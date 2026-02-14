@@ -5,6 +5,7 @@ import { useAuthStore } from "../stores/auth";
 import LoginView from "../views/LoginView.vue";
 import ContestsView from "../views/ContestsView.vue";
 import ContestDetailView from "../views/ContestDetailView.vue";
+import AdminView from "../views/AdminView.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -30,6 +31,12 @@ const router = createRouter({
       component: ContestDetailView,
       props: true,
       meta: { requiresAuth: true }
+    },
+    {
+      path: "/admin",
+      name: "admin",
+      component: AdminView,
+      meta: { requiresAuth: true, requiresAdmin: true }
     }
   ]
 });
@@ -53,6 +60,13 @@ router.beforeEach(async (to) => {
         redirect: to.fullPath
       }
     };
+  }
+
+  if (to.meta.requiresAdmin) {
+    const role = authStore.user?.role ?? "";
+    if (role !== "admin" && role !== "judge") {
+      return { name: "contests" };
+    }
   }
 
   return true;

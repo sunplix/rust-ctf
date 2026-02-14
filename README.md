@@ -123,6 +123,7 @@ rust-ctf/
 - `backend/`：已完成核心数据库迁移（users/teams/contests/challenges/submissions/instances）
 - `backend/`：已提供认证接口（`/api/v1/auth/register`、`/api/v1/auth/login`、`/api/v1/auth/refresh`、`/api/v1/auth/me`）
 - `backend/`：已提供比赛基础接口（`/api/v1/contests`、`/api/v1/contests/{contest_id}/challenges`、`/api/v1/submissions`）
+- `backend/`：已提供管理员接口（`/api/v1/admin/challenges`、`/api/v1/admin/contests`、`/api/v1/admin/instances`）
 - `backend/`：提交接口已接入 Redis 限频（30 秒窗口内最多 10 次）
 - `backend/`：已提供排行榜接口（`/api/v1/contests/{contest_id}/scoreboard`）
 - `backend/`：已提供排行榜 WebSocket 推送接口（`/api/v1/contests/{contest_id}/scoreboard/ws`）
@@ -133,6 +134,7 @@ rust-ctf/
 - `backend/`：`script` 判题已支持按题目 metadata 执行外部校验脚本（返回码 0=正确，1=错误，其他=判题异常）
 - `frontend/`：已完成选手最小闭环页面（登录/注册、比赛列表、题目列表、Flag 提交、实例控制、实时榜单显示）
 - `frontend/`：已完成 API 客户端与本地登录态持久化（Pinia + localStorage）
+- `frontend/`：已完成管理员 v1 页面（题目创建/可见性切换、比赛状态切换、实例列表监控）
 - `deploy/`：本地开发用 `docker-compose.dev.yml`（PostgreSQL / Redis / Backend / Frontend）
 - `docs/`：初始化后续开发任务说明
 

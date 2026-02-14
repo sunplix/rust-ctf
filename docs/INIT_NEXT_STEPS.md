@@ -16,14 +16,17 @@
 12. Docker compose orchestration integration for real instance bring-up/teardown is ready.
 13. Runtime lifecycle E2E verification is ready (`start -> stop -> reset -> destroy`, real container state consistent).
 14. Scoreboard websocket auth fallback for browser is ready (`Authorization` or `access_token` query).
-15. Next: frontend admin pages + richer runtime monitor/notifications.
+15. Admin API v1 is ready (challenges/contests/instances list & operations for admin/judge).
+16. Admin frontend v1 is ready (challenge create/visibility, contest status update, instance monitor).
+17. Next: richer runtime monitor/notifications + admin edit flows (contest create/edit, challenge full edit).
 
 ## Frontend
 
 1. API client layer and auth state persistence are ready.
 2. Player pages are ready: login/register, contest list, challenge detail, submission panel, instance controls.
 3. Scoreboard websocket consumer and polling fallback are ready.
-4. Next: build admin pages (challenge management, contest control, instance monitor).
+4. Admin v1 page is ready: challenge management, contest control, instance monitor.
+5. Next: admin full CRUD/editor and operation audit views.
 
 ## Infrastructure
 

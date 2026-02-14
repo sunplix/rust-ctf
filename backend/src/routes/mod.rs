@@ -1,3 +1,4 @@
+mod admin;
 mod auth;
 mod contests;
 mod health;
@@ -15,6 +16,7 @@ pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .nest("/api/v1", health::router())
         .nest("/api/v1", auth::router())
+        .nest("/api/v1", admin::router())
         .nest("/api/v1", contests::router())
         .nest("/api/v1", instances::router())
         .nest("/api/v1", scoreboard::router())

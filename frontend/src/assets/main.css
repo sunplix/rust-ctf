@@ -228,6 +228,44 @@ button:disabled {
   align-items: start;
 }
 
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.admin-list {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+.admin-list-item {
+  border: 1px solid rgba(19, 32, 56, 0.16);
+  border-radius: 10px;
+  padding: 0.65rem;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.admin-list-item p {
+  margin: 0.24rem 0;
+}
+
+textarea {
+  border: 1px solid rgba(19, 32, 56, 0.2);
+  border-radius: 8px;
+  padding: 0.52rem 0.62rem;
+  background: rgba(255, 255, 255, 0.9);
+  resize: vertical;
+}
+
+.inline-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
 .challenge-panel {
   display: grid;
   gap: 0.7rem;
@@ -307,6 +345,10 @@ button:disabled {
   .scoreboard-panel {
     grid-column: 1 / -1;
   }
+
+  .admin-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 900px) {
@@ -316,5 +358,9 @@ button:disabled {
 
   .topbar {
     flex-wrap: wrap;
+  }
+
+  .admin-grid {
+    grid-template-columns: 1fr;
   }
 }
