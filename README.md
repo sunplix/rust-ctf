@@ -125,7 +125,9 @@ rust-ctf/
 - `backend/`：已提供比赛基础接口（`/api/v1/contests`、`/api/v1/contests/{contest_id}/challenges`、`/api/v1/submissions`）
 - `backend/`：提交接口已接入 Redis 限频（30 秒窗口内最多 10 次）
 - `backend/`：已提供排行榜接口（`/api/v1/contests/{contest_id}/scoreboard`）
+- `backend/`：已提供排行榜 WebSocket 推送接口（`/api/v1/contests/{contest_id}/scoreboard/ws`）
 - `backend/`：判题已支持静态 flag（明文或 Argon2 哈希）与动态 flag（Redis 键 `flag:dynamic:{contest_id}:{challenge_id}:{team_id}`）
+- `backend/`：`script` 判题已支持按题目 metadata 执行外部校验脚本（返回码 0=正确，1=错误，其他=判题异常）
 - `frontend/`：Vue3 + TypeScript 基础工程（含路由、状态管理、初始化页面、Dockerfile）
 - `deploy/`：本地开发用 `docker-compose.dev.yml`（PostgreSQL / Redis / Backend / Frontend）
 - `docs/`：初始化后续开发任务说明
@@ -195,3 +197,19 @@ curl http://localhost:8080/api/v1/health
 - `POST /api/v1/submissions`：静态哈希 flag 判题通过
 - `GET /api/v1/contests/{contest_id}/scoreboard`：排行榜查询通过
 - 提交限频：高频提交后返回 `verdict=rate_limited`
+
+### 8.6 Script 判题 metadata 示例
+
+`flag_mode=script` 的题目可在 `metadata` 中配置：
+
+```json
+{
+  "script_verifier": {
+    "program": "./scripts/verifiers/simple_compare.sh",
+    "args": ["ctf{demo_flag}"],
+    "timeout_seconds": 5
+  }
+}
+```
+
+后端会向脚本注入环境变量：`SUBMITTED_FLAG`、`CONTEST_ID`、`CHALLENGE_ID`、`TEAM_ID`。

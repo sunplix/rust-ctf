@@ -9,7 +9,9 @@
 5. Basic contest/challenge list APIs and submission flow are ready.
 6. Submission rate limiting and scoreboard API are ready.
 7. Dynamic flag verifier and hashed static flag check are ready.
-8. Next: script-based flag verifier and scoreboard websocket push.
+8. Script-based flag verifier is ready (metadata-driven command + timeout).
+9. Scoreboard websocket push skeleton is ready (Redis pubsub trigger + ws route).
+10. Next: instance lifecycle APIs and scoreboard/event permission controls.
 
 ## Frontend
 

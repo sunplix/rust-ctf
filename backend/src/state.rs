@@ -7,6 +7,7 @@ use tracing::warn;
 pub struct AppState {
     pub config: AppConfig,
     pub db: PgPool,
+    pub redis_client: redis::Client,
     pub redis: ConnectionManager,
 }
 
@@ -29,10 +30,15 @@ impl AppState {
 
         let redis_client =
             redis::Client::open(config.redis_url.clone()).context("invalid redis url")?;
-        let redis = ConnectionManager::new(redis_client)
+        let redis = ConnectionManager::new(redis_client.clone())
             .await
             .context("failed to connect redis")?;
 
-        Ok(Self { config, db, redis })
+        Ok(Self {
+            config,
+            db,
+            redis_client,
+            redis,
+        })
     }
 }
