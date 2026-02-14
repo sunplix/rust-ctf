@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use argon2::{password_hash::PasswordHash, Argon2, PasswordVerifier};
 use axum::{extract::State, routing::post, Json, Router};
 use chrono::{DateTime, Utc};
 use redis::AsyncCommands;
@@ -153,7 +154,16 @@ async fn submit_flag(
     .await
     .map_err(AppError::internal)?;
 
-    let (verdict, score_awarded, message) = judge_flag(&judge_ctx, submitted_flag, already_solved);
+    let (verdict, score_awarded, message) = judge_flag(
+        state.as_ref(),
+        &judge_ctx,
+        req.contest_id,
+        req.challenge_id,
+        membership.team_id,
+        submitted_flag,
+        already_solved,
+    )
+    .await?;
 
     let submitted_at = insert_submission(
         state.as_ref(),
@@ -288,37 +298,83 @@ fn validate_submission_window(ctx: &JudgeContextRow) -> AppResult<()> {
     Ok(())
 }
 
-fn judge_flag(
+async fn judge_flag(
+    state: &AppState,
     ctx: &JudgeContextRow,
+    contest_id: Uuid,
+    challenge_id: Uuid,
+    team_id: Uuid,
     submitted_flag: &str,
     already_solved: bool,
-) -> (String, i32, String) {
-    if ctx.flag_mode != "static" {
-        return (
-            "invalid".to_string(),
-            0,
-            format!(
-                "flag mode '{}' for challenge type '{}' is not supported yet",
-                ctx.flag_mode, ctx.challenge_type
-            ),
-        );
-    }
+) -> AppResult<(String, i32, String)> {
+    let is_correct = match ctx.flag_mode.as_str() {
+        "static" => verify_static_flag(submitted_flag, &ctx.flag_hash)?,
+        "dynamic" => {
+            let mut redis_conn = state.redis.clone();
+            let key = format!("flag:dynamic:{}:{}:{}", contest_id, challenge_id, team_id);
+            let expected: Option<String> =
+                redis_conn.get(&key).await.map_err(AppError::internal)?;
 
-    if submitted_flag == ctx.flag_hash {
+            match expected {
+                Some(flag) => submitted_flag == flag,
+                None => {
+                    return Ok((
+                        "invalid".to_string(),
+                        0,
+                        "dynamic flag is not provisioned yet".to_string(),
+                    ));
+                }
+            }
+        }
+        "script" => {
+            return Ok((
+                "invalid".to_string(),
+                0,
+                format!(
+                    "script flag verifier is not implemented yet for challenge type '{}'",
+                    ctx.challenge_type
+                ),
+            ));
+        }
+        other => {
+            return Ok((
+                "invalid".to_string(),
+                0,
+                format!("unsupported flag mode '{}'", other),
+            ));
+        }
+    };
+
+    if is_correct {
         if already_solved {
-            return (
+            return Ok((
                 "accepted".to_string(),
                 0,
                 "correct flag, but this challenge is already solved by your team".to_string(),
-            );
+            ));
         }
 
-        return (
+        return Ok((
             "accepted".to_string(),
             ctx.static_score,
             "correct flag".to_string(),
-        );
+        ));
     }
 
-    ("wrong".to_string(), 0, "incorrect flag".to_string())
+    Ok(("wrong".to_string(), 0, "incorrect flag".to_string()))
+}
+
+fn verify_static_flag(submitted_flag: &str, stored_flag: &str) -> AppResult<bool> {
+    if stored_flag.starts_with("$argon2") {
+        let parsed_hash = PasswordHash::new(stored_flag).map_err(|_| {
+            AppError::BadRequest("challenge static flag hash is malformed".to_string())
+        })?;
+
+        let verified = Argon2::default()
+            .verify_password(submitted_flag.as_bytes(), &parsed_hash)
+            .is_ok();
+        return Ok(verified);
+    }
+
+    Ok(submitted_flag == stored_flag)
 }

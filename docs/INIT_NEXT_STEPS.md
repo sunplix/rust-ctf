@@ -8,7 +8,8 @@
 4. Bearer auth extractor (route guard) is ready for protected APIs.
 5. Basic contest/challenge list APIs and submission flow are ready.
 6. Submission rate limiting and scoreboard API are ready.
-7. Next: dynamic flag verifier, hashed flag check, and scoreboard websocket push.
+7. Dynamic flag verifier and hashed static flag check are ready.
+8. Next: script-based flag verifier and scoreboard websocket push.
 
 ## Frontend
 

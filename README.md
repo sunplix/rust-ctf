@@ -125,6 +125,7 @@ rust-ctf/
 - `backend/`：已提供比赛基础接口（`/api/v1/contests`、`/api/v1/contests/{contest_id}/challenges`、`/api/v1/submissions`）
 - `backend/`：提交接口已接入 Redis 限频（30 秒窗口内最多 10 次）
 - `backend/`：已提供排行榜接口（`/api/v1/contests/{contest_id}/scoreboard`）
+- `backend/`：判题已支持静态 flag（明文或 Argon2 哈希）与动态 flag（Redis 键 `flag:dynamic:{contest_id}:{challenge_id}:{team_id}`）
 - `frontend/`：Vue3 + TypeScript 基础工程（含路由、状态管理、初始化页面、Dockerfile）
 - `deploy/`：本地开发用 `docker-compose.dev.yml`（PostgreSQL / Redis / Backend / Frontend）
 - `docs/`：初始化后续开发任务说明
@@ -186,3 +187,11 @@ curl http://localhost:8080/api/v1/health
 ```
 
 返回 `status=ok` 且 `dependencies.database=true`、`dependencies.redis=true` 即表示后端基础可用。
+
+### 8.5 已验证的接口链路（2026-02-14）
+
+- `GET /api/v1/health`：健康检查通过，数据库和 Redis 状态正常
+- `POST /api/v1/auth/register`、`GET /api/v1/auth/me`、`POST /api/v1/auth/refresh`：认证链路通过
+- `POST /api/v1/submissions`：静态哈希 flag 判题通过
+- `GET /api/v1/contests/{contest_id}/scoreboard`：排行榜查询通过
+- 提交限频：高频提交后返回 `verdict=rate_limited`
