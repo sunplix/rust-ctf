@@ -1,0 +1,13 @@
+/Users/sunplix/rust-ctf/backend/target/debug/deps/url-1db8605efe4ade18.d: /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/lib.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/host.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/origin.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/parser.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/path_segments.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/slicing.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/quirks.rs
+
+/Users/sunplix/rust-ctf/backend/target/debug/deps/liburl-1db8605efe4ade18.rlib: /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/lib.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/host.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/origin.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/parser.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/path_segments.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/slicing.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/quirks.rs
+
+/Users/sunplix/rust-ctf/backend/target/debug/deps/liburl-1db8605efe4ade18.rmeta: /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/lib.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/host.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/origin.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/parser.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/path_segments.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/slicing.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/quirks.rs
+
+/Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/lib.rs:
+/Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/host.rs:
+/Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/origin.rs:
+/Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/parser.rs:
+/Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/path_segments.rs:
+/Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/slicing.rs:
+/Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/url-2.5.7/src/quirks.rs:

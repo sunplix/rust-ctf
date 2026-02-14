@@ -117,4 +117,72 @@ rust-ctf/
 
 ## 7. 当前状态
 
-当前仓库已完成项目目标与功能边界定义（本 README）。下一步进入工程初始化：创建后端/前端工程骨架、数据库迁移、基础认证与比赛域模型。
+当前仓库已完成第一轮工程初始化，已包含：
+
+- `backend/`：Rust + Axum 基础服务骨架（含配置加载、健康检查路由、Dockerfile）
+- `backend/`：已完成核心数据库迁移（users/teams/contests/challenges/submissions/instances）
+- `backend/`：已提供认证接口（`/api/v1/auth/register`、`/api/v1/auth/login`、`/api/v1/auth/refresh`、`/api/v1/auth/me`）
+- `backend/`：已提供比赛基础接口（`/api/v1/contests`、`/api/v1/contests/{contest_id}/challenges`、`/api/v1/submissions`）
+- `backend/`：提交接口已接入 Redis 限频（30 秒窗口内最多 10 次）
+- `backend/`：已提供排行榜接口（`/api/v1/contests/{contest_id}/scoreboard`）
+- `frontend/`：Vue3 + TypeScript 基础工程（含路由、状态管理、初始化页面、Dockerfile）
+- `deploy/`：本地开发用 `docker-compose.dev.yml`（PostgreSQL / Redis / Backend / Frontend）
+- `docs/`：初始化后续开发任务说明
+
+下一步进入业务实现阶段：数据库迁移、认证体系、比赛域模型、题目与判题流程、多容器实例调度模块。
+
+## 8. 本地启动（可用版）
+
+### 8.1 前置要求
+
+- Docker + Docker Compose（本仓库默认使用 `docker-compose` 命令）
+- Rust（建议 stable）
+- Node.js 20+
+
+### 8.2 方式 A：容器一键启动（推荐）
+
+```bash
+docker-compose -f deploy/docker-compose.dev.yml up --build
+```
+
+启动后访问：
+
+- 前端：`http://localhost:5173`
+- 后端健康检查：`http://localhost:8080/api/v1/health`
+
+停止服务：
+
+```bash
+docker-compose -f deploy/docker-compose.dev.yml down
+```
+
+### 8.3 方式 B：本地开发模式（后端/前端分开跑）
+
+1. 启动基础依赖（PostgreSQL + Redis）：
+
+```bash
+docker-compose -f deploy/docker-compose.dev.yml up -d postgres redis
+```
+
+2. 启动后端（会自动执行 `backend/migrations/` 下迁移）：
+
+```bash
+cd backend
+cargo run
+```
+
+3. 新开终端启动前端：
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### 8.4 快速自检
+
+```bash
+curl http://localhost:8080/api/v1/health
+```
+
+返回 `status=ok` 且 `dependencies.database=true`、`dependencies.redis=true` 即表示后端基础可用。

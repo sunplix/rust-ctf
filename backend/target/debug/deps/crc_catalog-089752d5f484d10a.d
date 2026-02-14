@@ -1,0 +1,7 @@
+/Users/sunplix/rust-ctf/backend/target/debug/deps/crc_catalog-089752d5f484d10a.d: /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/crc-catalog-2.4.0/src/lib.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/crc-catalog-2.4.0/src/poly.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/crc-catalog-2.4.0/src/algorithm.rs
+
+/Users/sunplix/rust-ctf/backend/target/debug/deps/libcrc_catalog-089752d5f484d10a.rmeta: /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/crc-catalog-2.4.0/src/lib.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/crc-catalog-2.4.0/src/poly.rs /Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/crc-catalog-2.4.0/src/algorithm.rs
+
+/Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/crc-catalog-2.4.0/src/lib.rs:
+/Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/crc-catalog-2.4.0/src/poly.rs:
+/Users/sunplix/.cargo/registry/src/rsproxy.cn-bba5f22c699b99ea/crc-catalog-2.4.0/src/algorithm.rs:
