@@ -126,27 +126,34 @@ rust-ctf/
 - `backend/`：提交接口已接入 Redis 限频（30 秒窗口内最多 10 次）
 - `backend/`：已提供排行榜接口（`/api/v1/contests/{contest_id}/scoreboard`）
 - `backend/`：已提供排行榜 WebSocket 推送接口（`/api/v1/contests/{contest_id}/scoreboard/ws`）
+- `backend/`：排行榜 WebSocket 支持浏览器 Token Query 鉴权（`?access_token=...`，同时兼容 `Authorization: Bearer ...`）
+- `backend/`：已提供实例生命周期接口（`/api/v1/instances/start|stop|reset|destroy|{contest_id}/{challenge_id}`）
+- `backend/`：实例生命周期已接入真实 `docker compose` 编排（模板渲染、compose 文件落盘、启动/停止/重置/销毁）
 - `backend/`：判题已支持静态 flag（明文或 Argon2 哈希）与动态 flag（Redis 键 `flag:dynamic:{contest_id}:{challenge_id}:{team_id}`）
 - `backend/`：`script` 判题已支持按题目 metadata 执行外部校验脚本（返回码 0=正确，1=错误，其他=判题异常）
-- `frontend/`：Vue3 + TypeScript 基础工程（含路由、状态管理、初始化页面、Dockerfile）
+- `frontend/`：已完成选手最小闭环页面（登录/注册、比赛列表、题目列表、Flag 提交、实例控制、实时榜单显示）
+- `frontend/`：已完成 API 客户端与本地登录态持久化（Pinia + localStorage）
 - `deploy/`：本地开发用 `docker-compose.dev.yml`（PostgreSQL / Redis / Backend / Frontend）
 - `docs/`：初始化后续开发任务说明
 
-下一步进入业务实现阶段：数据库迁移、认证体系、比赛域模型、题目与判题流程、多容器实例调度模块。
+下一步进入前端业务页面与后台管理能力的持续实现阶段。
 
 ## 8. 本地启动（可用版）
 
 ### 8.1 前置要求
 
-- Docker + Docker Compose（本仓库默认使用 `docker-compose` 命令）
+- Docker Engine（Daemon 已启动）
+- Docker Compose（本仓库默认使用 `docker compose` 命令）
 - Rust（建议 stable）
 - Node.js 20+
 
 ### 8.2 方式 A：容器一键启动（推荐）
 
 ```bash
-docker-compose -f deploy/docker-compose.dev.yml up --build
+docker compose -f deploy/docker-compose.dev.yml up --build
 ```
+
+说明：开发编排已包含 `backend` 容器对 Docker Socket 的挂载（`/var/run/docker.sock`），实例生命周期接口可直接调用宿主机 Docker 创建/销毁题目环境。
 
 启动后访问：
 
@@ -156,7 +163,7 @@ docker-compose -f deploy/docker-compose.dev.yml up --build
 停止服务：
 
 ```bash
-docker-compose -f deploy/docker-compose.dev.yml down
+docker compose -f deploy/docker-compose.dev.yml down
 ```
 
 ### 8.3 方式 B：本地开发模式（后端/前端分开跑）
@@ -164,7 +171,7 @@ docker-compose -f deploy/docker-compose.dev.yml down
 1. 启动基础依赖（PostgreSQL + Redis）：
 
 ```bash
-docker-compose -f deploy/docker-compose.dev.yml up -d postgres redis
+docker compose -f deploy/docker-compose.dev.yml up -d postgres redis
 ```
 
 2. 启动后端（会自动执行 `backend/migrations/` 下迁移）：
@@ -190,12 +197,19 @@ curl http://localhost:8080/api/v1/health
 
 返回 `status=ok` 且 `dependencies.database=true`、`dependencies.redis=true` 即表示后端基础可用。
 
+如需验证实例编排链路可用，可再执行：
+
+```bash
+docker info >/dev/null && docker compose version
+```
+
 ### 8.5 已验证的接口链路（2026-02-14）
 
 - `GET /api/v1/health`：健康检查通过，数据库和 Redis 状态正常
 - `POST /api/v1/auth/register`、`GET /api/v1/auth/me`、`POST /api/v1/auth/refresh`：认证链路通过
 - `POST /api/v1/submissions`：静态哈希 flag 判题通过
 - `GET /api/v1/contests/{contest_id}/scoreboard`：排行榜查询通过
+- `GET /api/v1/contests/{contest_id}/scoreboard`：未鉴权访问返回 `401`（权限控制生效）
 - 提交限频：高频提交后返回 `verdict=rate_limited`
 
 ### 8.6 Script 判题 metadata 示例

@@ -11,14 +11,19 @@
 7. Dynamic flag verifier and hashed static flag check are ready.
 8. Script-based flag verifier is ready (metadata-driven command + timeout).
 9. Scoreboard websocket push skeleton is ready (Redis pubsub trigger + ws route).
-10. Next: instance lifecycle APIs and scoreboard/event permission controls.
+10. Instance lifecycle APIs are ready (start/stop/reset/destroy/query).
+11. Scoreboard permission controls are ready (auth required + private contest guard).
+12. Docker compose orchestration integration for real instance bring-up/teardown is ready.
+13. Runtime lifecycle E2E verification is ready (`start -> stop -> reset -> destroy`, real container state consistent).
+14. Scoreboard websocket auth fallback for browser is ready (`Authorization` or `access_token` query).
+15. Next: frontend admin pages + richer runtime monitor/notifications.
 
 ## Frontend
 
-1. Add API client layer and auth state persistence.
-2. Build player pages: contest list, challenge list/detail, submission panel.
-3. Build admin pages: challenge management, contest control, instance monitor.
-4. Add websocket service for scoreboard and runtime events.
+1. API client layer and auth state persistence are ready.
+2. Player pages are ready: login/register, contest list, challenge detail, submission panel, instance controls.
+3. Scoreboard websocket consumer and polling fallback are ready.
+4. Next: build admin pages (challenge management, contest control, instance monitor).
 
 ## Infrastructure
 

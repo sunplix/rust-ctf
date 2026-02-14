@@ -3,20 +3,22 @@ use std::sync::Arc;
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
-        Path, State,
+        Path, Query, State,
     },
+    http::HeaderMap,
     response::IntoResponse,
     routing::get,
     Json, Router,
 };
 use chrono::{DateTime, Utc};
 use futures_util::StreamExt;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use tracing::warn;
 use uuid::Uuid;
 
 use crate::{
+    auth::{self, AuthenticatedUser},
     error::{AppError, AppResult},
     state::AppState,
 };
@@ -47,6 +49,18 @@ struct ScoreboardRow {
     last_submit_at: Option<DateTime<Utc>>,
 }
 
+#[derive(Debug, FromRow)]
+struct ContestAccessRow {
+    visibility: String,
+    status: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ScoreboardWsAuthQuery {
+    access_token: Option<String>,
+    token: Option<String>,
+}
+
 pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/contests/{contest_id}/scoreboard", get(get_scoreboard))
@@ -56,7 +70,9 @@ pub fn router() -> Router<Arc<AppState>> {
 async fn get_scoreboard(
     State(state): State<Arc<AppState>>,
     Path(contest_id): Path<Uuid>,
+    current_user: AuthenticatedUser,
 ) -> AppResult<Json<Vec<ScoreboardEntry>>> {
+    ensure_scoreboard_access(state.as_ref(), contest_id, &current_user).await?;
     let entries = load_scoreboard_entries(state.as_ref(), contest_id).await?;
     Ok(Json(entries))
 }
@@ -65,11 +81,35 @@ async fn scoreboard_ws(
     ws: WebSocketUpgrade,
     State(state): State<Arc<AppState>>,
     Path(contest_id): Path<Uuid>,
-) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| scoreboard_ws_loop(socket, state, contest_id))
+    headers: HeaderMap,
+    Query(query): Query<ScoreboardWsAuthQuery>,
+) -> AppResult<impl IntoResponse> {
+    let current_user = resolve_ws_user(state.as_ref(), &headers, query)?;
+    ensure_scoreboard_access(state.as_ref(), contest_id, &current_user).await?;
+
+    Ok(ws.on_upgrade(move |socket| scoreboard_ws_loop(socket, state, contest_id, current_user)))
 }
 
-async fn scoreboard_ws_loop(mut socket: WebSocket, state: Arc<AppState>, contest_id: Uuid) {
+fn resolve_ws_user(
+    state: &AppState,
+    headers: &HeaderMap,
+    query: ScoreboardWsAuthQuery,
+) -> AppResult<AuthenticatedUser> {
+    let token_from_header = auth::extract_bearer_token(headers).ok().map(str::to_string);
+    let token = token_from_header
+        .or(query.access_token)
+        .or(query.token)
+        .ok_or(AppError::Unauthorized)?;
+
+    auth::decode_access_token(&token, &state.config.jwt_secret)
+}
+
+async fn scoreboard_ws_loop(
+    mut socket: WebSocket,
+    state: Arc<AppState>,
+    contest_id: Uuid,
+    current_user: AuthenticatedUser,
+) {
     if send_scoreboard_snapshot(&mut socket, state.as_ref(), contest_id)
         .await
         .is_err()
@@ -82,7 +122,12 @@ async fn scoreboard_ws_loop(mut socket: WebSocket, state: Arc<AppState>, contest
     let mut pubsub = match state.redis_client.get_async_pubsub().await {
         Ok(pubsub) => pubsub,
         Err(err) => {
-            warn!(contest_id = %contest_id, error = %err, "failed to create redis pubsub connection");
+            warn!(
+                contest_id = %contest_id,
+                user_id = %current_user.user_id,
+                error = %err,
+                "failed to create redis pubsub connection"
+            );
             let _ = socket
                 .send(Message::Close(Some(axum::extract::ws::CloseFrame {
                     code: axum::extract::ws::close_code::ERROR,
@@ -94,7 +139,12 @@ async fn scoreboard_ws_loop(mut socket: WebSocket, state: Arc<AppState>, contest
     };
 
     if let Err(err) = pubsub.subscribe(&channel).await {
-        warn!(contest_id = %contest_id, error = %err, "failed to subscribe scoreboard channel");
+        warn!(
+            contest_id = %contest_id,
+            user_id = %current_user.user_id,
+            error = %err,
+            "failed to subscribe scoreboard channel"
+        );
         let _ = socket
             .send(Message::Close(Some(axum::extract::ws::CloseFrame {
                 code: axum::extract::ws::close_code::ERROR,
@@ -118,7 +168,12 @@ async fn scoreboard_ws_loop(mut socket: WebSocket, state: Arc<AppState>, contest
                     }
                     Some(Ok(_)) => {}
                     Some(Err(err)) => {
-                        warn!(contest_id = %contest_id, error = %err, "websocket receive error");
+                        warn!(
+                            contest_id = %contest_id,
+                            user_id = %current_user.user_id,
+                            error = %err,
+                            "websocket receive error"
+                        );
                         break;
                     }
                 }
@@ -159,6 +214,36 @@ async fn send_scoreboard_snapshot(
     socket.send(Message::Text(payload.into())).await.map_err(|err| {
         warn!(contest_id = %contest_id, error = %err, "failed to send websocket scoreboard payload");
     })
+}
+
+async fn ensure_scoreboard_access(
+    state: &AppState,
+    contest_id: Uuid,
+    current_user: &AuthenticatedUser,
+) -> AppResult<()> {
+    let contest = sqlx::query_as::<_, ContestAccessRow>(
+        "SELECT visibility, status
+         FROM contests
+         WHERE id = $1
+         LIMIT 1",
+    )
+    .bind(contest_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest("contest not found".to_string()))?;
+
+    let is_privileged = current_user.role == "admin" || current_user.role == "judge";
+
+    if contest.visibility == "private" && !is_privileged {
+        return Err(AppError::Forbidden);
+    }
+
+    if (contest.status == "draft" || contest.status == "archived") && !is_privileged {
+        return Err(AppError::Forbidden);
+    }
+
+    Ok(())
 }
 
 async fn load_scoreboard_entries(

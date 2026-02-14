@@ -19,3 +19,7 @@
 
 # Logs
 *.log
+
+# Runtime artifacts
+/runtime
+/backend/runtime

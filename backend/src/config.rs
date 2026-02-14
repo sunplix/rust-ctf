@@ -7,6 +7,8 @@ pub struct AppConfig {
     pub database_url: String,
     pub redis_url: String,
     pub jwt_secret: String,
+    pub instance_runtime_root: String,
+    pub compose_command_timeout_seconds: u64,
 }
 
 impl AppConfig {
@@ -17,6 +19,8 @@ impl AppConfig {
             .set_default("database_url", "postgres://ctf:ctf@localhost:5432/rust_ctf")?
             .set_default("redis_url", "redis://localhost:6379")?
             .set_default("jwt_secret", "change_me_in_production")?
+            .set_default("instance_runtime_root", "./runtime/instances")?
+            .set_default("compose_command_timeout_seconds", 120_u64)?
             .add_source(::config::Environment::default().separator("__"));
 
         builder.build()?.try_deserialize().map_err(Into::into)

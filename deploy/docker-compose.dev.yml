@@ -46,8 +46,13 @@ services:
       DATABASE_URL: postgres://ctf:ctf@postgres:5432/rust_ctf
       REDIS_URL: redis://redis:6379
       JWT_SECRET: change_me_before_production
+      INSTANCE_RUNTIME_ROOT: /runtime/instances
+      COMPOSE_COMMAND_TIMEOUT_SECONDS: 120
     ports:
       - "8080:8080"
+    volumes:
+      - ../runtime:/runtime
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       postgres:
         condition: service_healthy

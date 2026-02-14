@@ -132,6 +132,10 @@ fn decode_access_identity(token: &str, jwt_secret: &str) -> AppResult<Authentica
     })
 }
 
+pub fn decode_access_token(token: &str, jwt_secret: &str) -> AppResult<AuthenticatedUser> {
+    decode_access_identity(token, jwt_secret)
+}
+
 fn build_token_bundle(
     state: &AppState,
     user_id: Uuid,
