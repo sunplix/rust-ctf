@@ -2,7 +2,7 @@ pub(crate) mod admin;
 mod auth;
 mod contests;
 mod health;
-mod instances;
+pub(crate) mod instances;
 mod scoreboard;
 mod submissions;
 mod teams;

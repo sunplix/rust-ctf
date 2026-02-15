@@ -329,13 +329,26 @@
 
 - 销毁实例（`down --volumes --remove-orphans`），状态改为 `destroyed`
 
+### `POST /instances/heartbeat`
+
+- 刷新运行中实例心跳时间（`last_heartbeat_at=now`）
+- 仅当该队伍对应实例处于 `running` 状态时成功
+- 若实例不存在或非运行态，返回 `400`（`running instance not found`）
+
 ### `GET /instances/{contest_id}/{challenge_id}`
 
 - 查询当前用户所属队伍在该题目的实例
 
+### 生命周期补充说明
+
+- 后端默认启用后台实例回收器：按配置周期扫描 `expires_at <= now` 且未销毁实例，自动执行销毁与运行目录清理。
+- 回收器配置项：`INSTANCE_REAPER_ENABLED`、`INSTANCE_REAPER_INTERVAL_SECONDS`、`INSTANCE_REAPER_INITIAL_DELAY_SECONDS`、`INSTANCE_REAPER_BATCH_SIZE`。
+- 实例默认资源配额支持配置：`INSTANCE_DEFAULT_CPU_LIMIT`、`INSTANCE_DEFAULT_MEMORY_LIMIT_MB`。
+- 心跳超时阈值与自动处置配置：`INSTANCE_HEARTBEAT_STALE_SECONDS`、`INSTANCE_STALE_REAPER_ENABLED`、`INSTANCE_STALE_REAPER_BATCH_SIZE`（默认仅告警，不自动销毁）。
+
 ### 响应模型 `InstanceResponse`
 
-`id,contest_id,challenge_id,team_id,status,subnet,compose_project_name,entrypoint_url,started_at,expires_at,destroyed_at,last_heartbeat_at,message`
+`id,contest_id,challenge_id,team_id,status,subnet,compose_project_name,entrypoint_url,cpu_limit,memory_limit_mb,started_at,expires_at,destroyed_at,last_heartbeat_at,message`
 
 ## 9. 排行榜 API
 
@@ -566,6 +579,7 @@
   - 触发一次运行时告警扫描（失败实例、即将过期、过期未销毁、心跳超时）
   - 自动去重（按 `fingerprint`）、刷新 `last_seen_at`，并自动关闭不再命中的历史告警
   - 说明：后端默认也会按配置后台定时执行同一套扫描逻辑
+  - 心跳超时判定阈值由 `INSTANCE_HEARTBEAT_STALE_SECONDS` 控制（默认 300 秒）
 - `POST /admin/runtime/alerts/{alert_id}/ack`
   - 将告警标记为 `acknowledged`
   - 可选 Body：`{"note":"..."}`（用于审计备注）

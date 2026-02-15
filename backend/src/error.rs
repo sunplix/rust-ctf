@@ -98,10 +98,7 @@ impl IntoResponse for AppError {
         }
 
         let body = ErrorEnvelope {
-            error: ErrorBody {
-                code,
-                message,
-            },
+            error: ErrorBody { code, message },
         };
 
         (status, Json(body)).into_response()

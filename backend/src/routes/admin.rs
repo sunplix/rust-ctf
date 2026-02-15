@@ -47,8 +47,7 @@ const RUNTIME_ALERT_SEVERITY_ALLOWED: &[&str] = &["info", "warning", "critical"]
 const RUNTIME_ALERT_SOURCE_INSTANCE: &str = "instance";
 const RUNTIME_ALERT_TYPE_INSTANCE_FAILED: &str = "instance_failed";
 const RUNTIME_ALERT_TYPE_INSTANCE_EXPIRING_SOON: &str = "instance_expiring_soon";
-const RUNTIME_ALERT_TYPE_INSTANCE_EXPIRED_NOT_DESTROYED: &str =
-    "instance_expired_not_destroyed";
+const RUNTIME_ALERT_TYPE_INSTANCE_EXPIRED_NOT_DESTROYED: &str = "instance_expired_not_destroyed";
 const RUNTIME_ALERT_TYPE_INSTANCE_HEARTBEAT_STALE: &str = "instance_heartbeat_stale";
 const RUNTIME_ALERT_SCANNER_TYPES: &[&str] = &[
     RUNTIME_ALERT_TYPE_INSTANCE_FAILED,
@@ -1028,11 +1027,7 @@ async fn create_challenge(
     .bind(row.id)
     .bind(row.current_version)
     .bind(snapshot)
-    .bind(
-        change_note
-            .as_deref()
-            .unwrap_or("initial version"),
-    )
+    .bind(change_note.as_deref().unwrap_or("initial version"))
     .bind(current_user.user_id)
     .execute(&mut *tx)
     .await
@@ -1105,7 +1100,9 @@ async fn update_challenge(
     let normalized_writeup_visibility = req
         .writeup_visibility
         .as_deref()
-        .map(|value| normalize_with_allowed(value, WRITEUP_VISIBILITY_ALLOWED, "writeup_visibility"))
+        .map(|value| {
+            normalize_with_allowed(value, WRITEUP_VISIBILITY_ALLOWED, "writeup_visibility")
+        })
         .transpose()?;
     let normalized_tags = req.tags.map(normalize_tags).transpose()?;
     let change_note = req
@@ -1321,9 +1318,7 @@ async fn rollback_challenge_version(
     ensure_challenge_exists(state.as_ref(), challenge_id).await?;
 
     if req.version_no < 1 {
-        return Err(AppError::BadRequest(
-            "version_no must be >= 1".to_string(),
-        ));
+        return Err(AppError::BadRequest("version_no must be >= 1".to_string()));
     }
 
     let snapshot_value = sqlx::query_scalar::<_, Value>(
@@ -1342,11 +1337,8 @@ async fn rollback_challenge_version(
 
     let target_snapshot: ChallengeSnapshot =
         serde_json::from_value(snapshot_value).map_err(AppError::internal)?;
-    let rollback_status = normalize_with_allowed(
-        &target_snapshot.status,
-        CHALLENGE_STATUS_ALLOWED,
-        "status",
-    )?;
+    let rollback_status =
+        normalize_with_allowed(&target_snapshot.status, CHALLENGE_STATUS_ALLOWED, "status")?;
     let rollback_visible = rollback_status == "published";
 
     let mut tx = state.db.begin().await.map_err(AppError::internal)?;
@@ -1838,7 +1830,9 @@ async fn update_contest(
         None => existing.status,
     };
     let scoring_mode = match req.scoring_mode {
-        Some(value) => normalize_with_allowed(&value, CONTEST_SCORING_MODE_ALLOWED, "scoring_mode")?,
+        Some(value) => {
+            normalize_with_allowed(&value, CONTEST_SCORING_MODE_ALLOWED, "scoring_mode")?
+        }
         None => existing.scoring_mode,
     };
     let dynamic_decay = req.dynamic_decay.unwrap_or(existing.dynamic_decay);
@@ -2295,10 +2289,7 @@ async fn update_contest_announcement(
         .and_then(normalize_optional_text)
         .map(str::to_string);
 
-    if title.is_none()
-        && content.is_none()
-        && req.is_published.is_none()
-        && req.is_pinned.is_none()
+    if title.is_none() && content.is_none() && req.is_published.is_none() && req.is_pinned.is_none()
     {
         return Err(AppError::BadRequest(
             "at least one field is required for update".to_string(),
@@ -2901,8 +2892,15 @@ async fn scan_runtime_alerts_internal(state: &AppState) -> AppResult<(i64, i64)>
     Ok((upserted, auto_resolved))
 }
 
-async fn collect_runtime_alert_candidates(state: &AppState) -> AppResult<Vec<RuntimeAlertCandidate>> {
+async fn collect_runtime_alert_candidates(
+    state: &AppState,
+) -> AppResult<Vec<RuntimeAlertCandidate>> {
     let mut candidates = Vec::new();
+    let heartbeat_stale_seconds = state
+        .config
+        .instance_heartbeat_stale_seconds
+        .clamp(60, 86_400);
+    let heartbeat_stale_minutes = heartbeat_stale_seconds / 60;
 
     let failed_rows = sqlx::query_as::<_, RuntimeAlertSignalInstanceRow>(
         "SELECT i.id,
@@ -3042,9 +3040,10 @@ async fn collect_runtime_alert_candidates(state: &AppState) -> AppResult<Vec<Run
          JOIN teams t ON t.id = i.team_id
          WHERE i.status = 'running'
            AND i.last_heartbeat_at IS NOT NULL
-           AND i.last_heartbeat_at <= NOW() - INTERVAL '5 minutes'
+           AND i.last_heartbeat_at <= NOW() - ($1::bigint * INTERVAL '1 second')
          ORDER BY i.last_heartbeat_at ASC",
     )
+    .bind(heartbeat_stale_seconds as i64)
     .fetch_all(&state.db)
     .await
     .map_err(AppError::internal)?;
@@ -3052,8 +3051,12 @@ async fn collect_runtime_alert_candidates(state: &AppState) -> AppResult<Vec<Run
     for row in stale_heartbeat_rows {
         if let Some(last_heartbeat_at) = row.last_heartbeat_at {
             let message = format!(
-                "实例 {} / {} / {} 心跳停留在 {}，可能存在异常",
-                row.contest_title, row.challenge_title, row.team_name, last_heartbeat_at
+                "实例 {} / {} / {} 心跳停留在 {}，超过 {} 分钟阈值，可能存在异常",
+                row.contest_title,
+                row.challenge_title,
+                row.team_name,
+                last_heartbeat_at,
+                heartbeat_stale_minutes
             );
             candidates.push(build_runtime_alert_candidate(
                 RUNTIME_ALERT_TYPE_INSTANCE_HEARTBEAT_STALE,
@@ -3229,7 +3232,10 @@ async fn load_runtime_alert_counts(state: &AppState) -> AppResult<RuntimeAlertCo
     .map_err(AppError::internal)
 }
 
-async fn load_runtime_alert_item(state: &AppState, alert_id: Uuid) -> AppResult<AdminRuntimeAlertItem> {
+async fn load_runtime_alert_item(
+    state: &AppState,
+    alert_id: Uuid,
+) -> AppResult<AdminRuntimeAlertItem> {
     sqlx::query_as::<_, AdminRuntimeAlertItem>(
         "SELECT a.id,
                 a.alert_type,

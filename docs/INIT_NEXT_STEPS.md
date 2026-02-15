@@ -20,7 +20,10 @@
 16. Admin frontend v2 is ready (challenge create/visibility, contest create/status, contest-challenge binding/sort, instance monitor).
 17. Runtime alert notification API is ready (`/admin/runtime/alerts`, `scan`, `ack`, `resolve`).
 18. Runtime alert scheduled scanner is ready (startup background task + configurable interval).
-19. Next: runtime alert UI integration + auto-remediation workers.
+19. Instance expired reaper is ready (startup background task + configurable interval/batch).
+20. Instance resource quota enforcement and heartbeat API are ready (`INSTANCE_DEFAULT_CPU_LIMIT`, `INSTANCE_DEFAULT_MEMORY_LIMIT_MB`, `POST /instances/heartbeat`).
+21. Stale-heartbeat remediation policy is ready (configurable threshold + optional auto-reaper, default off).
+22. Next: runtime alert UI integration + heartbeat reporter agent in challenge runtime.
 
 ## Frontend
 

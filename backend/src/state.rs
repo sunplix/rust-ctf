@@ -1,9 +1,9 @@
 use crate::config::AppConfig;
+use anyhow::Context;
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
     Argon2,
 };
-use anyhow::Context;
 use redis::aio::ConnectionManager;
 use sqlx::{postgres::PgPoolOptions, FromRow, PgPool};
 use tracing::{info, warn};
@@ -66,12 +66,16 @@ async fn ensure_default_admin_user(db: &PgPool, config: &AppConfig) -> anyhow::R
     let password = config.default_admin_password.as_str();
 
     if username.is_empty() || email.is_empty() {
-        warn!("default admin bootstrap skipped: DEFAULT_ADMIN_USERNAME/DEFAULT_ADMIN_EMAIL is empty");
+        warn!(
+            "default admin bootstrap skipped: DEFAULT_ADMIN_USERNAME/DEFAULT_ADMIN_EMAIL is empty"
+        );
         return Ok(());
     }
 
     if password.len() < 8 {
-        warn!("default admin bootstrap skipped: DEFAULT_ADMIN_PASSWORD must be at least 8 characters");
+        warn!(
+            "default admin bootstrap skipped: DEFAULT_ADMIN_PASSWORD must be at least 8 characters"
+        );
         return Ok(());
     }
 

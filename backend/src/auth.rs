@@ -66,7 +66,8 @@ impl FromRequestParts<Arc<AppState>> for AuthenticatedUser {
         async move {
             let token = token?;
             let identity = decode_access_identity(&token, &jwt_secret)?;
-            ensure_access_session_active(state.as_ref(), identity.user_id, identity.session_id).await?;
+            ensure_access_session_active(state.as_ref(), identity.user_id, identity.session_id)
+                .await?;
             let role = fetch_active_user_role(state.as_ref(), identity.user_id).await?;
 
             Ok(AuthenticatedUser {

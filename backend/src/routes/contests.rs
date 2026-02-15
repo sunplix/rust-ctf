@@ -58,7 +58,10 @@ struct ContestAccessRow {
 pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/contests", get(list_contests))
-        .route("/contests/{contest_id}/challenges", get(list_contest_challenges))
+        .route(
+            "/contests/{contest_id}/challenges",
+            get(list_contest_challenges),
+        )
         .route(
             "/contests/{contest_id}/announcements",
             get(list_contest_announcements),

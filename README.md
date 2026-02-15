@@ -158,8 +158,11 @@ rust-ctf/
 - `backend/`：已提供排行榜接口（`/api/v1/contests/{contest_id}/scoreboard`）
 - `backend/`：已提供排行榜 WebSocket 推送接口（`/api/v1/contests/{contest_id}/scoreboard/ws`）
 - `backend/`：排行榜 WebSocket 支持浏览器 Token Query 鉴权（`?access_token=...`，同时兼容 `Authorization: Bearer ...`）
-- `backend/`：已提供实例生命周期接口（`/api/v1/instances/start|stop|reset|destroy|{contest_id}/{challenge_id}`）
+- `backend/`：已提供实例生命周期接口（`/api/v1/instances/start|stop|reset|destroy|heartbeat|{contest_id}/{challenge_id}`）
 - `backend/`：实例生命周期已接入真实 `docker compose` 编排（模板渲染、compose 文件落盘、启动/停止/重置/销毁）
+- `backend/`：实例已支持默认资源配额注入（CPU/内存）与心跳刷新（`last_heartbeat_at`）
+- `backend/`：已支持实例过期自动回收（后台定时扫描 `expires_at`，批量执行销毁与运行目录清理）
+- `backend/`：已支持心跳超时阈值配置与可选自动回收策略（默认关闭，避免误回收未接入心跳上报的靶机）
 - `backend/`：已提供管理员审计日志与运行概览接口（`/api/v1/admin/audit-logs`、`/api/v1/admin/runtime/overview`）
 - `backend/`：已提供运行告警通知接口（`/api/v1/admin/runtime/alerts`、`/api/v1/admin/runtime/alerts/scan`、`/api/v1/admin/runtime/alerts/{alert_id}/ack|resolve`），并支持后台定时扫描与自动收敛
 - `backend/`：已提供比赛公告管理与选手公告读取接口（管理员 CRUD + 选手只读已发布）
@@ -177,7 +180,7 @@ rust-ctf/
 - `docs/`：初始化后续开发任务说明
 - `docs/`：全量后端接口文档 `docs/API_REFERENCE.md`（后续开发持续维护）
 
-下一步进入前端业务页面与后台管理能力的持续实现阶段。
+下一步进入 M3 深化（心跳上报联动与资源策略细化）与管理端可观测性增强阶段。
 
 ## 8. 本地启动（可用版）
 
@@ -270,9 +273,18 @@ docker info >/dev/null && docker compose version
 - `DEFAULT_ADMIN_EMAIL=admin@rust-ctf.local`
 - `DEFAULT_ADMIN_PASSWORD=admin123456`
 - `DEFAULT_ADMIN_FORCE_PASSWORD_RESET=false`
+- `INSTANCE_DEFAULT_CPU_LIMIT=1.0`
+- `INSTANCE_DEFAULT_MEMORY_LIMIT_MB=512`
 - `RUNTIME_ALERT_SCAN_ENABLED=true`
 - `RUNTIME_ALERT_SCAN_INTERVAL_SECONDS=60`
 - `RUNTIME_ALERT_SCAN_INITIAL_DELAY_SECONDS=10`
+- `INSTANCE_REAPER_ENABLED=true`
+- `INSTANCE_REAPER_INTERVAL_SECONDS=60`
+- `INSTANCE_REAPER_INITIAL_DELAY_SECONDS=20`
+- `INSTANCE_REAPER_BATCH_SIZE=30`
+- `INSTANCE_HEARTBEAT_STALE_SECONDS=300`
+- `INSTANCE_STALE_REAPER_ENABLED=false`
+- `INSTANCE_STALE_REAPER_BATCH_SIZE=20`
 
 说明：
 

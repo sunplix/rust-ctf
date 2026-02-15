@@ -26,6 +26,7 @@ async fn main() -> anyhow::Result<()> {
     let config = AppConfig::from_env()?;
     let state = Arc::new(AppState::new(config.clone()).await?);
     spawn_runtime_alert_scanner(Arc::clone(&state));
+    spawn_instance_reaper(Arc::clone(&state));
 
     let app = build_router(state);
     let addr: SocketAddr = format!("{}:{}", config.app_host, config.app_port).parse()?;
@@ -46,7 +47,11 @@ fn build_router(state: Arc<AppState>) -> Router {
         .with_state(state)
         .layer(
             TraceLayer::new_for_http()
-                .make_span_with(DefaultMakeSpan::new().level(Level::INFO).include_headers(false))
+                .make_span_with(
+                    DefaultMakeSpan::new()
+                        .level(Level::INFO)
+                        .include_headers(false),
+                )
                 .on_request(DefaultOnRequest::new().level(Level::INFO))
                 .on_response(
                     DefaultOnResponse::new()
@@ -79,7 +84,10 @@ fn spawn_runtime_alert_scanner(state: Arc<AppState>) {
         return;
     }
 
-    let interval_seconds = state.config.runtime_alert_scan_interval_seconds.clamp(10, 3600);
+    let interval_seconds = state
+        .config
+        .runtime_alert_scan_interval_seconds
+        .clamp(10, 3600);
     let initial_delay_seconds = state
         .config
         .runtime_alert_scan_initial_delay_seconds
@@ -87,8 +95,7 @@ fn spawn_runtime_alert_scanner(state: Arc<AppState>) {
 
     info!(
         interval_seconds,
-        initial_delay_seconds,
-        "runtime alert scanner task scheduled"
+        initial_delay_seconds, "runtime alert scanner task scheduled"
     );
 
     tokio::spawn(async move {
@@ -114,6 +121,89 @@ fn spawn_runtime_alert_scanner(state: Arc<AppState>) {
                 }
                 Err(err) => {
                     warn!(error = %err, "runtime alert scanner tick failed");
+                }
+            }
+        }
+    });
+}
+
+fn spawn_instance_reaper(state: Arc<AppState>) {
+    if !state.config.instance_reaper_enabled {
+        info!("instance reaper disabled by configuration");
+        return;
+    }
+
+    let interval_seconds = state
+        .config
+        .instance_reaper_interval_seconds
+        .clamp(10, 3600);
+    let initial_delay_seconds = state.config.instance_reaper_initial_delay_seconds.min(3600);
+    let batch_size = state.config.instance_reaper_batch_size.clamp(1, 500);
+    let stale_reaper_enabled = state.config.instance_stale_reaper_enabled;
+    let heartbeat_stale_seconds = state
+        .config
+        .instance_heartbeat_stale_seconds
+        .clamp(60, 86_400);
+    let stale_reaper_batch_size = state.config.instance_stale_reaper_batch_size.clamp(1, 500);
+
+    info!(
+        interval_seconds,
+        initial_delay_seconds,
+        batch_size,
+        stale_reaper_enabled,
+        heartbeat_stale_seconds,
+        stale_reaper_batch_size,
+        "instance reaper task scheduled"
+    );
+
+    tokio::spawn(async move {
+        if initial_delay_seconds > 0 {
+            sleep(Duration::from_secs(initial_delay_seconds)).await;
+        }
+
+        let mut ticker = tokio::time::interval(Duration::from_secs(interval_seconds));
+        ticker.set_missed_tick_behavior(MissedTickBehavior::Delay);
+
+        loop {
+            ticker.tick().await;
+            match routes::instances::run_expired_instance_reaper(state.as_ref(), batch_size).await {
+                Ok(summary) => {
+                    info!(
+                        scanned = summary.scanned,
+                        reaped = summary.reaped,
+                        failed = summary.failed,
+                        skipped = summary.skipped,
+                        batch_size,
+                        "instance reaper tick completed"
+                    );
+                }
+                Err(err) => {
+                    warn!(error = %err, "instance reaper tick failed");
+                }
+            }
+
+            if stale_reaper_enabled {
+                match routes::instances::run_stale_instance_reaper(
+                    state.as_ref(),
+                    heartbeat_stale_seconds as i64,
+                    stale_reaper_batch_size,
+                )
+                .await
+                {
+                    Ok(summary) => {
+                        info!(
+                            scanned = summary.scanned,
+                            reaped = summary.reaped,
+                            failed = summary.failed,
+                            skipped = summary.skipped,
+                            heartbeat_stale_seconds,
+                            stale_reaper_batch_size,
+                            "stale instance reaper tick completed"
+                        );
+                    }
+                    Err(err) => {
+                        warn!(error = %err, "stale instance reaper tick failed");
+                    }
                 }
             }
         }

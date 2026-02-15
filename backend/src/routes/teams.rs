@@ -184,7 +184,10 @@ pub fn router() -> Router<Arc<AppState>> {
         .route("/teams/join", post(join_team))
         .route("/teams/leave", post(leave_team))
         .route("/teams/invitations", post(create_invitation))
-        .route("/teams/invitations/received", get(list_received_invitations))
+        .route(
+            "/teams/invitations/received",
+            get(list_received_invitations),
+        )
         .route("/teams/invitations/sent", get(list_sent_invitations))
         .route(
             "/teams/invitations/{invitation_id}/respond",
@@ -196,14 +199,9 @@ pub fn router() -> Router<Arc<AppState>> {
         )
         .route(
             "/teams/{team_id}",
-            get(get_team_by_id)
-                .patch(update_team)
-                .delete(disband_team),
+            get(get_team_by_id).patch(update_team).delete(disband_team),
         )
-        .route(
-            "/teams/{team_id}/transfer-captain",
-            post(transfer_captain),
-        )
+        .route("/teams/{team_id}/transfer-captain", post(transfer_captain))
         .route(
             "/teams/{team_id}/members/{member_user_id}",
             delete(remove_team_member),
@@ -695,9 +693,7 @@ async fn create_invitation(
 
     let invitee_user_id = resolve_invitee_user_id(state.as_ref(), &req).await?;
     if invitee_user_id == current_user.user_id {
-        return Err(AppError::BadRequest(
-            "cannot invite yourself".to_string(),
-        ));
+        return Err(AppError::BadRequest("cannot invite yourself".to_string()));
     }
 
     if fetch_user_team_id(state.as_ref(), invitee_user_id)
@@ -891,9 +887,7 @@ async fn respond_invitation(
             .await?
             .is_some()
     {
-        return Err(AppError::Conflict(
-            "you are already in a team".to_string(),
-        ));
+        return Err(AppError::Conflict("you are already in a team".to_string()));
     }
 
     let mut tx = state.db.begin().await.map_err(AppError::internal)?;
@@ -1010,17 +1004,20 @@ async fn cancel_invitation(
 
 async fn resolve_target_team_id(state: &AppState, req: &JoinTeamRequest) -> AppResult<Uuid> {
     if let Some(team_id) = req.team_id {
-        let exists = sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM teams WHERE id = $1)")
-            .bind(team_id)
-            .fetch_one(&state.db)
-            .await
-            .map_err(AppError::internal)?;
+        let exists =
+            sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM teams WHERE id = $1)")
+                .bind(team_id)
+                .fetch_one(&state.db)
+                .await
+                .map_err(AppError::internal)?;
 
         if exists {
             return Ok(team_id);
         }
 
-        return Err(AppError::BadRequest("target team does not exist".to_string()));
+        return Err(AppError::BadRequest(
+            "target team does not exist".to_string(),
+        ));
     }
 
     let team_name = req
@@ -1041,7 +1038,9 @@ async fn resolve_target_team_id(state: &AppState, req: &JoinTeamRequest) -> AppR
     .fetch_optional(&state.db)
     .await
     .map_err(AppError::internal)?
-    .ok_or(AppError::BadRequest("target team does not exist".to_string()))?;
+    .ok_or(AppError::BadRequest(
+        "target team does not exist".to_string(),
+    ))?;
 
     Ok(resolved.id)
 }
@@ -1095,7 +1094,10 @@ async fn resolve_invitee_user_id(
     Ok(resolved.id)
 }
 
-async fn load_invitation_item(state: &AppState, invitation_id: Uuid) -> AppResult<TeamInvitationItem> {
+async fn load_invitation_item(
+    state: &AppState,
+    invitation_id: Uuid,
+) -> AppResult<TeamInvitationItem> {
     let invitation = sqlx::query_as::<_, TeamInvitationItem>(
         "SELECT ti.id,
                 ti.team_id,
