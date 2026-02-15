@@ -2,8 +2,8 @@
   <section class="page-block">
     <div class="row-between">
       <div>
-        <h1>管理控制台（v1）</h1>
-        <p class="muted">题目管理、比赛状态控制、实例监控。</p>
+        <h1>管理控制台（v2）</h1>
+        <p class="muted">题目管理、比赛创建与状态控制、比赛题目挂载、实例监控。</p>
       </div>
       <button class="ghost" type="button" @click="refreshAll" :disabled="refreshing">
         {{ refreshing ? "刷新中..." : "刷新全部" }}
@@ -96,9 +96,57 @@
 
       <section class="panel">
         <div class="row-between">
-          <h2>比赛状态控制</h2>
+          <h2>比赛管理</h2>
           <span class="badge">{{ contests.length }} 场</span>
         </div>
+
+        <form class="form-grid" @submit.prevent="handleCreateContest">
+          <label>
+            <span>标题</span>
+            <input v-model.trim="newContest.title" required />
+          </label>
+          <label>
+            <span>slug</span>
+            <input v-model.trim="newContest.slug" required />
+          </label>
+          <label>
+            <span>描述</span>
+            <input v-model="newContest.description" />
+          </label>
+          <label>
+            <span>可见性</span>
+            <select v-model="newContest.visibility">
+              <option value="public">public</option>
+              <option value="private">private</option>
+            </select>
+          </label>
+          <label>
+            <span>初始状态</span>
+            <select v-model="newContest.status">
+              <option value="draft">draft</option>
+              <option value="scheduled">scheduled</option>
+              <option value="running">running</option>
+              <option value="ended">ended</option>
+              <option value="archived">archived</option>
+            </select>
+          </label>
+          <label>
+            <span>开始时间</span>
+            <input v-model="newContest.start_at" type="datetime-local" required />
+          </label>
+          <label>
+            <span>结束时间</span>
+            <input v-model="newContest.end_at" type="datetime-local" required />
+          </label>
+          <label>
+            <span>封榜时间（可选）</span>
+            <input v-model="newContest.freeze_at" type="datetime-local" />
+          </label>
+
+          <button class="primary" type="submit" :disabled="creatingContest">
+            {{ creatingContest ? "创建中..." : "创建比赛" }}
+          </button>
+        </form>
 
         <p v-if="contestError" class="error">{{ contestError }}</p>
 
@@ -111,6 +159,14 @@
             <p class="muted mono">{{ contest.slug }} · {{ contest.visibility }}</p>
             <p class="muted">{{ formatTime(contest.start_at) }} ~ {{ formatTime(contest.end_at) }}</p>
             <div class="actions-row">
+              <button
+                class="ghost"
+                type="button"
+                @click="selectContest(contest.id)"
+                :disabled="selectedContestId === contest.id"
+              >
+                {{ selectedContestId === contest.id ? "当前管理中" : "管理挂载" }}
+              </button>
               <button
                 v-for="status in statusActions"
                 :key="status"
@@ -128,64 +184,152 @@
 
       <section class="panel">
         <div class="row-between">
-          <h2>实例监控</h2>
-          <label class="inline-check">
-            <span>状态过滤</span>
-            <select v-model="instanceFilter" @change="loadInstances">
-              <option value="">all</option>
-              <option value="creating">creating</option>
-              <option value="running">running</option>
-              <option value="stopped">stopped</option>
-              <option value="destroyed">destroyed</option>
-              <option value="failed">failed</option>
-            </select>
-          </label>
+          <h2>比赛题目挂载</h2>
+          <span class="badge" v-if="selectedContest">{{ selectedContest.title }}</span>
         </div>
 
-        <p v-if="instanceError" class="error">{{ instanceError }}</p>
+        <p class="muted" v-if="!selectedContest">请先在中间列选择一个比赛。</p>
 
-        <table v-if="instances.length > 0" class="scoreboard-table">
-          <thead>
-            <tr>
-              <th>比赛</th>
-              <th>队伍</th>
-              <th>题目</th>
-              <th>状态</th>
-              <th>子网</th>
-              <th>到期</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in instances" :key="item.id">
-              <td>{{ item.contest_title }}</td>
-              <td>{{ item.team_name }}</td>
-              <td>{{ item.challenge_title }}</td>
-              <td>{{ item.status }}</td>
-              <td class="mono">{{ item.subnet }}</td>
-              <td>{{ item.expires_at ? formatTime(item.expires_at) : "-" }}</td>
-            </tr>
-          </tbody>
-        </table>
-        <p v-else class="muted">暂无实例记录。</p>
+        <template v-else>
+          <form class="form-grid" @submit.prevent="handleUpsertBinding">
+            <label>
+              <span>选择题目</span>
+              <select v-model="bindingForm.challenge_id" required>
+                <option value="" disabled>请选择题目</option>
+                <option v-for="item in challenges" :key="item.id" :value="item.id">
+                  {{ item.title }} ({{ item.category }})
+                </option>
+              </select>
+            </label>
+            <label>
+              <span>排序</span>
+              <input v-model.number="bindingForm.sort_order" type="number" />
+            </label>
+            <label>
+              <span>发布时间（可选）</span>
+              <input v-model="bindingForm.release_at" type="datetime-local" />
+            </label>
+            <button class="primary" type="submit" :disabled="bindingBusy">
+              {{ bindingBusy ? "处理中..." : "挂载或更新" }}
+            </button>
+          </form>
+
+          <p v-if="bindingError" class="error">{{ bindingError }}</p>
+
+          <div class="admin-list">
+            <article v-for="item in contestBindings" :key="item.challenge_id" class="admin-list-item">
+              <div class="row-between">
+                <strong>{{ item.challenge_title }}</strong>
+                <span class="badge">sort {{ item.sort_order }}</span>
+              </div>
+              <p class="muted mono">{{ item.challenge_category }} · {{ item.challenge_difficulty }}</p>
+              <p class="muted">release_at={{ item.release_at ? formatTime(item.release_at) : '-' }}</p>
+              <div class="actions-row">
+                <button
+                  class="ghost"
+                  type="button"
+                  @click="quickAdjustSort(item.challenge_id, item.sort_order - 1)"
+                  :disabled="bindingBusy"
+                >
+                  上移
+                </button>
+                <button
+                  class="ghost"
+                  type="button"
+                  @click="quickAdjustSort(item.challenge_id, item.sort_order + 1)"
+                  :disabled="bindingBusy"
+                >
+                  下移
+                </button>
+                <button
+                  class="ghost"
+                  type="button"
+                  @click="clearBindingReleaseAt(item.challenge_id)"
+                  :disabled="bindingBusy"
+                >
+                  清除发布时间
+                </button>
+                <button
+                  class="danger"
+                  type="button"
+                  @click="removeBinding(item.challenge_id)"
+                  :disabled="bindingBusy"
+                >
+                  移除
+                </button>
+              </div>
+            </article>
+            <p v-if="contestBindings.length === 0" class="muted">当前比赛未挂载题目。</p>
+          </div>
+        </template>
       </section>
     </div>
+
+    <section class="panel">
+      <div class="row-between">
+        <h2>实例监控</h2>
+        <label class="inline-check">
+          <span>状态过滤</span>
+          <select v-model="instanceFilter" @change="loadInstances">
+            <option value="">all</option>
+            <option value="creating">creating</option>
+            <option value="running">running</option>
+            <option value="stopped">stopped</option>
+            <option value="destroyed">destroyed</option>
+            <option value="failed">failed</option>
+          </select>
+        </label>
+      </div>
+
+      <p v-if="instanceError" class="error">{{ instanceError }}</p>
+
+      <table v-if="instances.length > 0" class="scoreboard-table">
+        <thead>
+          <tr>
+            <th>比赛</th>
+            <th>队伍</th>
+            <th>题目</th>
+            <th>状态</th>
+            <th>子网</th>
+            <th>到期</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in instances" :key="item.id">
+            <td>{{ item.contest_title }}</td>
+            <td>{{ item.team_name }}</td>
+            <td>{{ item.challenge_title }}</td>
+            <td>{{ item.status }}</td>
+            <td class="mono">{{ item.subnet }}</td>
+            <td>{{ item.expires_at ? formatTime(item.expires_at) : "-" }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-else class="muted">暂无实例记录。</p>
+    </section>
   </section>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 
 import {
   ApiClientError,
   createAdminChallenge,
+  createAdminContest,
+  deleteAdminContestChallenge,
   listAdminChallenges,
+  listAdminContestChallenges,
   listAdminContests,
   listAdminInstances,
   type AdminChallengeItem,
+  type AdminContestChallengeItem,
   type AdminContestItem,
   type AdminInstanceItem,
   updateAdminChallenge,
-  updateAdminContestStatus
+  updateAdminContestStatus,
+  updateAdminContestChallenge,
+  upsertAdminContestChallenge
 } from "../api/client";
 import { useAuthStore } from "../stores/auth";
 
@@ -193,17 +337,23 @@ const authStore = useAuthStore();
 
 const challenges = ref<AdminChallengeItem[]>([]);
 const contests = ref<AdminContestItem[]>([]);
+const contestBindings = ref<AdminContestChallengeItem[]>([]);
 const instances = ref<AdminInstanceItem[]>([]);
+
+const selectedContestId = ref("");
 
 const pageError = ref("");
 const challengeError = ref("");
 const contestError = ref("");
+const bindingError = ref("");
 const instanceError = ref("");
 
 const refreshing = ref(false);
 const creatingChallenge = ref(false);
+const creatingContest = ref(false);
 const updatingChallengeId = ref("");
 const updatingContestId = ref("");
+const bindingBusy = ref(false);
 
 const instanceFilter = ref("");
 const statusActions = ["draft", "scheduled", "running", "ended", "archived"];
@@ -218,6 +368,40 @@ const newChallenge = reactive({
   flag_hash: "",
   compose_template: "",
   is_visible: false
+});
+
+function localInputValue(input: Date) {
+  const normalized = new Date(input.getTime() - input.getTimezoneOffset() * 60_000);
+  return normalized.toISOString().slice(0, 16);
+}
+
+function localInputToIso(value: string) {
+  return new Date(value).toISOString();
+}
+
+const now = new Date();
+const defaultStart = localInputValue(new Date(now.getTime() + 30 * 60_000));
+const defaultEnd = localInputValue(new Date(now.getTime() + 3 * 60 * 60_000));
+
+const newContest = reactive({
+  title: "",
+  slug: "",
+  description: "",
+  visibility: "public",
+  status: "draft",
+  start_at: defaultStart,
+  end_at: defaultEnd,
+  freeze_at: ""
+});
+
+const bindingForm = reactive({
+  challenge_id: "",
+  sort_order: 0,
+  release_at: ""
+});
+
+const selectedContest = computed(() => {
+  return contests.value.find((item) => item.id === selectedContestId.value) ?? null;
 });
 
 function formatTime(input: string) {
@@ -244,8 +428,29 @@ async function loadContests() {
   contestError.value = "";
   try {
     contests.value = await listAdminContests(accessTokenOrThrow());
+    if (!selectedContestId.value && contests.value.length > 0) {
+      selectedContestId.value = contests.value[0].id;
+    }
   } catch (err) {
     contestError.value = err instanceof ApiClientError ? err.message : "加载比赛失败";
+  }
+}
+
+async function loadContestBindings() {
+  bindingError.value = "";
+
+  if (!selectedContestId.value) {
+    contestBindings.value = [];
+    return;
+  }
+
+  try {
+    contestBindings.value = await listAdminContestChallenges(
+      selectedContestId.value,
+      accessTokenOrThrow()
+    );
+  } catch (err) {
+    bindingError.value = err instanceof ApiClientError ? err.message : "加载挂载失败";
   }
 }
 
@@ -267,6 +472,7 @@ async function refreshAll() {
 
   try {
     await Promise.all([loadChallenges(), loadContests(), loadInstances()]);
+    await loadContestBindings();
   } catch (err) {
     pageError.value = err instanceof ApiClientError ? err.message : "刷新失败";
   } finally {
@@ -321,6 +527,39 @@ async function toggleChallengeVisibility(challengeId: string, visible: boolean) 
   }
 }
 
+async function handleCreateContest() {
+  creatingContest.value = true;
+  contestError.value = "";
+
+  try {
+    const created = await createAdminContest(
+      {
+        title: newContest.title,
+        slug: newContest.slug,
+        description: newContest.description || undefined,
+        visibility: newContest.visibility,
+        status: newContest.status,
+        start_at: localInputToIso(newContest.start_at),
+        end_at: localInputToIso(newContest.end_at),
+        freeze_at: newContest.freeze_at ? localInputToIso(newContest.freeze_at) : undefined
+      },
+      accessTokenOrThrow()
+    );
+
+    newContest.title = "";
+    newContest.slug = "";
+    newContest.description = "";
+
+    await loadContests();
+    selectedContestId.value = created.id;
+    await loadContestBindings();
+  } catch (err) {
+    contestError.value = err instanceof ApiClientError ? err.message : "创建比赛失败";
+  } finally {
+    creatingContest.value = false;
+  }
+}
+
 async function updateContestStatus(contestId: string, status: string) {
   updatingContestId.value = contestId;
   contestError.value = "";
@@ -334,6 +573,109 @@ async function updateContestStatus(contestId: string, status: string) {
     updatingContestId.value = "";
   }
 }
+
+function selectContest(contestId: string) {
+  selectedContestId.value = contestId;
+}
+
+async function handleUpsertBinding() {
+  if (!selectedContestId.value) {
+    bindingError.value = "请先选择比赛";
+    return;
+  }
+
+  bindingBusy.value = true;
+  bindingError.value = "";
+
+  try {
+    await upsertAdminContestChallenge(
+      selectedContestId.value,
+      {
+        challenge_id: bindingForm.challenge_id,
+        sort_order: bindingForm.sort_order,
+        release_at: bindingForm.release_at ? localInputToIso(bindingForm.release_at) : undefined
+      },
+      accessTokenOrThrow()
+    );
+
+    await loadContestBindings();
+  } catch (err) {
+    bindingError.value = err instanceof ApiClientError ? err.message : "挂载失败";
+  } finally {
+    bindingBusy.value = false;
+  }
+}
+
+async function quickAdjustSort(challengeId: string, nextSort: number) {
+  if (!selectedContestId.value) {
+    return;
+  }
+
+  bindingBusy.value = true;
+  bindingError.value = "";
+
+  try {
+    await updateAdminContestChallenge(
+      selectedContestId.value,
+      challengeId,
+      { sort_order: nextSort },
+      accessTokenOrThrow()
+    );
+    await loadContestBindings();
+  } catch (err) {
+    bindingError.value = err instanceof ApiClientError ? err.message : "更新排序失败";
+  } finally {
+    bindingBusy.value = false;
+  }
+}
+
+async function clearBindingReleaseAt(challengeId: string) {
+  if (!selectedContestId.value) {
+    return;
+  }
+
+  bindingBusy.value = true;
+  bindingError.value = "";
+
+  try {
+    await updateAdminContestChallenge(
+      selectedContestId.value,
+      challengeId,
+      { clear_release_at: true },
+      accessTokenOrThrow()
+    );
+    await loadContestBindings();
+  } catch (err) {
+    bindingError.value = err instanceof ApiClientError ? err.message : "清除发布时间失败";
+  } finally {
+    bindingBusy.value = false;
+  }
+}
+
+async function removeBinding(challengeId: string) {
+  if (!selectedContestId.value) {
+    return;
+  }
+
+  bindingBusy.value = true;
+  bindingError.value = "";
+
+  try {
+    await deleteAdminContestChallenge(selectedContestId.value, challengeId, accessTokenOrThrow());
+    await loadContestBindings();
+  } catch (err) {
+    bindingError.value = err instanceof ApiClientError ? err.message : "移除挂载失败";
+  } finally {
+    bindingBusy.value = false;
+  }
+}
+
+watch(
+  () => selectedContestId.value,
+  () => {
+    loadContestBindings();
+  }
+);
 
 refreshAll();
 </script>

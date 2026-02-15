@@ -148,6 +148,7 @@ export type AdminContestItem = {
   id: string;
   title: string;
   slug: string;
+  description: string;
   visibility: string;
   status: string;
   start_at: string;
@@ -155,6 +156,16 @@ export type AdminContestItem = {
   freeze_at: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type AdminContestChallengeItem = {
+  contest_id: string;
+  challenge_id: string;
+  challenge_title: string;
+  challenge_category: string;
+  challenge_difficulty: string;
+  sort_order: number;
+  release_at: string | null;
 };
 
 export type AdminInstanceItem = {
@@ -414,6 +425,54 @@ export async function listAdminContests(accessToken: string): Promise<AdminConte
   }
 }
 
+export async function createAdminContest(
+  payload: {
+    title: string;
+    slug: string;
+    description?: string;
+    visibility?: string;
+    status?: string;
+    start_at: string;
+    end_at: string;
+    freeze_at?: string | null;
+  },
+  accessToken: string
+): Promise<AdminContestItem> {
+  try {
+    const { data } = await api.post<AdminContestItem>("/admin/contests", payload, authHeaders(accessToken));
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function updateAdminContest(
+  contestId: string,
+  payload: {
+    title?: string;
+    slug?: string;
+    description?: string;
+    visibility?: string;
+    status?: string;
+    start_at?: string;
+    end_at?: string;
+    freeze_at?: string | null;
+    clear_freeze_at?: boolean;
+  },
+  accessToken: string
+): Promise<AdminContestItem> {
+  try {
+    const { data } = await api.patch<AdminContestItem>(
+      `/admin/contests/${contestId}`,
+      payload,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
 export async function updateAdminContestStatus(
   contestId: string,
   status: string,
@@ -441,6 +500,76 @@ export async function listAdminInstances(
       params: query
     });
     return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function listAdminContestChallenges(
+  contestId: string,
+  accessToken: string
+): Promise<AdminContestChallengeItem[]> {
+  try {
+    const { data } = await api.get<AdminContestChallengeItem[]>(
+      `/admin/contests/${contestId}/challenges`,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function upsertAdminContestChallenge(
+  contestId: string,
+  payload: {
+    challenge_id: string;
+    sort_order?: number;
+    release_at?: string | null;
+  },
+  accessToken: string
+): Promise<AdminContestChallengeItem> {
+  try {
+    const { data } = await api.post<AdminContestChallengeItem>(
+      `/admin/contests/${contestId}/challenges`,
+      payload,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function updateAdminContestChallenge(
+  contestId: string,
+  challengeId: string,
+  payload: {
+    sort_order?: number;
+    release_at?: string | null;
+    clear_release_at?: boolean;
+  },
+  accessToken: string
+): Promise<AdminContestChallengeItem> {
+  try {
+    const { data } = await api.patch<AdminContestChallengeItem>(
+      `/admin/contests/${contestId}/challenges/${challengeId}`,
+      payload,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function deleteAdminContestChallenge(
+  contestId: string,
+  challengeId: string,
+  accessToken: string
+): Promise<void> {
+  try {
+    await api.delete(`/admin/contests/${contestId}/challenges/${challengeId}`, authHeaders(accessToken));
   } catch (error) {
     throw toApiClientError(error);
   }

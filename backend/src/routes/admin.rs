@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use axum::{
     extract::{Path, Query, State},
+    http::StatusCode,
     routing::{get, patch},
     Json, Router,
 };
@@ -21,6 +22,15 @@ const DIFFICULTY_ALLOWED: &[&str] = &["easy", "normal", "hard", "insane"];
 const CHALLENGE_TYPE_ALLOWED: &[&str] = &["static", "dynamic", "internal"];
 const FLAG_MODE_ALLOWED: &[&str] = &["static", "dynamic", "script"];
 const CONTEST_STATUS_ALLOWED: &[&str] = &["draft", "scheduled", "running", "ended", "archived"];
+const CONTEST_VISIBILITY_ALLOWED: &[&str] = &["public", "private"];
+const INSTANCE_STATUS_ALLOWED: &[&str] = &[
+    "creating",
+    "running",
+    "stopped",
+    "destroyed",
+    "expired",
+    "failed",
+];
 
 #[derive(Debug, Serialize, FromRow)]
 struct AdminChallengeItem {
@@ -76,6 +86,7 @@ struct AdminContestItem {
     id: Uuid,
     title: String,
     slug: String,
+    description: String,
     visibility: String,
     status: String,
     start_at: DateTime<Utc>,
@@ -86,8 +97,58 @@ struct AdminContestItem {
 }
 
 #[derive(Debug, Deserialize)]
+struct CreateContestRequest {
+    title: String,
+    slug: String,
+    description: Option<String>,
+    visibility: Option<String>,
+    status: Option<String>,
+    start_at: DateTime<Utc>,
+    end_at: DateTime<Utc>,
+    freeze_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct UpdateContestRequest {
+    title: Option<String>,
+    slug: Option<String>,
+    description: Option<String>,
+    visibility: Option<String>,
+    status: Option<String>,
+    start_at: Option<DateTime<Utc>>,
+    end_at: Option<DateTime<Utc>>,
+    freeze_at: Option<DateTime<Utc>>,
+    clear_freeze_at: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
 struct UpdateContestStatusRequest {
     status: String,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+struct AdminContestChallengeItem {
+    contest_id: Uuid,
+    challenge_id: Uuid,
+    challenge_title: String,
+    challenge_category: String,
+    challenge_difficulty: String,
+    sort_order: i32,
+    release_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct UpsertContestChallengeRequest {
+    challenge_id: Uuid,
+    sort_order: Option<i32>,
+    release_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct UpdateContestChallengeRequest {
+    sort_order: Option<i32>,
+    release_at: Option<DateTime<Utc>>,
+    clear_release_at: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -124,10 +185,19 @@ pub fn router() -> Router<Arc<AppState>> {
             get(list_challenges).post(create_challenge),
         )
         .route("/admin/challenges/{challenge_id}", patch(update_challenge))
-        .route("/admin/contests", get(list_contests))
+        .route("/admin/contests", get(list_contests).post(create_contest))
+        .route("/admin/contests/{contest_id}", patch(update_contest))
         .route(
             "/admin/contests/{contest_id}/status",
             patch(update_contest_status),
+        )
+        .route(
+            "/admin/contests/{contest_id}/challenges",
+            get(list_contest_challenges).post(upsert_contest_challenge),
+        )
+        .route(
+            "/admin/contests/{contest_id}/challenges/{challenge_id}",
+            patch(update_contest_challenge).delete(remove_contest_challenge),
         )
         .route("/admin/instances", get(list_instances))
 }
@@ -376,6 +446,7 @@ async fn list_contests(
         "SELECT id,
                 title,
                 slug,
+                description,
                 visibility,
                 status,
                 start_at,
@@ -391,6 +462,180 @@ async fn list_contests(
     .map_err(AppError::internal)?;
 
     Ok(Json(rows))
+}
+
+async fn create_contest(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Json(req): Json<CreateContestRequest>,
+) -> AppResult<Json<AdminContestItem>> {
+    ensure_admin_or_judge(&current_user)?;
+
+    validate_contest_time_window(req.start_at, req.end_at, req.freeze_at)?;
+
+    let title = trim_required(&req.title, "title")?;
+    let slug = trim_required(&req.slug, "slug")?.to_lowercase();
+    let description = req.description.unwrap_or_default();
+    let visibility = normalize_with_allowed(
+        req.visibility.as_deref().unwrap_or("public"),
+        CONTEST_VISIBILITY_ALLOWED,
+        "visibility",
+    )?;
+    let status = normalize_with_allowed(
+        req.status.as_deref().unwrap_or("draft"),
+        CONTEST_STATUS_ALLOWED,
+        "status",
+    )?;
+
+    let row = sqlx::query_as::<_, AdminContestItem>(
+        "INSERT INTO contests (
+            title,
+            slug,
+            description,
+            visibility,
+            status,
+            start_at,
+            end_at,
+            freeze_at,
+            created_by
+         )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         RETURNING id,
+                   title,
+                   slug,
+                   description,
+                   visibility,
+                   status,
+                   start_at,
+                   end_at,
+                   freeze_at,
+                   created_at,
+                   updated_at",
+    )
+    .bind(title)
+    .bind(slug)
+    .bind(description)
+    .bind(visibility)
+    .bind(status)
+    .bind(req.start_at)
+    .bind(req.end_at)
+    .bind(req.freeze_at)
+    .bind(current_user.user_id)
+    .fetch_one(&state.db)
+    .await
+    .map_err(|err| {
+        if is_unique_violation(&err) {
+            AppError::Conflict("contest slug already exists".to_string())
+        } else {
+            AppError::internal(err)
+        }
+    })?;
+
+    Ok(Json(row))
+}
+
+async fn update_contest(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Path(contest_id): Path<Uuid>,
+    Json(req): Json<UpdateContestRequest>,
+) -> AppResult<Json<AdminContestItem>> {
+    ensure_admin_or_judge(&current_user)?;
+
+    let existing = sqlx::query_as::<_, AdminContestItem>(
+        "SELECT id,
+                title,
+                slug,
+                description,
+                visibility,
+                status,
+                start_at,
+                end_at,
+                freeze_at,
+                created_at,
+                updated_at
+         FROM contests
+         WHERE id = $1
+         LIMIT 1",
+    )
+    .bind(contest_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest("contest not found".to_string()))?;
+
+    let title = match req.title {
+        Some(value) => trim_required(&value, "title")?,
+        None => existing.title,
+    };
+    let slug = match req.slug {
+        Some(value) => trim_required(&value, "slug")?.to_lowercase(),
+        None => existing.slug,
+    };
+    let description = req.description.unwrap_or(existing.description);
+    let visibility = match req.visibility {
+        Some(value) => normalize_with_allowed(&value, CONTEST_VISIBILITY_ALLOWED, "visibility")?,
+        None => existing.visibility,
+    };
+    let status = match req.status {
+        Some(value) => normalize_with_allowed(&value, CONTEST_STATUS_ALLOWED, "status")?,
+        None => existing.status,
+    };
+
+    let start_at = req.start_at.unwrap_or(existing.start_at);
+    let end_at = req.end_at.unwrap_or(existing.end_at);
+    let freeze_at = if req.clear_freeze_at.unwrap_or(false) {
+        None
+    } else {
+        req.freeze_at.or(existing.freeze_at)
+    };
+
+    validate_contest_time_window(start_at, end_at, freeze_at)?;
+
+    let row = sqlx::query_as::<_, AdminContestItem>(
+        "UPDATE contests
+         SET title = $2,
+             slug = $3,
+             description = $4,
+             visibility = $5,
+             status = $6,
+             start_at = $7,
+             end_at = $8,
+             freeze_at = $9,
+             updated_at = NOW()
+         WHERE id = $1
+         RETURNING id,
+                   title,
+                   slug,
+                   description,
+                   visibility,
+                   status,
+                   start_at,
+                   end_at,
+                   freeze_at,
+                   created_at,
+                   updated_at",
+    )
+    .bind(contest_id)
+    .bind(title)
+    .bind(slug)
+    .bind(description)
+    .bind(visibility)
+    .bind(status)
+    .bind(start_at)
+    .bind(end_at)
+    .bind(freeze_at)
+    .fetch_one(&state.db)
+    .await
+    .map_err(|err| {
+        if is_unique_violation(&err) {
+            AppError::Conflict("contest slug already exists".to_string())
+        } else {
+            AppError::internal(err)
+        }
+    })?;
+
+    Ok(Json(row))
 }
 
 async fn update_contest_status(
@@ -411,6 +656,7 @@ async fn update_contest_status(
          RETURNING id,
                    title,
                    slug,
+                   description,
                    visibility,
                    status,
                    start_at,
@@ -429,6 +675,158 @@ async fn update_contest_status(
     Ok(Json(row))
 }
 
+async fn list_contest_challenges(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Path(contest_id): Path<Uuid>,
+) -> AppResult<Json<Vec<AdminContestChallengeItem>>> {
+    ensure_admin_or_judge(&current_user)?;
+    ensure_contest_exists(state.as_ref(), contest_id).await?;
+
+    let rows = sqlx::query_as::<_, AdminContestChallengeItem>(
+        "SELECT cc.contest_id,
+                cc.challenge_id,
+                c.title AS challenge_title,
+                c.category AS challenge_category,
+                c.difficulty AS challenge_difficulty,
+                cc.sort_order,
+                cc.release_at
+         FROM contest_challenges cc
+         JOIN challenges c ON c.id = cc.challenge_id
+         WHERE cc.contest_id = $1
+         ORDER BY cc.sort_order ASC, c.created_at ASC",
+    )
+    .bind(contest_id)
+    .fetch_all(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    Ok(Json(rows))
+}
+
+async fn upsert_contest_challenge(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Path(contest_id): Path<Uuid>,
+    Json(req): Json<UpsertContestChallengeRequest>,
+) -> AppResult<Json<AdminContestChallengeItem>> {
+    ensure_admin_or_judge(&current_user)?;
+
+    let sort_order = req.sort_order.unwrap_or(0);
+
+    let row = sqlx::query_as::<_, AdminContestChallengeItem>(
+        "WITH upserted AS (
+            INSERT INTO contest_challenges (contest_id, challenge_id, sort_order, release_at)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (contest_id, challenge_id)
+            DO UPDATE SET sort_order = EXCLUDED.sort_order,
+                          release_at = EXCLUDED.release_at
+            RETURNING contest_id, challenge_id, sort_order, release_at
+         )
+         SELECT u.contest_id,
+                u.challenge_id,
+                c.title AS challenge_title,
+                c.category AS challenge_category,
+                c.difficulty AS challenge_difficulty,
+                u.sort_order,
+                u.release_at
+         FROM upserted u
+         JOIN challenges c ON c.id = u.challenge_id",
+    )
+    .bind(contest_id)
+    .bind(req.challenge_id)
+    .bind(sort_order)
+    .bind(req.release_at)
+    .fetch_one(&state.db)
+    .await
+    .map_err(|err| {
+        if is_foreign_key_violation(&err) {
+            AppError::BadRequest("contest or challenge not found".to_string())
+        } else {
+            AppError::internal(err)
+        }
+    })?;
+
+    Ok(Json(row))
+}
+
+async fn update_contest_challenge(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Path((contest_id, challenge_id)): Path<(Uuid, Uuid)>,
+    Json(req): Json<UpdateContestChallengeRequest>,
+) -> AppResult<Json<AdminContestChallengeItem>> {
+    ensure_admin_or_judge(&current_user)?;
+
+    if req.sort_order.is_none()
+        && req.release_at.is_none()
+        && !req.clear_release_at.unwrap_or(false)
+    {
+        return Err(AppError::BadRequest(
+            "at least one field is required for update".to_string(),
+        ));
+    }
+
+    let row = sqlx::query_as::<_, AdminContestChallengeItem>(
+        "WITH updated AS (
+            UPDATE contest_challenges
+            SET sort_order = COALESCE($3, sort_order),
+                release_at = CASE
+                    WHEN $4 THEN NULL
+                    ELSE COALESCE($5, release_at)
+                END
+            WHERE contest_id = $1 AND challenge_id = $2
+            RETURNING contest_id, challenge_id, sort_order, release_at
+         )
+         SELECT u.contest_id,
+                u.challenge_id,
+                c.title AS challenge_title,
+                c.category AS challenge_category,
+                c.difficulty AS challenge_difficulty,
+                u.sort_order,
+                u.release_at
+         FROM updated u
+         JOIN challenges c ON c.id = u.challenge_id",
+    )
+    .bind(contest_id)
+    .bind(challenge_id)
+    .bind(req.sort_order)
+    .bind(req.clear_release_at.unwrap_or(false))
+    .bind(req.release_at)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest(
+        "contest challenge binding not found".to_string(),
+    ))?;
+
+    Ok(Json(row))
+}
+
+async fn remove_contest_challenge(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Path((contest_id, challenge_id)): Path<(Uuid, Uuid)>,
+) -> AppResult<StatusCode> {
+    ensure_admin_or_judge(&current_user)?;
+
+    let result =
+        sqlx::query("DELETE FROM contest_challenges WHERE contest_id = $1 AND challenge_id = $2")
+            .bind(contest_id)
+            .bind(challenge_id)
+            .execute(&state.db)
+            .await
+            .map_err(AppError::internal)?;
+
+    if result.rows_affected() == 0 {
+        return Err(AppError::BadRequest(
+            "contest challenge binding not found".to_string(),
+        ));
+    }
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
 async fn list_instances(
     State(state): State<Arc<AppState>>,
     current_user: AuthenticatedUser,
@@ -439,20 +837,7 @@ async fn list_instances(
     let status_filter = query
         .status
         .as_deref()
-        .map(|v| {
-            normalize_with_allowed(
-                v,
-                &[
-                    "creating",
-                    "running",
-                    "stopped",
-                    "destroyed",
-                    "expired",
-                    "failed",
-                ],
-                "status",
-            )
-        })
+        .map(|v| normalize_with_allowed(v, INSTANCE_STATUS_ALLOWED, "status"))
         .transpose()?;
 
     let limit = query.limit.unwrap_or(100).clamp(1, 500);
@@ -492,6 +877,21 @@ async fn list_instances(
     Ok(Json(rows))
 }
 
+async fn ensure_contest_exists(state: &AppState, contest_id: Uuid) -> AppResult<()> {
+    let exists =
+        sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM contests WHERE id = $1)")
+            .bind(contest_id)
+            .fetch_one(&state.db)
+            .await
+            .map_err(AppError::internal)?;
+
+    if exists {
+        Ok(())
+    } else {
+        Err(AppError::BadRequest("contest not found".to_string()))
+    }
+}
+
 fn ensure_admin_or_judge(user: &AuthenticatedUser) -> AppResult<()> {
     if user.role == "admin" || user.role == "judge" {
         return Ok(());
@@ -526,9 +926,38 @@ fn normalize_with_allowed(value: &str, allowed: &[&str], field: &str) -> AppResu
     }
 }
 
+fn validate_contest_time_window(
+    start_at: DateTime<Utc>,
+    end_at: DateTime<Utc>,
+    freeze_at: Option<DateTime<Utc>>,
+) -> AppResult<()> {
+    if end_at <= start_at {
+        return Err(AppError::BadRequest(
+            "contest end_at must be later than start_at".to_string(),
+        ));
+    }
+
+    if let Some(freeze) = freeze_at {
+        if freeze < start_at || freeze > end_at {
+            return Err(AppError::BadRequest(
+                "freeze_at must be between start_at and end_at".to_string(),
+            ));
+        }
+    }
+
+    Ok(())
+}
+
 fn is_unique_violation(err: &sqlx::Error) -> bool {
     match err {
         sqlx::Error::Database(db_err) => db_err.code().as_deref() == Some("23505"),
+        _ => false,
+    }
+}
+
+fn is_foreign_key_violation(err: &sqlx::Error) -> bool {
+    match err {
+        sqlx::Error::Database(db_err) => db_err.code().as_deref() == Some("23503"),
         _ => false,
     }
 }
