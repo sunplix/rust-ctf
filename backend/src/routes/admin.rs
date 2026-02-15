@@ -8,8 +8,9 @@ use axum::{
 };
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{json, Value};
 use sqlx::FromRow;
+use tracing::warn;
 use uuid::Uuid;
 
 use crate::{
@@ -157,6 +158,14 @@ struct AdminInstancesQuery {
     limit: Option<i64>,
 }
 
+#[derive(Debug, Deserialize)]
+struct AdminAuditLogsQuery {
+    action: Option<String>,
+    target_type: Option<String>,
+    actor_user_id: Option<Uuid>,
+    limit: Option<i64>,
+}
+
 #[derive(Debug, Serialize, FromRow)]
 struct AdminInstanceItem {
     id: Uuid,
@@ -176,6 +185,19 @@ struct AdminInstanceItem {
     last_heartbeat_at: Option<DateTime<Utc>>,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+struct AdminAuditLogItem {
+    id: i64,
+    actor_user_id: Option<Uuid>,
+    actor_username: Option<String>,
+    actor_role: String,
+    action: String,
+    target_type: String,
+    target_id: Option<Uuid>,
+    detail: Value,
+    created_at: DateTime<Utc>,
 }
 
 pub fn router() -> Router<Arc<AppState>> {
@@ -200,6 +222,7 @@ pub fn router() -> Router<Arc<AppState>> {
             patch(update_contest_challenge).delete(remove_contest_challenge),
         )
         .route("/admin/instances", get(list_instances))
+        .route("/admin/audit-logs", get(list_audit_logs))
 }
 
 async fn list_challenges(
@@ -333,6 +356,24 @@ async fn create_challenge(
         }
     })?;
 
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.challenge.create",
+        "challenge",
+        Some(row.id),
+        json!({
+            "title": &row.title,
+            "slug": &row.slug,
+            "category": &row.category,
+            "difficulty": &row.difficulty,
+            "challenge_type": &row.challenge_type,
+            "flag_mode": &row.flag_mode,
+            "is_visible": row.is_visible
+        }),
+    )
+    .await;
+
     Ok(Json(row))
 }
 
@@ -433,6 +474,24 @@ async fn update_challenge(
     })?
     .ok_or(AppError::BadRequest("challenge not found".to_string()))?;
 
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.challenge.update",
+        "challenge",
+        Some(row.id),
+        json!({
+            "title": &row.title,
+            "slug": &row.slug,
+            "category": &row.category,
+            "difficulty": &row.difficulty,
+            "challenge_type": &row.challenge_type,
+            "flag_mode": &row.flag_mode,
+            "is_visible": row.is_visible
+        }),
+    )
+    .await;
+
     Ok(Json(row))
 }
 
@@ -530,6 +589,24 @@ async fn create_contest(
             AppError::internal(err)
         }
     })?;
+
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.contest.create",
+        "contest",
+        Some(row.id),
+        json!({
+            "title": &row.title,
+            "slug": &row.slug,
+            "status": &row.status,
+            "visibility": &row.visibility,
+            "start_at": row.start_at,
+            "end_at": row.end_at,
+            "freeze_at": row.freeze_at
+        }),
+    )
+    .await;
 
     Ok(Json(row))
 }
@@ -635,6 +712,24 @@ async fn update_contest(
         }
     })?;
 
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.contest.update",
+        "contest",
+        Some(row.id),
+        json!({
+            "title": &row.title,
+            "slug": &row.slug,
+            "status": &row.status,
+            "visibility": &row.visibility,
+            "start_at": row.start_at,
+            "end_at": row.end_at,
+            "freeze_at": row.freeze_at
+        }),
+    )
+    .await;
+
     Ok(Json(row))
 }
 
@@ -671,6 +766,18 @@ async fn update_contest_status(
     .await
     .map_err(AppError::internal)?
     .ok_or(AppError::BadRequest("contest not found".to_string()))?;
+
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.contest.status.update",
+        "contest",
+        Some(row.id),
+        json!({
+            "status": &row.status
+        }),
+    )
+    .await;
 
     Ok(Json(row))
 }
@@ -747,6 +854,21 @@ async fn upsert_contest_challenge(
         }
     })?;
 
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.contest_challenge.upsert",
+        "contest_challenge",
+        Some(row.challenge_id),
+        json!({
+            "contest_id": row.contest_id,
+            "challenge_id": row.challenge_id,
+            "sort_order": row.sort_order,
+            "release_at": row.release_at
+        }),
+    )
+    .await;
+
     Ok(Json(row))
 }
 
@@ -800,6 +922,21 @@ async fn update_contest_challenge(
         "contest challenge binding not found".to_string(),
     ))?;
 
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.contest_challenge.update",
+        "contest_challenge",
+        Some(row.challenge_id),
+        json!({
+            "contest_id": row.contest_id,
+            "challenge_id": row.challenge_id,
+            "sort_order": row.sort_order,
+            "release_at": row.release_at
+        }),
+    )
+    .await;
+
     Ok(Json(row))
 }
 
@@ -823,6 +960,19 @@ async fn remove_contest_challenge(
             "contest challenge binding not found".to_string(),
         ));
     }
+
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.contest_challenge.delete",
+        "contest_challenge",
+        Some(challenge_id),
+        json!({
+            "contest_id": contest_id,
+            "challenge_id": challenge_id
+        }),
+    )
+    .await;
 
     Ok(StatusCode::NO_CONTENT)
 }
@@ -869,6 +1019,46 @@ async fn list_instances(
          LIMIT $2",
     )
     .bind(status_filter)
+    .bind(limit)
+    .fetch_all(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    Ok(Json(rows))
+}
+
+async fn list_audit_logs(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Query(query): Query<AdminAuditLogsQuery>,
+) -> AppResult<Json<Vec<AdminAuditLogItem>>> {
+    ensure_admin_or_judge(&current_user)?;
+
+    let action_filter = normalize_optional_filter(query.action);
+    let target_type_filter = normalize_optional_filter(query.target_type);
+    let limit = query.limit.unwrap_or(200).clamp(1, 1000);
+
+    let rows = sqlx::query_as::<_, AdminAuditLogItem>(
+        "SELECT l.id,
+                l.actor_user_id,
+                u.username AS actor_username,
+                l.actor_role,
+                l.action,
+                l.target_type,
+                l.target_id,
+                l.detail,
+                l.created_at
+         FROM audit_logs l
+         LEFT JOIN users u ON u.id = l.actor_user_id
+         WHERE ($1::text IS NULL OR l.action = $1)
+           AND ($2::text IS NULL OR l.target_type = $2)
+           AND ($3::uuid IS NULL OR l.actor_user_id = $3)
+         ORDER BY l.created_at DESC
+         LIMIT $4",
+    )
+    .bind(action_filter)
+    .bind(target_type_filter)
+    .bind(query.actor_user_id)
     .bind(limit)
     .fetch_all(&state.db)
     .await
@@ -926,6 +1116,17 @@ fn normalize_with_allowed(value: &str, allowed: &[&str], field: &str) -> AppResu
     }
 }
 
+fn normalize_optional_filter(value: Option<String>) -> Option<String> {
+    value.and_then(|v| {
+        let trimmed = v.trim().to_lowercase();
+        if trimmed.is_empty() {
+            None
+        } else {
+            Some(trimmed)
+        }
+    })
+}
+
 fn validate_contest_time_window(
     start_at: DateTime<Utc>,
     end_at: DateTime<Utc>,
@@ -959,5 +1160,36 @@ fn is_foreign_key_violation(err: &sqlx::Error) -> bool {
     match err {
         sqlx::Error::Database(db_err) => db_err.code().as_deref() == Some("23503"),
         _ => false,
+    }
+}
+
+async fn record_audit_log(
+    state: &AppState,
+    current_user: &AuthenticatedUser,
+    action: &str,
+    target_type: &str,
+    target_id: Option<Uuid>,
+    detail: Value,
+) {
+    if let Err(err) = sqlx::query(
+        "INSERT INTO audit_logs (actor_user_id, actor_role, action, target_type, target_id, detail)
+         VALUES ($1, $2, $3, $4, $5, $6)",
+    )
+    .bind(current_user.user_id)
+    .bind(current_user.role.as_str())
+    .bind(action)
+    .bind(target_type)
+    .bind(target_id)
+    .bind(detail)
+    .execute(&state.db)
+    .await
+    {
+        warn!(
+            actor_user_id = %current_user.user_id,
+            action,
+            target_type,
+            error = %err,
+            "failed to write admin audit log"
+        );
     }
 }

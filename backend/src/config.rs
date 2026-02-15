@@ -9,6 +9,11 @@ pub struct AppConfig {
     pub jwt_secret: String,
     pub instance_runtime_root: String,
     pub compose_command_timeout_seconds: u64,
+    pub default_admin_enabled: bool,
+    pub default_admin_username: String,
+    pub default_admin_email: String,
+    pub default_admin_password: String,
+    pub default_admin_force_password_reset: bool,
 }
 
 impl AppConfig {
@@ -21,6 +26,11 @@ impl AppConfig {
             .set_default("jwt_secret", "change_me_in_production")?
             .set_default("instance_runtime_root", "./runtime/instances")?
             .set_default("compose_command_timeout_seconds", 120_u64)?
+            .set_default("default_admin_enabled", true)?
+            .set_default("default_admin_username", "admin")?
+            .set_default("default_admin_email", "admin@rust-ctf.local")?
+            .set_default("default_admin_password", "admin123456")?
+            .set_default("default_admin_force_password_reset", false)?
             .add_source(::config::Environment::default().separator("__"));
 
         builder.build()?.try_deserialize().map_err(Into::into)

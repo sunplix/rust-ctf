@@ -337,6 +337,11 @@ textarea {
   text-align: left;
 }
 
+.audit-detail {
+  max-width: 420px;
+  word-break: break-all;
+}
+
 @media (max-width: 1250px) {
   .layout-grid {
     grid-template-columns: 260px minmax(0, 1fr);

@@ -48,6 +48,11 @@ services:
       JWT_SECRET: change_me_before_production
       INSTANCE_RUNTIME_ROOT: /runtime/instances
       COMPOSE_COMMAND_TIMEOUT_SECONDS: 120
+      DEFAULT_ADMIN_ENABLED: "true"
+      DEFAULT_ADMIN_USERNAME: admin
+      DEFAULT_ADMIN_EMAIL: admin@rust-ctf.local
+      DEFAULT_ADMIN_PASSWORD: admin123456
+      DEFAULT_ADMIN_FORCE_PASSWORD_RESET: "false"
     ports:
       - "8080:8080"
     volumes:

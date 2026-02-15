@@ -307,6 +307,59 @@
       </table>
       <p v-else class="muted">暂无实例记录。</p>
     </section>
+
+    <section class="panel">
+      <div class="row-between">
+        <h2>审计日志</h2>
+        <button class="ghost" type="button" @click="loadAuditLogs" :disabled="auditLoading">
+          {{ auditLoading ? "加载中..." : "刷新日志" }}
+        </button>
+      </div>
+
+      <div class="actions-row">
+        <label>
+          <span>action</span>
+          <input v-model.trim="auditActionFilter" placeholder="如：admin.contest.create" />
+        </label>
+        <label>
+          <span>target_type</span>
+          <input v-model.trim="auditTargetTypeFilter" placeholder="如：contest" />
+        </label>
+        <label>
+          <span>条数</span>
+          <input v-model.number="auditLimit" type="number" min="1" max="1000" />
+        </label>
+        <button class="ghost" type="button" @click="loadAuditLogs" :disabled="auditLoading">
+          应用筛选
+        </button>
+      </div>
+
+      <p v-if="auditError" class="error">{{ auditError }}</p>
+
+      <table v-if="auditLogs.length > 0" class="scoreboard-table">
+        <thead>
+          <tr>
+            <th>时间</th>
+            <th>操作人</th>
+            <th>角色</th>
+            <th>action</th>
+            <th>target</th>
+            <th>detail</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in auditLogs" :key="item.id">
+            <td>{{ formatTime(item.created_at) }}</td>
+            <td>{{ item.actor_username ?? item.actor_user_id ?? "system" }}</td>
+            <td>{{ item.actor_role }}</td>
+            <td class="mono">{{ item.action }}</td>
+            <td class="mono">{{ item.target_type }}{{ item.target_id ? `:${item.target_id}` : "" }}</td>
+            <td class="mono audit-detail">{{ formatAuditDetail(item.detail) }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-else class="muted">暂无审计记录。</p>
+    </section>
   </section>
 </template>
 
@@ -318,10 +371,12 @@ import {
   createAdminChallenge,
   createAdminContest,
   deleteAdminContestChallenge,
+  listAdminAuditLogs,
   listAdminChallenges,
   listAdminContestChallenges,
   listAdminContests,
   listAdminInstances,
+  type AdminAuditLogItem,
   type AdminChallengeItem,
   type AdminContestChallengeItem,
   type AdminContestItem,
@@ -339,6 +394,7 @@ const challenges = ref<AdminChallengeItem[]>([]);
 const contests = ref<AdminContestItem[]>([]);
 const contestBindings = ref<AdminContestChallengeItem[]>([]);
 const instances = ref<AdminInstanceItem[]>([]);
+const auditLogs = ref<AdminAuditLogItem[]>([]);
 
 const selectedContestId = ref("");
 
@@ -347,6 +403,7 @@ const challengeError = ref("");
 const contestError = ref("");
 const bindingError = ref("");
 const instanceError = ref("");
+const auditError = ref("");
 
 const refreshing = ref(false);
 const creatingChallenge = ref(false);
@@ -354,8 +411,12 @@ const creatingContest = ref(false);
 const updatingChallengeId = ref("");
 const updatingContestId = ref("");
 const bindingBusy = ref(false);
+const auditLoading = ref(false);
 
 const instanceFilter = ref("");
+const auditActionFilter = ref("");
+const auditTargetTypeFilter = ref("");
+const auditLimit = ref(200);
 const statusActions = ["draft", "scheduled", "running", "ended", "archived"];
 
 const newChallenge = reactive({
@@ -406,6 +467,19 @@ const selectedContest = computed(() => {
 
 function formatTime(input: string) {
   return new Date(input).toLocaleString();
+}
+
+function formatAuditDetail(detail: Record<string, unknown>) {
+  const text = JSON.stringify(detail);
+  if (!text) {
+    return "{}";
+  }
+
+  if (text.length <= 180) {
+    return text;
+  }
+
+  return `${text.slice(0, 180)}...`;
 }
 
 function accessTokenOrThrow() {
@@ -466,12 +540,29 @@ async function loadInstances() {
   }
 }
 
+async function loadAuditLogs() {
+  auditLoading.value = true;
+  auditError.value = "";
+
+  try {
+    auditLogs.value = await listAdminAuditLogs(accessTokenOrThrow(), {
+      action: auditActionFilter.value || undefined,
+      target_type: auditTargetTypeFilter.value || undefined,
+      limit: Number.isFinite(auditLimit.value) ? Math.max(1, Math.min(1000, auditLimit.value)) : 200
+    });
+  } catch (err) {
+    auditError.value = err instanceof ApiClientError ? err.message : "加载审计日志失败";
+  } finally {
+    auditLoading.value = false;
+  }
+}
+
 async function refreshAll() {
   refreshing.value = true;
   pageError.value = "";
 
   try {
-    await Promise.all([loadChallenges(), loadContests(), loadInstances()]);
+    await Promise.all([loadChallenges(), loadContests(), loadInstances(), loadAuditLogs()]);
     await loadContestBindings();
   } catch (err) {
     pageError.value = err instanceof ApiClientError ? err.message : "刷新失败";

@@ -188,6 +188,18 @@ export type AdminInstanceItem = {
   updated_at: string;
 };
 
+export type AdminAuditLogItem = {
+  id: number;
+  actor_user_id: string | null;
+  actor_username: string | null;
+  actor_role: string;
+  action: string;
+  target_type: string;
+  target_id: string | null;
+  detail: Record<string, unknown>;
+  created_at: string;
+};
+
 export async function register(payload: {
   username: string;
   email: string;
@@ -496,6 +508,26 @@ export async function listAdminInstances(
 ): Promise<AdminInstanceItem[]> {
   try {
     const { data } = await api.get<AdminInstanceItem[]>("/admin/instances", {
+      ...authHeaders(accessToken),
+      params: query
+    });
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function listAdminAuditLogs(
+  accessToken: string,
+  query?: {
+    action?: string;
+    target_type?: string;
+    actor_user_id?: string;
+    limit?: number;
+  }
+): Promise<AdminAuditLogItem[]> {
+  try {
+    const { data } = await api.get<AdminAuditLogItem[]>("/admin/audit-logs", {
       ...authHeaders(accessToken),
       params: query
     });

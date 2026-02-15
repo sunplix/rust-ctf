@@ -214,7 +214,24 @@ docker info >/dev/null && docker compose version
 - `GET /api/v1/contests/{contest_id}/scoreboard`：未鉴权访问返回 `401`（权限控制生效）
 - 提交限频：高频提交后返回 `verdict=rate_limited`
 
-### 8.6 Script 判题 metadata 示例
+### 8.6 默认管理员账号（可配置）
+
+后端在启动时会自动执行数据库迁移，并根据配置确保存在一个管理员账号（如不存在则创建，存在则提升为 `admin` 并设为 `active`）。
+
+默认配置如下（见 `backend/.env.example` 与 `deploy/docker-compose.dev.yml`）：
+
+- `DEFAULT_ADMIN_ENABLED=true`
+- `DEFAULT_ADMIN_USERNAME=admin`
+- `DEFAULT_ADMIN_EMAIL=admin@rust-ctf.local`
+- `DEFAULT_ADMIN_PASSWORD=admin123456`
+- `DEFAULT_ADMIN_FORCE_PASSWORD_RESET=false`
+
+说明：
+
+- 仅用于初始化与本地检查，生产环境请务必修改默认密码。
+- 当 `DEFAULT_ADMIN_FORCE_PASSWORD_RESET=true` 时，每次启动会强制把该账号密码重置为 `DEFAULT_ADMIN_PASSWORD`。
+
+### 8.7 Script 判题 metadata 示例
 
 `flag_mode=script` 的题目可在 `metadata` 中配置：
 
