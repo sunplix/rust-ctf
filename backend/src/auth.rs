@@ -61,10 +61,19 @@ impl FromRequestParts<Arc<AppState>> for AuthenticatedUser {
     ) -> impl Future<Output = Result<Self, Self::Rejection>> + Send {
         let token = extract_bearer_token(&parts.headers).map(str::to_owned);
         let jwt_secret = state.config.jwt_secret.clone();
+        let state = Arc::clone(state);
 
         async move {
             let token = token?;
-            decode_access_identity(&token, &jwt_secret)
+            let identity = decode_access_identity(&token, &jwt_secret)?;
+            ensure_access_session_active(state.as_ref(), identity.user_id, identity.session_id).await?;
+            let role = fetch_active_user_role(state.as_ref(), identity.user_id).await?;
+
+            Ok(AuthenticatedUser {
+                user_id: identity.user_id,
+                role,
+                session_id: identity.session_id,
+            })
         }
     }
 }
@@ -94,6 +103,34 @@ pub async fn rotate_session_tokens(
     store_refresh_session(state, user_id, session_id, next_refresh_jti).await?;
 
     build_token_bundle(state, user_id, role, session_id, next_refresh_jti)
+}
+
+pub async fn revoke_all_user_sessions(state: &AppState, user_id: Uuid) -> AppResult<()> {
+    let mut redis_conn = state.redis.clone();
+    let sessions_key = user_sessions_key(user_id);
+
+    let session_ids: Vec<String> = redis_conn
+        .smembers(&sessions_key)
+        .await
+        .map_err(AppError::internal)?;
+
+    if !session_ids.is_empty() {
+        let session_keys: Vec<String> = session_ids
+            .into_iter()
+            .map(|session_id| format!("auth:session:{}", session_id))
+            .collect();
+        let _: usize = redis_conn
+            .del(session_keys)
+            .await
+            .map_err(AppError::internal)?;
+    }
+
+    let _: usize = redis_conn
+        .del(&sessions_key)
+        .await
+        .map_err(AppError::internal)?;
+
+    Ok(())
 }
 
 pub fn decode_refresh_session(token: &str, jwt_secret: &str) -> AppResult<RefreshSession> {
@@ -242,19 +279,78 @@ async fn store_refresh_session(
     refresh_jti: Uuid,
 ) -> AppResult<()> {
     let mut redis_conn = state.redis.clone();
-    let key = refresh_session_key(session_id);
-    let value = refresh_session_value(user_id, refresh_jti);
+    let session_key = refresh_session_key(session_id);
+    let session_value = refresh_session_value(user_id, refresh_jti);
+    let sessions_key = user_sessions_key(user_id);
 
     redis_conn
-        .set_ex::<_, _, ()>(key, value, REFRESH_TOKEN_TTL_SECS as u64)
+        .set_ex::<_, _, ()>(session_key, session_value, REFRESH_TOKEN_TTL_SECS as u64)
         .await
-        .map_err(AppError::internal)
+        .map_err(AppError::internal)?;
+
+    let _: usize = redis_conn
+        .sadd(&sessions_key, session_id.to_string())
+        .await
+        .map_err(AppError::internal)?;
+
+    let _: bool = redis_conn
+        .expire(&sessions_key, REFRESH_TOKEN_TTL_SECS)
+        .await
+        .map_err(AppError::internal)?;
+
+    Ok(())
 }
 
 fn refresh_session_key(session_id: Uuid) -> String {
     format!("auth:session:{}", session_id)
 }
 
+fn user_sessions_key(user_id: Uuid) -> String {
+    format!("auth:user_sessions:{}", user_id)
+}
+
 fn refresh_session_value(user_id: Uuid, refresh_jti: Uuid) -> String {
     format!("{}:{}", user_id, refresh_jti)
+}
+
+fn parse_session_value(value: &str) -> Option<(Uuid, Uuid)> {
+    let (user_id, refresh_jti) = value.split_once(':')?;
+    let user_id = Uuid::parse_str(user_id).ok()?;
+    let refresh_jti = Uuid::parse_str(refresh_jti).ok()?;
+    Some((user_id, refresh_jti))
+}
+
+async fn ensure_access_session_active(
+    state: &AppState,
+    user_id: Uuid,
+    session_id: Uuid,
+) -> AppResult<()> {
+    let mut redis_conn = state.redis.clone();
+    let session_key = refresh_session_key(session_id);
+    let stored: Option<String> = redis_conn
+        .get(&session_key)
+        .await
+        .map_err(AppError::internal)?;
+
+    match stored.and_then(|value| parse_session_value(&value)) {
+        Some((stored_user_id, _)) if stored_user_id == user_id => Ok(()),
+        _ => Err(AppError::Unauthorized),
+    }
+}
+
+async fn fetch_active_user_role(state: &AppState, user_id: Uuid) -> AppResult<String> {
+    let role = sqlx::query_scalar::<_, String>(
+        "SELECT role
+         FROM users
+         WHERE id = $1
+           AND status = 'active'
+         LIMIT 1",
+    )
+    .bind(user_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::Unauthorized)?;
+
+    Ok(role)
 }

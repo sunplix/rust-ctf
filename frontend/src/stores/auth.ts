@@ -71,6 +71,10 @@ export const useAuthStore = defineStore("auth", () => {
     persist();
   }
 
+  function applyAuthResponse(response: AuthResponse) {
+    applySession(response);
+  }
+
   function clearSession() {
     accessToken.value = "";
     refreshToken.value = "";
@@ -130,6 +134,7 @@ export const useAuthStore = defineStore("auth", () => {
     hydrateFromStorage,
     registerWithPassword,
     loginWithPassword,
+    applyAuthResponse,
     syncCurrentUser,
     clearSession
   };

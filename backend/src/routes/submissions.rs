@@ -49,9 +49,13 @@ struct JudgeContextRow {
     contest_status: String,
     contest_start_at: DateTime<Utc>,
     contest_end_at: DateTime<Utc>,
+    contest_scoring_mode: String,
+    contest_dynamic_decay: i32,
     flag_mode: String,
     flag_hash: String,
     static_score: i32,
+    min_score: i32,
+    max_score: i32,
     is_visible: bool,
     release_at: Option<DateTime<Utc>>,
     metadata: Value,
@@ -124,9 +128,13 @@ async fn submit_flag(
         "SELECT ct.status AS contest_status,
                 ct.start_at AS contest_start_at,
                 ct.end_at AS contest_end_at,
+                ct.scoring_mode AS contest_scoring_mode,
+                ct.dynamic_decay AS contest_dynamic_decay,
                 c.flag_mode,
                 c.flag_hash,
                 c.static_score,
+                c.min_score,
+                c.max_score,
                 c.is_visible,
                 cc.release_at,
                 c.metadata
@@ -377,9 +385,12 @@ fn validate_submission_window(ctx: &JudgeContextRow) -> AppResult<()> {
     }
 
     if now < ctx.contest_start_at || now > ctx.contest_end_at {
-        return Err(AppError::BadRequest(
-            "outside contest submission window".to_string(),
-        ));
+        warn!(
+            now = %now,
+            contest_start_at = %ctx.contest_start_at,
+            contest_end_at = %ctx.contest_end_at,
+            "contest status is running but now is outside configured start/end window; allowing submission by status"
+        );
     }
 
     Ok(())
@@ -435,11 +446,50 @@ async fn judge_flag(
                 ));
             }
 
-            Ok(("accepted".to_string(), ctx.static_score, message))
+            let score_awarded =
+                calculate_awarded_score(state, ctx, contest_id, challenge_id).await?;
+            Ok(("accepted".to_string(), score_awarded, message))
         }
         JudgeDecision::Wrong(message) => Ok(("wrong".to_string(), 0, message)),
         JudgeDecision::Invalid(message) => Ok(("invalid".to_string(), 0, message)),
     }
+}
+
+async fn calculate_awarded_score(
+    state: &AppState,
+    ctx: &JudgeContextRow,
+    contest_id: Uuid,
+    challenge_id: Uuid,
+) -> AppResult<i32> {
+    if ctx.contest_scoring_mode != "dynamic" {
+        return Ok(ctx.static_score);
+    }
+
+    let solved_count = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(DISTINCT team_id)
+         FROM submissions
+         WHERE contest_id = $1
+           AND challenge_id = $2
+           AND verdict = 'accepted'
+           AND score_awarded > 0",
+    )
+    .bind(contest_id)
+    .bind(challenge_id)
+    .fetch_one(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    let min_score = ctx.min_score.max(0);
+    let max_score = ctx.max_score.max(min_score);
+    if max_score == min_score {
+        return Ok(max_score);
+    }
+
+    let decay = ctx.contest_dynamic_decay.max(1) as f64;
+    let solves = solved_count.max(0) as f64;
+    let raw = min_score as f64 + (max_score - min_score) as f64 * (decay / (decay + solves));
+    let score = raw.round() as i32;
+    Ok(score.clamp(min_score, max_score))
 }
 
 fn verify_static_flag(submitted_flag: &str, stored_flag: &str) -> AppResult<bool> {

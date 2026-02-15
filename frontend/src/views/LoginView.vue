@@ -66,8 +66,10 @@ import { useRoute, useRouter } from "vue-router";
 
 import { ApiClientError } from "../api/client";
 import { useAuthStore } from "../stores/auth";
+import { useUiStore } from "../stores/ui";
 
 const authStore = useAuthStore();
+const uiStore = useUiStore();
 const router = useRouter();
 const route = useRoute();
 
@@ -106,6 +108,7 @@ async function handleSubmit() {
         password: password.value
       });
       message.value = "登录成功，正在跳转...";
+      uiStore.success("登录成功", "欢迎回来，准备开始比赛。");
     } else {
       await authStore.registerWithPassword({
         username: registerForm.username,
@@ -113,11 +116,13 @@ async function handleSubmit() {
         password: password.value
       });
       message.value = "注册成功，正在跳转...";
+      uiStore.success("注册成功", "账号已创建并自动登录。");
     }
 
     await router.replace(redirectPath.value);
   } catch (err) {
     error.value = err instanceof ApiClientError ? err.message : "请求失败";
+    uiStore.error("认证失败", error.value);
   } finally {
     submitting.value = false;
   }

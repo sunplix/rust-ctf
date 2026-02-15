@@ -72,11 +72,20 @@ export type AuthResponse = {
   user: AuthUser;
 };
 
+export type LoginHistoryItem = {
+  id: number;
+  action: string;
+  detail: Record<string, unknown>;
+  created_at: string;
+};
+
 export type ContestListItem = {
   id: string;
   title: string;
   slug: string;
   status: string;
+  scoring_mode: string;
+  dynamic_decay: number;
   start_at: string;
   end_at: string;
 };
@@ -89,6 +98,74 @@ export type ContestChallengeItem = {
   challenge_type: string;
   static_score: number;
   release_at: string | null;
+};
+
+export type ContestAnnouncementItem = {
+  id: string;
+  title: string;
+  content: string;
+  is_pinned: boolean;
+  published_at: string | null;
+  created_at: string;
+};
+
+export type TeamListItem = {
+  id: string;
+  name: string;
+  description: string;
+  captain_user_id: string;
+  captain_username: string | null;
+  member_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TeamMemberItem = {
+  user_id: string;
+  username: string;
+  member_role: string;
+  joined_at: string;
+};
+
+export type TeamProfile = {
+  id: string;
+  name: string;
+  description: string;
+  captain_user_id: string;
+  captain_username: string | null;
+  created_at: string;
+  updated_at: string;
+  members: TeamMemberItem[];
+};
+
+export type MyTeamResponse = {
+  team: TeamProfile | null;
+};
+
+export type LeaveTeamResponse = {
+  team_id: string;
+  disbanded: boolean;
+  message: string;
+};
+
+export type TeamInvitationItem = {
+  id: string;
+  team_id: string;
+  team_name: string;
+  inviter_user_id: string;
+  inviter_username: string | null;
+  invitee_user_id: string;
+  invitee_username: string | null;
+  status: string;
+  message: string;
+  created_at: string;
+  updated_at: string;
+  responded_at: string | null;
+};
+
+export type TeamInvitationRespondResponse = {
+  invitation: TeamInvitationItem;
+  team: TeamProfile | null;
 };
 
 export type SubmitFlagResponse = {
@@ -139,9 +216,35 @@ export type AdminChallengeItem = {
   static_score: number;
   challenge_type: string;
   flag_mode: string;
+  status: string;
   is_visible: boolean;
+  tags: string[];
+  writeup_visibility: string;
+  current_version: number;
   created_at: string;
   updated_at: string;
+};
+
+export type AdminChallengeVersionItem = {
+  id: string;
+  challenge_id: string;
+  version_no: number;
+  change_note: string;
+  created_by: string | null;
+  created_by_username: string | null;
+  created_at: string;
+};
+
+export type AdminChallengeAttachmentItem = {
+  id: string;
+  challenge_id: string;
+  filename: string;
+  content_type: string;
+  storage_path: string;
+  size_bytes: number;
+  uploaded_by: string | null;
+  uploaded_by_username: string | null;
+  created_at: string;
 };
 
 export type AdminContestItem = {
@@ -151,9 +254,27 @@ export type AdminContestItem = {
   description: string;
   visibility: string;
   status: string;
+  scoring_mode: string;
+  dynamic_decay: number;
   start_at: string;
   end_at: string;
   freeze_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdminContestAnnouncementItem = {
+  id: string;
+  contest_id: string;
+  title: string;
+  content: string;
+  is_published: boolean;
+  is_pinned: boolean;
+  published_at: string | null;
+  created_by: string | null;
+  created_by_username: string | null;
+  updated_by: string | null;
+  updated_by_username: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -166,6 +287,16 @@ export type AdminContestChallengeItem = {
   challenge_difficulty: string;
   sort_order: number;
   release_at: string | null;
+};
+
+export type AdminUserItem = {
+  id: string;
+  username: string;
+  email: string;
+  role: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
 };
 
 export type AdminInstanceItem = {
@@ -274,6 +405,51 @@ export async function me(accessToken: string): Promise<AuthUser> {
   }
 }
 
+export async function updateProfile(
+  payload: {
+    username?: string;
+    email?: string;
+  },
+  accessToken: string
+): Promise<AuthUser> {
+  try {
+    const { data } = await api.patch<AuthUser>("/auth/profile", payload, authHeaders(accessToken));
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function changePassword(
+  payload: {
+    current_password: string;
+    new_password: string;
+  },
+  accessToken: string
+): Promise<AuthResponse> {
+  try {
+    const { data } = await api.post<AuthResponse>("/auth/change-password", payload, authHeaders(accessToken));
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function getLoginHistory(
+  accessToken: string,
+  query?: { limit?: number }
+): Promise<LoginHistoryItem[]> {
+  try {
+    const { data } = await api.get<LoginHistoryItem[]>("/auth/login-history", {
+      ...authHeaders(accessToken),
+      params: query
+    });
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
 export async function listContests(): Promise<ContestListItem[]> {
   try {
     const { data } = await api.get<ContestListItem[]>("/contests");
@@ -290,6 +466,213 @@ export async function listContestChallenges(
   try {
     const { data } = await api.get<ContestChallengeItem[]>(
       `/contests/${contestId}/challenges`,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function listContestAnnouncements(
+  contestId: string,
+  accessToken: string
+): Promise<ContestAnnouncementItem[]> {
+  try {
+    const { data } = await api.get<ContestAnnouncementItem[]>(
+      `/contests/${contestId}/announcements`,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function listTeams(
+  accessToken: string,
+  query?: { keyword?: string; limit?: number }
+): Promise<TeamListItem[]> {
+  try {
+    const { data } = await api.get<TeamListItem[]>("/teams", {
+      ...authHeaders(accessToken),
+      params: query
+    });
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function getMyTeam(accessToken: string): Promise<MyTeamResponse> {
+  try {
+    const { data } = await api.get<MyTeamResponse>("/teams/me", authHeaders(accessToken));
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function createTeam(
+  payload: { name: string; description?: string },
+  accessToken: string
+): Promise<TeamProfile> {
+  try {
+    const { data } = await api.post<TeamProfile>("/teams", payload, authHeaders(accessToken));
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function joinTeam(
+  payload: { team_id?: string; team_name?: string },
+  accessToken: string
+): Promise<TeamProfile> {
+  try {
+    const { data } = await api.post<TeamProfile>("/teams/join", payload, authHeaders(accessToken));
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function getTeamById(teamId: string, accessToken: string): Promise<TeamProfile> {
+  try {
+    const { data } = await api.get<TeamProfile>(`/teams/${teamId}`, authHeaders(accessToken));
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function updateTeam(
+  teamId: string,
+  payload: { name?: string; description?: string },
+  accessToken: string
+): Promise<TeamProfile> {
+  try {
+    const { data } = await api.patch<TeamProfile>(`/teams/${teamId}`, payload, authHeaders(accessToken));
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function transferTeamCaptain(
+  teamId: string,
+  newCaptainUserId: string,
+  accessToken: string
+): Promise<TeamProfile> {
+  try {
+    const { data } = await api.post<TeamProfile>(
+      `/teams/${teamId}/transfer-captain`,
+      { new_captain_user_id: newCaptainUserId },
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function removeTeamMember(
+  teamId: string,
+  memberUserId: string,
+  accessToken: string
+): Promise<TeamProfile> {
+  try {
+    const { data } = await api.delete<TeamProfile>(`/teams/${teamId}/members/${memberUserId}`, authHeaders(accessToken));
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function disbandTeam(teamId: string, accessToken: string): Promise<void> {
+  try {
+    await api.delete(`/teams/${teamId}`, authHeaders(accessToken));
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function leaveTeam(accessToken: string): Promise<LeaveTeamResponse> {
+  try {
+    const { data } = await api.post<LeaveTeamResponse>("/teams/leave", {}, authHeaders(accessToken));
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function createTeamInvitation(
+  payload: { invitee_user_id?: string; invitee_username?: string; message?: string },
+  accessToken: string
+): Promise<TeamInvitationItem> {
+  try {
+    const { data } = await api.post<TeamInvitationItem>("/teams/invitations", payload, authHeaders(accessToken));
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function listReceivedTeamInvitations(
+  accessToken: string,
+  query?: { status?: string; limit?: number }
+): Promise<TeamInvitationItem[]> {
+  try {
+    const { data } = await api.get<TeamInvitationItem[]>("/teams/invitations/received", {
+      ...authHeaders(accessToken),
+      params: query
+    });
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function listSentTeamInvitations(
+  accessToken: string,
+  query?: { status?: string; limit?: number }
+): Promise<TeamInvitationItem[]> {
+  try {
+    const { data } = await api.get<TeamInvitationItem[]>("/teams/invitations/sent", {
+      ...authHeaders(accessToken),
+      params: query
+    });
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function respondTeamInvitation(
+  invitationId: string,
+  action: "accept" | "reject",
+  accessToken: string
+): Promise<TeamInvitationRespondResponse> {
+  try {
+    const { data } = await api.post<TeamInvitationRespondResponse>(
+      `/teams/invitations/${invitationId}/respond`,
+      { action },
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function cancelTeamInvitation(
+  invitationId: string,
+  accessToken: string
+): Promise<TeamInvitationItem> {
+  try {
+    const { data } = await api.post<TeamInvitationItem>(
+      `/teams/invitations/${invitationId}/cancel`,
+      {},
       authHeaders(accessToken)
     );
     return data;
@@ -413,13 +796,19 @@ export async function createAdminChallenge(
     title: string;
     slug: string;
     category: string;
+    description?: string;
     difficulty?: string;
     static_score?: number;
     challenge_type?: string;
     flag_mode?: string;
+    status?: string;
     flag_hash?: string;
     is_visible?: boolean;
     compose_template?: string;
+    tags?: string[];
+    writeup_visibility?: string;
+    writeup_content?: string;
+    change_note?: string;
   },
   accessToken: string
 ): Promise<AdminChallengeItem> {
@@ -437,13 +826,19 @@ export async function updateAdminChallenge(
     title?: string;
     slug?: string;
     category?: string;
+    description?: string;
     difficulty?: string;
     static_score?: number;
     challenge_type?: string;
     flag_mode?: string;
+    status?: string;
     flag_hash?: string;
     is_visible?: boolean;
     compose_template?: string;
+    tags?: string[];
+    writeup_visibility?: string;
+    writeup_content?: string;
+    change_note?: string;
   },
   accessToken: string
 ): Promise<AdminChallengeItem> {
@@ -459,9 +854,167 @@ export async function updateAdminChallenge(
   }
 }
 
+export async function listAdminChallengeVersions(
+  challengeId: string,
+  accessToken: string,
+  query?: { limit?: number }
+): Promise<AdminChallengeVersionItem[]> {
+  try {
+    const { data } = await api.get<AdminChallengeVersionItem[]>(
+      `/admin/challenges/${challengeId}/versions`,
+      {
+        ...authHeaders(accessToken),
+        params: query
+      }
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function rollbackAdminChallengeVersion(
+  challengeId: string,
+  payload: { version_no: number; change_note?: string },
+  accessToken: string
+): Promise<AdminChallengeItem> {
+  try {
+    const { data } = await api.post<AdminChallengeItem>(
+      `/admin/challenges/${challengeId}/rollback`,
+      payload,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function listAdminChallengeAttachments(
+  challengeId: string,
+  accessToken: string,
+  query?: { limit?: number }
+): Promise<AdminChallengeAttachmentItem[]> {
+  try {
+    const { data } = await api.get<AdminChallengeAttachmentItem[]>(
+      `/admin/challenges/${challengeId}/attachments`,
+      {
+        ...authHeaders(accessToken),
+        params: query
+      }
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function uploadAdminChallengeAttachment(
+  challengeId: string,
+  payload: { filename: string; content_base64: string; content_type?: string },
+  accessToken: string
+): Promise<AdminChallengeAttachmentItem> {
+  try {
+    const { data } = await api.post<AdminChallengeAttachmentItem>(
+      `/admin/challenges/${challengeId}/attachments`,
+      payload,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function deleteAdminChallengeAttachment(
+  challengeId: string,
+  attachmentId: string,
+  accessToken: string
+): Promise<void> {
+  try {
+    await api.delete(
+      `/admin/challenges/${challengeId}/attachments/${attachmentId}`,
+      authHeaders(accessToken)
+    );
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
 export async function listAdminContests(accessToken: string): Promise<AdminContestItem[]> {
   try {
     const { data } = await api.get<AdminContestItem[]>("/admin/contests", authHeaders(accessToken));
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function listAdminUsers(
+  accessToken: string,
+  query?: {
+    keyword?: string;
+    role?: string;
+    status?: string;
+    limit?: number;
+  }
+): Promise<AdminUserItem[]> {
+  try {
+    const { data } = await api.get<AdminUserItem[]>("/admin/users", {
+      ...authHeaders(accessToken),
+      params: query
+    });
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function updateAdminUserStatus(
+  userId: string,
+  status: string,
+  accessToken: string
+): Promise<AdminUserItem> {
+  try {
+    const { data } = await api.patch<AdminUserItem>(
+      `/admin/users/${userId}/status`,
+      { status },
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function updateAdminUserRole(
+  userId: string,
+  role: string,
+  accessToken: string
+): Promise<AdminUserItem> {
+  try {
+    const { data } = await api.patch<AdminUserItem>(
+      `/admin/users/${userId}/role`,
+      { role },
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function resetAdminUserPassword(
+  userId: string,
+  newPassword: string,
+  accessToken: string
+): Promise<AdminUserItem> {
+  try {
+    const { data } = await api.post<AdminUserItem>(
+      `/admin/users/${userId}/reset-password`,
+      { new_password: newPassword },
+      authHeaders(accessToken)
+    );
     return data;
   } catch (error) {
     throw toApiClientError(error);
@@ -475,6 +1028,8 @@ export async function createAdminContest(
     description?: string;
     visibility?: string;
     status?: string;
+    scoring_mode?: string;
+    dynamic_decay?: number;
     start_at: string;
     end_at: string;
     freeze_at?: string | null;
@@ -497,6 +1052,8 @@ export async function updateAdminContest(
     description?: string;
     visibility?: string;
     status?: string;
+    scoring_mode?: string;
+    dynamic_decay?: number;
     start_at?: string;
     end_at?: string;
     freeze_at?: string | null;
@@ -528,6 +1085,85 @@ export async function updateAdminContestStatus(
       authHeaders(accessToken)
     );
     return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function listAdminContestAnnouncements(
+  contestId: string,
+  accessToken: string,
+  query?: { limit?: number }
+): Promise<AdminContestAnnouncementItem[]> {
+  try {
+    const { data } = await api.get<AdminContestAnnouncementItem[]>(
+      `/admin/contests/${contestId}/announcements`,
+      {
+        ...authHeaders(accessToken),
+        params: query
+      }
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function createAdminContestAnnouncement(
+  contestId: string,
+  payload: {
+    title: string;
+    content: string;
+    is_published?: boolean;
+    is_pinned?: boolean;
+  },
+  accessToken: string
+): Promise<AdminContestAnnouncementItem> {
+  try {
+    const { data } = await api.post<AdminContestAnnouncementItem>(
+      `/admin/contests/${contestId}/announcements`,
+      payload,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function updateAdminContestAnnouncement(
+  contestId: string,
+  announcementId: string,
+  payload: {
+    title?: string;
+    content?: string;
+    is_published?: boolean;
+    is_pinned?: boolean;
+  },
+  accessToken: string
+): Promise<AdminContestAnnouncementItem> {
+  try {
+    const { data } = await api.patch<AdminContestAnnouncementItem>(
+      `/admin/contests/${contestId}/announcements/${announcementId}`,
+      payload,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function deleteAdminContestAnnouncement(
+  contestId: string,
+  announcementId: string,
+  accessToken: string
+): Promise<void> {
+  try {
+    await api.delete(
+      `/admin/contests/${contestId}/announcements/${announcementId}`,
+      authHeaders(accessToken)
+    );
   } catch (error) {
     throw toApiClientError(error);
   }

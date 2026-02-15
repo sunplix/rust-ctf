@@ -6,6 +6,8 @@ import LoginView from "../views/LoginView.vue";
 import ContestsView from "../views/ContestsView.vue";
 import ContestDetailView from "../views/ContestDetailView.vue";
 import AdminView from "../views/AdminView.vue";
+import TeamsView from "../views/TeamsView.vue";
+import ProfileView from "../views/ProfileView.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -23,6 +25,18 @@ const router = createRouter({
       path: "/contests",
       name: "contests",
       component: ContestsView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: "/teams",
+      name: "teams",
+      component: TeamsView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: "/profile",
+      name: "profile",
+      component: ProfileView,
       meta: { requiresAuth: true }
     },
     {

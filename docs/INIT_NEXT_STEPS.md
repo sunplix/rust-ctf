@@ -18,7 +18,9 @@
 14. Scoreboard websocket auth fallback for browser is ready (`Authorization` or `access_token` query).
 15. Admin API v2 is ready (challenge CRUD-lite, contest create/edit/status, contest-challenge binding CRUD, instance list).
 16. Admin frontend v2 is ready (challenge create/visibility, contest create/status, contest-challenge binding/sort, instance monitor).
-17. Next: richer runtime monitor/notifications + operation audit API/UI.
+17. Runtime alert notification API is ready (`/admin/runtime/alerts`, `scan`, `ack`, `resolve`).
+18. Runtime alert scheduled scanner is ready (startup background task + configurable interval).
+19. Next: runtime alert UI integration + auto-remediation workers.
 
 ## Frontend
 

@@ -22,16 +22,44 @@
 ### 3.1 平台核心业务模块
 
 1. 用户管理  
-平台支持用户注册、登录、JWT 鉴权、角色权限控制（选手/管理员/裁判），并提供个人资料维护、密码修改、登录历史查看等能力。该模块是整个平台安全边界的第一层，后续将扩展为支持验证码、邮箱激活、双因素认证（2FA）等机制。
+用户管理核心能力已完成首版闭环，覆盖“账号创建、登录鉴权、资料维护、密码变更、登录历史查询”五类主流程，当前实现如下：
+
+- 认证与会话：`/api/v1/auth/register`、`/api/v1/auth/login`、`/api/v1/auth/refresh`、`/api/v1/auth/me`
+- 资料维护：`PATCH /api/v1/auth/profile`（用户名/邮箱更新）
+- 密码管理：`POST /api/v1/auth/change-password`（校验旧密码、更新后自动轮换会话）
+- 登录历史：`GET /api/v1/auth/login-history`（按时间倒序返回注册/登录/刷新/改密认证事件）
+- 管理端用户运维：`GET /api/v1/admin/users`、`PATCH /api/v1/admin/users/{user_id}/status`、`PATCH /api/v1/admin/users/{user_id}/role`、`POST /api/v1/admin/users/{user_id}/reset-password`
+
+安全策略方面，后端采用 Argon2 存储密码哈希，使用 JWT（Access + Refresh）与 Redis 会话键进行刷新令牌轮换；鉴权阶段会校验用户 `active` 状态与会话键有效性，因此禁用用户或管理员重置密码后，历史会话可被立即失效。认证事件会写入 `audit_logs`，记录操作与请求来源信息（如 `user-agent`、`x-forwarded-for`）以支持审计追溯。后续将继续扩展验证码、邮箱激活、双因素认证（2FA）等增强能力。
 
 2. 队伍管理  
-支持队伍创建、邀请成员、成员审批、队长权限变更、队伍信息编辑与解散控制。比赛期间队伍状态与成员关系将被严格校验，防止重复参赛、跨队提交等异常行为。该模块与判题、环境实例分配直接关联，是多容器隔离的身份基础。
+队伍管理已从“基础建队/加队”扩展到“完整生命周期管理”，当前实现如下：
+
+- 队伍基础：`GET /api/v1/teams`、`GET /api/v1/teams/me`、`GET /api/v1/teams/{team_id}`、`POST /api/v1/teams`、`POST /api/v1/teams/join`
+- 队伍维护：`PATCH /api/v1/teams/{team_id}`、`POST /api/v1/teams/leave`、`DELETE /api/v1/teams/{team_id}`
+- 队长能力：`POST /api/v1/teams/{team_id}/transfer-captain`、`DELETE /api/v1/teams/{team_id}/members/{member_user_id}`
+- 邀请机制：`POST /api/v1/teams/invitations`、`GET /api/v1/teams/invitations/sent`、`GET /api/v1/teams/invitations/received`、`POST /api/v1/teams/invitations/{invitation_id}/respond`、`POST /api/v1/teams/invitations/{invitation_id}/cancel`
+
+权限与一致性方面，后端会校验“当前是否队长”“目标成员是否属于本队”“被邀请用户是否已在其他队伍”等关键约束，并通过数据库唯一约束保证一个用户同一时刻仅属于一支队伍。该模块与判题、实例分配直接关联，是多容器隔离与竞赛身份边界的基础。
 
 3. 题目管理  
-管理员可上传题目基础信息（标题、分类、分值、难度、标签、题解可见策略）、附件、判题配置、环境模板（docker-compose 模板与变量定义）。题目支持草稿、发布、下线、版本更新与回滚，以满足教学迭代和赛题维护需求。
+题目管理已完成“配置录入 + 生命周期 + 版本追踪 + 附件管理”的完整闭环，当前实现如下：
+
+- 基础信息与判题配置：`POST /api/v1/admin/challenges`、`PATCH /api/v1/admin/challenges/{challenge_id}` 支持标题、分类、分值、难度、标签、`challenge_type`、`flag_mode`、`flag_hash`、`metadata`、`compose_template`、题解策略与题解内容配置
+- 生命周期管理：题目支持 `draft`、`published`、`offline` 三种状态；状态与可见性同步约束，避免“状态与对外展示冲突”
+- 版本更新与回滚：每次创建/更新都会写入 `challenge_versions` 快照；支持 `GET /api/v1/admin/challenges/{challenge_id}/versions` 查询历史版本，`POST /api/v1/admin/challenges/{challenge_id}/rollback` 一键回滚
+- 附件管理：支持 `POST /api/v1/admin/challenges/{challenge_id}/attachments` 上传、`GET /api/v1/admin/challenges/{challenge_id}/attachments` 查询、`DELETE /api/v1/admin/challenges/{challenge_id}/attachments/{attachment_id}` 删除
+- 前端管理入口：管理台已支持标签与题解策略录入、版本列表/回滚、附件上传与删除，满足赛题迭代与教学维护流程
 
 4. 比赛管理  
-支持创建比赛、设置起止时间、开放题目集合、可见性策略、提交规则、动态积分规则与公告。比赛生命周期（未开始/进行中/已结束）由系统自动驱动，并为管理端提供手动干预接口（暂停、延长、封榜、解榜）。
+比赛管理已具备“赛事创建 + 时间窗口 + 状态干预 + 题目编排”主流程能力，当前实现如下：
+
+- 赛事配置：`GET /api/v1/admin/contests`、`POST /api/v1/admin/contests`、`PATCH /api/v1/admin/contests/{contest_id}` 支持标题、slug、描述、可见性、起止时间、封榜时间配置
+- 积分规则：比赛级支持 `scoring_mode=static|dynamic` 与 `dynamic_decay` 参数，动态模式下按已解队伍数递减分值
+- 状态控制：`PATCH /api/v1/admin/contests/{contest_id}/status` 支持 `draft/scheduled/running/ended/archived` 手动切换，覆盖赛前准备、赛中运行与赛后归档流程
+- 题目集合编排：`GET|POST /api/v1/admin/contests/{contest_id}/challenges`、`PATCH|DELETE /api/v1/admin/contests/{contest_id}/challenges/{challenge_id}` 支持挂载题目、排序、按题发布时间控制
+- 公告系统：`GET|POST /api/v1/admin/contests/{contest_id}/announcements`、`PATCH|DELETE /api/v1/admin/contests/{contest_id}/announcements/{announcement_id}` 支持公告创建、发布/撤回、置顶、修改、删除；选手侧通过 `GET /api/v1/contests/{contest_id}/announcements` 获取已发布公告
+- 选手侧赛事视图：`GET /api/v1/contests`、`GET /api/v1/contests/{contest_id}/challenges`、`GET /api/v1/contests/{contest_id}/scoreboard` 已形成参赛主链路，并与判题模块联动
 
 5. Flag 判题与计分  
 提供统一判题接口，兼容静态 flag、动态 flag、脚本校验、内网场景校验。系统对提交频率进行限流，对错误提交做冷却与审计，避免爆破式噪声。判题成功后触发积分更新、解题记录写入与排行榜事件广播，确保竞赛反馈实时且一致。
@@ -121,9 +149,10 @@ rust-ctf/
 
 - `backend/`：Rust + Axum 基础服务骨架（含配置加载、健康检查路由、Dockerfile）
 - `backend/`：已完成核心数据库迁移（users/teams/contests/challenges/submissions/instances）
-- `backend/`：已提供认证接口（`/api/v1/auth/register`、`/api/v1/auth/login`、`/api/v1/auth/refresh`、`/api/v1/auth/me`）
+- `backend/`：已提供认证与用户管理接口（`/api/v1/auth/register`、`/api/v1/auth/login`、`/api/v1/auth/refresh`、`/api/v1/auth/me`、`/api/v1/auth/profile`、`/api/v1/auth/change-password`、`/api/v1/auth/login-history`）
 - `backend/`：已提供比赛基础接口（`/api/v1/contests`、`/api/v1/contests/{contest_id}/challenges`、`/api/v1/submissions`）
-- `backend/`：已提供管理员接口（题目管理、比赛创建/编辑/状态控制、比赛题目挂载管理、实例监控）
+- `backend/`：已提供完整队伍管理接口（建队/加队、邀请与响应、队伍编辑、离队、队长转让、移除成员、解散）
+- `backend/`：已提供管理员接口（用户管理、题目管理、比赛创建/编辑/状态控制、比赛题目挂载管理、实例监控）
 - `backend/`：已支持默认管理员账号自动初始化（可通过 `DEFAULT_ADMIN_*` 配置）
 - `backend/`：提交接口已接入 Redis 限频（30 秒窗口内最多 10 次）
 - `backend/`：已提供排行榜接口（`/api/v1/contests/{contest_id}/scoreboard`）
@@ -132,14 +161,21 @@ rust-ctf/
 - `backend/`：已提供实例生命周期接口（`/api/v1/instances/start|stop|reset|destroy|{contest_id}/{challenge_id}`）
 - `backend/`：实例生命周期已接入真实 `docker compose` 编排（模板渲染、compose 文件落盘、启动/停止/重置/销毁）
 - `backend/`：已提供管理员审计日志与运行概览接口（`/api/v1/admin/audit-logs`、`/api/v1/admin/runtime/overview`）
+- `backend/`：已提供运行告警通知接口（`/api/v1/admin/runtime/alerts`、`/api/v1/admin/runtime/alerts/scan`、`/api/v1/admin/runtime/alerts/{alert_id}/ack|resolve`），并支持后台定时扫描与自动收敛
+- `backend/`：已提供比赛公告管理与选手公告读取接口（管理员 CRUD + 选手只读已发布）
 - `backend/`：判题已支持静态 flag（明文或 Argon2 哈希）与动态 flag（Redis 键 `flag:dynamic:{contest_id}:{challenge_id}:{team_id}`）
+- `backend/`：判题已支持比赛级动态积分（根据已解队伍数按衰减公式计算实际得分）
 - `backend/`：`script` 判题已支持按题目 metadata 执行外部校验脚本（返回码 0=正确，1=错误，其他=判题异常）
 - `frontend/`：已完成选手最小闭环页面（登录/注册、比赛列表、题目列表、Flag 提交、实例控制、实时榜单显示）
 - `frontend/`：已完成 API 客户端与本地登录态持久化（Pinia + localStorage）
-- `frontend/`：已完成管理员 v2 页面（题目创建/可见性切换、比赛创建与状态切换、题目挂载与排序、实例列表监控）
+- `frontend/`：已新增账户中心页面（个人资料维护、密码修改、登录历史查看）
+- `frontend/`：已完成队伍中心增强版（邀请处理、队伍编辑、成员管理、队长转让、离队/解散）
+- `frontend/`：已完成管理员 v2 页面（模块/子导航拆分、题目创建/可见性切换、比赛创建与状态切换、题目挂载与排序、公告管理、实例列表监控）
 - `frontend/`：管理员页面已新增审计日志查询与运行概览监控（失败实例告警、提交与实例统计）
+- `frontend/`：敏感/细节字段（如判题哈希与 compose 模板）已下沉到二次展开面板，降低主界面拥挤度
 - `deploy/`：本地开发用 `docker-compose.dev.yml`（PostgreSQL / Redis / Backend / Frontend）
 - `docs/`：初始化后续开发任务说明
+- `docs/`：全量后端接口文档 `docs/API_REFERENCE.md`（后续开发持续维护）
 
 下一步进入前端业务页面与后台管理能力的持续实现阶段。
 
@@ -208,14 +244,20 @@ curl http://localhost:8080/api/v1/health
 docker info >/dev/null && docker compose version
 ```
 
-### 8.5 已验证的接口链路（2026-02-14）
+### 8.5 已验证的接口链路（2026-02-15）
 
 - `GET /api/v1/health`：健康检查通过，数据库和 Redis 状态正常
 - `POST /api/v1/auth/register`、`GET /api/v1/auth/me`、`POST /api/v1/auth/refresh`：认证链路通过
+- `PATCH /api/v1/auth/profile`、`POST /api/v1/auth/change-password`、`GET /api/v1/auth/login-history`：用户管理链路通过
+- `GET /api/v1/admin/users`、`PATCH /api/v1/admin/users/{user_id}/status`、`PATCH /api/v1/admin/users/{user_id}/role`、`POST /api/v1/admin/users/{user_id}/reset-password`：管理员用户运维链路通过
+- `POST /api/v1/teams/invitations`、`POST /api/v1/teams/invitations/{invitation_id}/respond`、`PATCH /api/v1/teams/{team_id}`、`POST /api/v1/teams/{team_id}/transfer-captain`、`DELETE /api/v1/teams/{team_id}/members/{member_user_id}`、`POST /api/v1/teams/leave`、`DELETE /api/v1/teams/{team_id}`：队伍生命周期链路通过
 - `POST /api/v1/submissions`：静态哈希 flag 判题通过
+- `POST /api/v1/submissions`：动态积分模式验证通过（同题不同队伍得分递减）
 - `GET /api/v1/contests/{contest_id}/scoreboard`：排行榜查询通过
 - `GET /api/v1/contests/{contest_id}/scoreboard`：未鉴权访问返回 `401`（权限控制生效）
 - 提交限频：高频提交后返回 `verdict=rate_limited`
+- `GET|POST|PATCH|DELETE /api/v1/admin/contests/{contest_id}/announcements...`：公告管理链路通过
+- `GET /api/v1/contests/{contest_id}/announcements`：选手侧仅可见已发布公告，发布后可即时读取
 
 ### 8.6 默认管理员账号（可配置）
 
@@ -228,6 +270,9 @@ docker info >/dev/null && docker compose version
 - `DEFAULT_ADMIN_EMAIL=admin@rust-ctf.local`
 - `DEFAULT_ADMIN_PASSWORD=admin123456`
 - `DEFAULT_ADMIN_FORCE_PASSWORD_RESET=false`
+- `RUNTIME_ALERT_SCAN_ENABLED=true`
+- `RUNTIME_ALERT_SCAN_INTERVAL_SECONDS=60`
+- `RUNTIME_ALERT_SCAN_INITIAL_DELAY_SECONDS=10`
 
 说明：
 

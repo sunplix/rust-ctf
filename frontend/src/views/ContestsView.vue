@@ -15,13 +15,21 @@
 
     <div v-else-if="contests.length === 0" class="panel">暂无可见比赛。</div>
 
-    <div v-else class="contest-grid">
+    <div v-else class="contest-grid stagger-list">
       <article v-for="contest in contests" :key="contest.id" class="panel contest-card">
         <div class="row-between">
           <h2>{{ contest.title }}</h2>
           <span class="badge">{{ contest.status }}</span>
         </div>
         <p class="muted mono">slug: {{ contest.slug }}</p>
+        <p class="muted">
+          积分规则:
+          {{
+            contest.scoring_mode === "dynamic"
+              ? `dynamic（衰减参数 ${contest.dynamic_decay}）`
+              : "static（固定分值）"
+          }}
+        </p>
         <p class="muted">开始: {{ formatTime(contest.start_at) }}</p>
         <p class="muted">结束: {{ formatTime(contest.end_at) }}</p>
 
@@ -37,10 +45,12 @@
 import { onMounted, ref } from "vue";
 
 import { ApiClientError, listContests, type ContestListItem } from "../api/client";
+import { useUiStore } from "../stores/ui";
 
 const contests = ref<ContestListItem[]>([]);
 const loading = ref(false);
 const error = ref("");
+const uiStore = useUiStore();
 
 function formatTime(input: string) {
   return new Date(input).toLocaleString();
@@ -54,6 +64,7 @@ async function loadContests() {
     contests.value = await listContests();
   } catch (err) {
     error.value = err instanceof ApiClientError ? err.message : "加载比赛失败";
+    uiStore.error("加载比赛失败", error.value);
   } finally {
     loading.value = false;
   }

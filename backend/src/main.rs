@@ -10,12 +10,13 @@ use axum::Router;
 use config::AppConfig;
 use state::AppState;
 use tokio::signal;
+use tokio::time::{sleep, Duration, MissedTickBehavior};
 use tower_http::{
     cors::CorsLayer,
     trace::{DefaultMakeSpan, DefaultOnFailure, DefaultOnRequest, DefaultOnResponse, TraceLayer},
     LatencyUnit,
 };
-use tracing::{info, Level};
+use tracing::{info, warn, Level};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -24,6 +25,7 @@ async fn main() -> anyhow::Result<()> {
 
     let config = AppConfig::from_env()?;
     let state = Arc::new(AppState::new(config.clone()).await?);
+    spawn_runtime_alert_scanner(Arc::clone(&state));
 
     let app = build_router(state);
     let addr: SocketAddr = format!("{}:{}", config.app_host, config.app_port).parse()?;
@@ -69,6 +71,53 @@ fn init_tracing() {
         )
         .compact()
         .init();
+}
+
+fn spawn_runtime_alert_scanner(state: Arc<AppState>) {
+    if !state.config.runtime_alert_scan_enabled {
+        info!("runtime alert scanner disabled by configuration");
+        return;
+    }
+
+    let interval_seconds = state.config.runtime_alert_scan_interval_seconds.clamp(10, 3600);
+    let initial_delay_seconds = state
+        .config
+        .runtime_alert_scan_initial_delay_seconds
+        .min(3600);
+
+    info!(
+        interval_seconds,
+        initial_delay_seconds,
+        "runtime alert scanner task scheduled"
+    );
+
+    tokio::spawn(async move {
+        if initial_delay_seconds > 0 {
+            sleep(Duration::from_secs(initial_delay_seconds)).await;
+        }
+
+        let mut ticker = tokio::time::interval(Duration::from_secs(interval_seconds));
+        ticker.set_missed_tick_behavior(MissedTickBehavior::Delay);
+
+        loop {
+            ticker.tick().await;
+            match routes::admin::run_runtime_alert_scan(state.as_ref()).await {
+                Ok(summary) => {
+                    info!(
+                        upserted = summary.upserted,
+                        auto_resolved = summary.auto_resolved,
+                        open_count = summary.open_count,
+                        acknowledged_count = summary.acknowledged_count,
+                        resolved_count = summary.resolved_count,
+                        "runtime alert scanner tick completed"
+                    );
+                }
+                Err(err) => {
+                    warn!(error = %err, "runtime alert scanner tick failed");
+                }
+            }
+        }
+    });
 }
 
 async fn shutdown_signal() {

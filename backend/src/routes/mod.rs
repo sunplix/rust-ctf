@@ -1,10 +1,11 @@
-mod admin;
+pub(crate) mod admin;
 mod auth;
 mod contests;
 mod health;
 mod instances;
 mod scoreboard;
 mod submissions;
+mod teams;
 
 use std::sync::Arc;
 
@@ -21,4 +22,5 @@ pub fn router() -> Router<Arc<AppState>> {
         .nest("/api/v1", instances::router())
         .nest("/api/v1", scoreboard::router())
         .nest("/api/v1", submissions::router())
+        .nest("/api/v1", teams::router())
 }

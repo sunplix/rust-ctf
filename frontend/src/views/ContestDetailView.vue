@@ -5,7 +5,10 @@
         <p class="muted mono">contest_id: {{ contestId }}</p>
         <h1>题目与提交</h1>
       </div>
-      <RouterLink class="ghost-link" to="/contests">返回比赛列表</RouterLink>
+      <div class="inline-actions">
+        <RouterLink class="ghost-link" to="/teams">队伍中心</RouterLink>
+        <RouterLink class="ghost-link" to="/contests">返回比赛列表</RouterLink>
+      </div>
     </div>
 
     <p v-if="pageError" class="error">{{ pageError }}</p>
@@ -21,18 +24,20 @@
 
         <div v-if="challenges.length === 0" class="muted">暂无可见题目。</div>
 
-        <button
-          v-for="item in challenges"
-          :key="item.id"
-          class="challenge-item"
-          :class="{ active: item.id === selectedChallengeId }"
-          type="button"
-          @click="selectedChallengeId = item.id"
-        >
-          <strong>{{ item.title }}</strong>
-          <span>{{ item.category }} / {{ item.difficulty }}</span>
-          <span>分值: {{ item.static_score }}</span>
-        </button>
+        <div class="stagger-list">
+          <button
+            v-for="item in challenges"
+            :key="item.id"
+            class="challenge-item"
+            :class="{ active: item.id === selectedChallengeId }"
+            type="button"
+            @click="selectedChallengeId = item.id"
+          >
+            <strong>{{ item.title }}</strong>
+            <span>{{ item.category }} / {{ item.difficulty }}</span>
+            <span>分值: {{ item.static_score }}</span>
+          </button>
+        </div>
       </aside>
 
       <main class="panel detail-panel">
@@ -134,6 +139,31 @@
           </tbody>
         </table>
         <p v-else class="muted">暂无榜单数据。</p>
+
+        <div class="row-between" style="margin-top: 1rem;">
+          <h3>比赛公告</h3>
+          <button class="ghost" type="button" @click="loadAnnouncements" :disabled="loadingAnnouncements">
+            {{ loadingAnnouncements ? "刷新中..." : "刷新" }}
+          </button>
+        </div>
+        <p v-if="announcementError" class="error">{{ announcementError }}</p>
+        <div v-if="contestAnnouncements.length === 0" class="muted">暂无公告。</div>
+        <div class="stagger-list">
+          <article
+            v-for="announcement in contestAnnouncements"
+            :key="announcement.id"
+            class="admin-list-item"
+          >
+            <div class="row-between">
+              <strong>{{ announcement.title }}</strong>
+              <span class="badge" v-if="announcement.is_pinned">置顶</span>
+            </div>
+            <p class="muted mono">
+              发布时间：{{ announcement.published_at ? formatTime(announcement.published_at) : formatTime(announcement.created_at) }}
+            </p>
+            <p>{{ announcement.content }}</p>
+          </article>
+        </div>
       </aside>
     </div>
   </section>
@@ -147,8 +177,10 @@ import {
   buildScoreboardWsUrl,
   destroyInstance,
   getInstance,
+  listContestAnnouncements,
   getScoreboard,
   listContestChallenges,
+  type ContestAnnouncementItem,
   type ContestChallengeItem,
   type InstanceResponse,
   type ScoreboardEntry,
@@ -160,12 +192,14 @@ import {
   type SubmitFlagResponse
 } from "../api/client";
 import { useAuthStore } from "../stores/auth";
+import { useUiStore } from "../stores/ui";
 
 const props = defineProps<{
   contestId: string;
 }>();
 
 const authStore = useAuthStore();
+const uiStore = useUiStore();
 
 const challenges = ref<ContestChallengeItem[]>([]);
 const selectedChallengeId = ref("");
@@ -185,6 +219,9 @@ const instanceError = ref("");
 const scoreboard = ref<ScoreboardEntry[]>([]);
 const loadingScoreboard = ref(false);
 const scoreboardError = ref("");
+const contestAnnouncements = ref<ContestAnnouncementItem[]>([]);
+const loadingAnnouncements = ref(false);
+const announcementError = ref("");
 const wsState = ref<"disconnected" | "connecting" | "connected" | "error">("disconnected");
 
 let ws: WebSocket | null = null;
@@ -244,6 +281,20 @@ async function loadScoreboard() {
     scoreboardError.value = err instanceof ApiClientError ? err.message : "加载榜单失败";
   } finally {
     loadingScoreboard.value = false;
+  }
+}
+
+async function loadAnnouncements() {
+  loadingAnnouncements.value = true;
+  announcementError.value = "";
+
+  try {
+    const token = requireAccessToken();
+    contestAnnouncements.value = await listContestAnnouncements(props.contestId, token);
+  } catch (err) {
+    announcementError.value = err instanceof ApiClientError ? err.message : "加载公告失败";
+  } finally {
+    loadingAnnouncements.value = false;
   }
 }
 
@@ -328,10 +379,27 @@ async function handleSubmitFlag() {
       token
     );
 
+    const verdict = submitResult.value.verdict;
+    if (verdict === "accepted" && submitResult.value.score_awarded > 0) {
+      uiStore.success("提交正确", `+${submitResult.value.score_awarded} 分`);
+    } else if (verdict === "accepted") {
+      uiStore.info("已解出", "该题已被你的队伍解出，本次不重复计分。");
+    } else if (verdict === "rate_limited") {
+      uiStore.warning("提交过快", submitResult.value.message);
+    } else {
+      uiStore.warning("提交结果", submitResult.value.message);
+    }
+
     flagInput.value = "";
     await loadScoreboard();
   } catch (err) {
     submitError.value = err instanceof ApiClientError ? err.message : "提交失败";
+    if (err instanceof ApiClientError && err.code === "forbidden") {
+      submitError.value = "提交被拒绝：你可能尚未加入队伍，请先到队伍中心创建或加入队伍。";
+      uiStore.error("提交被拒绝", "你可能尚未加入队伍，请先创建或加入队伍后再提交。");
+    } else {
+      uiStore.error("提交失败", submitError.value);
+    }
   } finally {
     submittingFlag.value = false;
   }
@@ -381,15 +449,20 @@ async function handleInstanceAction(action: "start" | "stop" | "reset" | "destro
 
     if (action === "start") {
       instance.value = await startInstance(payload, token);
+      uiStore.success("实例已启动", instance.value.message);
     } else if (action === "stop") {
       instance.value = await stopInstance(payload, token);
+      uiStore.info("实例已停止", instance.value.message);
     } else if (action === "reset") {
       instance.value = await resetInstance(payload, token);
+      uiStore.info("实例已重置", instance.value.message);
     } else {
       instance.value = await destroyInstance(payload, token);
+      uiStore.warning("实例已销毁", instance.value.message);
     }
   } catch (err) {
     instanceError.value = err instanceof ApiClientError ? err.message : "实例操作失败";
+    uiStore.error("实例操作失败", instanceError.value);
   } finally {
     mutatingInstance.value = false;
   }
@@ -407,6 +480,7 @@ watch(
 onMounted(async () => {
   await loadChallenges();
   await loadScoreboard();
+  await loadAnnouncements();
   startScoreboardWs();
   startScoreboardPolling();
   await loadInstance();

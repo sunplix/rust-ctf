@@ -14,6 +14,9 @@ pub struct AppConfig {
     pub default_admin_email: String,
     pub default_admin_password: String,
     pub default_admin_force_password_reset: bool,
+    pub runtime_alert_scan_enabled: bool,
+    pub runtime_alert_scan_interval_seconds: u64,
+    pub runtime_alert_scan_initial_delay_seconds: u64,
 }
 
 impl AppConfig {
@@ -31,6 +34,9 @@ impl AppConfig {
             .set_default("default_admin_email", "admin@rust-ctf.local")?
             .set_default("default_admin_password", "admin123456")?
             .set_default("default_admin_force_password_reset", false)?
+            .set_default("runtime_alert_scan_enabled", true)?
+            .set_default("runtime_alert_scan_interval_seconds", 60_u64)?
+            .set_default("runtime_alert_scan_initial_delay_seconds", 10_u64)?
             .add_source(::config::Environment::default().separator("__"));
 
         builder.build()?.try_deserialize().map_err(Into::into)
