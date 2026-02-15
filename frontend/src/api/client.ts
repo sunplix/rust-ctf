@@ -200,6 +200,37 @@ export type AdminAuditLogItem = {
   created_at: string;
 };
 
+export type AdminRuntimeInstanceAlertItem = {
+  id: string;
+  contest_id: string;
+  contest_title: string;
+  challenge_id: string;
+  challenge_title: string;
+  team_id: string;
+  team_name: string;
+  status: string;
+  expires_at: string | null;
+  last_heartbeat_at: string | null;
+  updated_at: string;
+};
+
+export type AdminRuntimeOverview = {
+  generated_at: string;
+  total_users: number;
+  total_teams: number;
+  total_contests: number;
+  running_contests: number;
+  total_challenges: number;
+  total_submissions: number;
+  submissions_last_24h: number;
+  instances_total: number;
+  instances_running: number;
+  instances_failed: number;
+  instances_expiring_within_30m: number;
+  instances_expired_not_destroyed: number;
+  recent_failed_instances: AdminRuntimeInstanceAlertItem[];
+};
+
 export async function register(payload: {
   username: string;
   email: string;
@@ -531,6 +562,15 @@ export async function listAdminAuditLogs(
       ...authHeaders(accessToken),
       params: query
     });
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function getAdminRuntimeOverview(accessToken: string): Promise<AdminRuntimeOverview> {
+  try {
+    const { data } = await api.get<AdminRuntimeOverview>("/admin/runtime/overview", authHeaders(accessToken));
     return data;
   } catch (error) {
     throw toApiClientError(error);

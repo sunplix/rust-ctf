@@ -200,6 +200,39 @@ struct AdminAuditLogItem {
     created_at: DateTime<Utc>,
 }
 
+#[derive(Debug, Serialize, FromRow)]
+struct AdminRuntimeInstanceAlertItem {
+    id: Uuid,
+    contest_id: Uuid,
+    contest_title: String,
+    challenge_id: Uuid,
+    challenge_title: String,
+    team_id: Uuid,
+    team_name: String,
+    status: String,
+    expires_at: Option<DateTime<Utc>>,
+    last_heartbeat_at: Option<DateTime<Utc>>,
+    updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize)]
+struct AdminRuntimeOverview {
+    generated_at: DateTime<Utc>,
+    total_users: i64,
+    total_teams: i64,
+    total_contests: i64,
+    running_contests: i64,
+    total_challenges: i64,
+    total_submissions: i64,
+    submissions_last_24h: i64,
+    instances_total: i64,
+    instances_running: i64,
+    instances_failed: i64,
+    instances_expiring_within_30m: i64,
+    instances_expired_not_destroyed: i64,
+    recent_failed_instances: Vec<AdminRuntimeInstanceAlertItem>,
+}
+
 pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .route(
@@ -223,6 +256,7 @@ pub fn router() -> Router<Arc<AppState>> {
         )
         .route("/admin/instances", get(list_instances))
         .route("/admin/audit-logs", get(list_audit_logs))
+        .route("/admin/runtime/overview", get(get_runtime_overview))
 }
 
 async fn list_challenges(
@@ -1065,6 +1099,134 @@ async fn list_audit_logs(
     .map_err(AppError::internal)?;
 
     Ok(Json(rows))
+}
+
+async fn get_runtime_overview(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+) -> AppResult<Json<AdminRuntimeOverview>> {
+    ensure_admin_or_judge(&current_user)?;
+
+    let total_users = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM users")
+        .fetch_one(&state.db)
+        .await
+        .map_err(AppError::internal)?;
+
+    let total_teams = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM teams")
+        .fetch_one(&state.db)
+        .await
+        .map_err(AppError::internal)?;
+
+    let total_contests = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM contests")
+        .fetch_one(&state.db)
+        .await
+        .map_err(AppError::internal)?;
+
+    let running_contests =
+        sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM contests WHERE status = 'running'")
+            .fetch_one(&state.db)
+            .await
+            .map_err(AppError::internal)?;
+
+    let total_challenges = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM challenges")
+        .fetch_one(&state.db)
+        .await
+        .map_err(AppError::internal)?;
+
+    let total_submissions = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM submissions")
+        .fetch_one(&state.db)
+        .await
+        .map_err(AppError::internal)?;
+
+    let submissions_last_24h = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*)
+         FROM submissions
+         WHERE submitted_at >= NOW() - INTERVAL '24 hours'",
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    let instances_total = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM instances")
+        .fetch_one(&state.db)
+        .await
+        .map_err(AppError::internal)?;
+
+    let instances_running =
+        sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM instances WHERE status = 'running'")
+            .fetch_one(&state.db)
+            .await
+            .map_err(AppError::internal)?;
+
+    let instances_failed =
+        sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM instances WHERE status = 'failed'")
+            .fetch_one(&state.db)
+            .await
+            .map_err(AppError::internal)?;
+
+    let instances_expiring_within_30m = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*)
+         FROM instances
+         WHERE status = 'running'
+           AND expires_at IS NOT NULL
+           AND expires_at > NOW()
+           AND expires_at <= NOW() + INTERVAL '30 minutes'",
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    let instances_expired_not_destroyed = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*)
+         FROM instances
+         WHERE status <> 'destroyed'
+           AND expires_at IS NOT NULL
+           AND expires_at <= NOW()",
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    let recent_failed_instances = sqlx::query_as::<_, AdminRuntimeInstanceAlertItem>(
+        "SELECT i.id,
+                i.contest_id,
+                ct.title AS contest_title,
+                i.challenge_id,
+                c.title AS challenge_title,
+                i.team_id,
+                t.name AS team_name,
+                i.status,
+                i.expires_at,
+                i.last_heartbeat_at,
+                i.updated_at
+         FROM instances i
+         JOIN contests ct ON ct.id = i.contest_id
+         JOIN challenges c ON c.id = i.challenge_id
+         JOIN teams t ON t.id = i.team_id
+         WHERE i.status = 'failed'
+         ORDER BY i.updated_at DESC
+         LIMIT 20",
+    )
+    .fetch_all(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    Ok(Json(AdminRuntimeOverview {
+        generated_at: Utc::now(),
+        total_users,
+        total_teams,
+        total_contests,
+        running_contests,
+        total_challenges,
+        total_submissions,
+        submissions_last_24h,
+        instances_total,
+        instances_running,
+        instances_failed,
+        instances_expiring_within_30m,
+        instances_expired_not_destroyed,
+        recent_failed_instances,
+    }))
 }
 
 async fn ensure_contest_exists(state: &AppState, contest_id: Uuid) -> AppResult<()> {

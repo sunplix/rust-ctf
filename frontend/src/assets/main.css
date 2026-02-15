@@ -337,6 +337,29 @@ textarea {
   text-align: left;
 }
 
+.runtime-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 0.8rem;
+}
+
+.metric-card {
+  border: 1px solid rgba(19, 32, 56, 0.14);
+  border-radius: 10px;
+  padding: 0.65rem;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.metric-card h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+}
+
+.metric-card p {
+  margin: 0.18rem 0;
+}
+
 .audit-detail {
   max-width: 420px;
   word-break: break-all;

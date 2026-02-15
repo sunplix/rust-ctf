@@ -267,6 +267,59 @@
 
     <section class="panel">
       <div class="row-between">
+        <h2>运行概览</h2>
+        <span v-if="runtimeOverview" class="muted">更新于 {{ formatTime(runtimeOverview.generated_at) }}</span>
+      </div>
+
+      <p v-if="runtimeError" class="error">{{ runtimeError }}</p>
+
+      <div v-if="runtimeOverview" class="runtime-metrics">
+        <article class="metric-card">
+          <h3>基础规模</h3>
+          <p>用户 {{ runtimeOverview.total_users }} · 队伍 {{ runtimeOverview.total_teams }}</p>
+          <p>比赛 {{ runtimeOverview.total_contests }} · 题目 {{ runtimeOverview.total_challenges }}</p>
+        </article>
+        <article class="metric-card">
+          <h3>比赛与提交</h3>
+          <p>运行中比赛 {{ runtimeOverview.running_contests }}</p>
+          <p>总提交 {{ runtimeOverview.total_submissions }} · 24h 提交 {{ runtimeOverview.submissions_last_24h }}</p>
+        </article>
+        <article class="metric-card">
+          <h3>实例健康</h3>
+          <p>总实例 {{ runtimeOverview.instances_total }} · 运行中 {{ runtimeOverview.instances_running }}</p>
+          <p>失败 {{ runtimeOverview.instances_failed }} · 30 分钟内到期 {{ runtimeOverview.instances_expiring_within_30m }}</p>
+          <p>已过期未销毁 {{ runtimeOverview.instances_expired_not_destroyed }}</p>
+        </article>
+      </div>
+
+      <h3>最近失败实例</h3>
+      <table v-if="runtimeOverview && runtimeOverview.recent_failed_instances.length > 0" class="scoreboard-table">
+        <thead>
+          <tr>
+            <th>更新时间</th>
+            <th>比赛</th>
+            <th>队伍</th>
+            <th>题目</th>
+            <th>状态</th>
+            <th>到期</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in runtimeOverview.recent_failed_instances" :key="item.id">
+            <td>{{ formatTime(item.updated_at) }}</td>
+            <td>{{ item.contest_title }}</td>
+            <td>{{ item.team_name }}</td>
+            <td>{{ item.challenge_title }}</td>
+            <td>{{ item.status }}</td>
+            <td>{{ item.expires_at ? formatTime(item.expires_at) : "-" }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-else class="muted">暂无失败实例。</p>
+    </section>
+
+    <section class="panel">
+      <div class="row-between">
         <h2>实例监控</h2>
         <label class="inline-check">
           <span>状态过滤</span>
@@ -371,6 +424,7 @@ import {
   createAdminChallenge,
   createAdminContest,
   deleteAdminContestChallenge,
+  getAdminRuntimeOverview,
   listAdminAuditLogs,
   listAdminChallenges,
   listAdminContestChallenges,
@@ -381,6 +435,7 @@ import {
   type AdminContestChallengeItem,
   type AdminContestItem,
   type AdminInstanceItem,
+  type AdminRuntimeOverview,
   updateAdminChallenge,
   updateAdminContestStatus,
   updateAdminContestChallenge,
@@ -395,6 +450,7 @@ const contests = ref<AdminContestItem[]>([]);
 const contestBindings = ref<AdminContestChallengeItem[]>([]);
 const instances = ref<AdminInstanceItem[]>([]);
 const auditLogs = ref<AdminAuditLogItem[]>([]);
+const runtimeOverview = ref<AdminRuntimeOverview | null>(null);
 
 const selectedContestId = ref("");
 
@@ -404,6 +460,7 @@ const contestError = ref("");
 const bindingError = ref("");
 const instanceError = ref("");
 const auditError = ref("");
+const runtimeError = ref("");
 
 const refreshing = ref(false);
 const creatingChallenge = ref(false);
@@ -540,6 +597,15 @@ async function loadInstances() {
   }
 }
 
+async function loadRuntimeOverview() {
+  runtimeError.value = "";
+  try {
+    runtimeOverview.value = await getAdminRuntimeOverview(accessTokenOrThrow());
+  } catch (err) {
+    runtimeError.value = err instanceof ApiClientError ? err.message : "加载运行概览失败";
+  }
+}
+
 async function loadAuditLogs() {
   auditLoading.value = true;
   auditError.value = "";
@@ -562,7 +628,13 @@ async function refreshAll() {
   pageError.value = "";
 
   try {
-    await Promise.all([loadChallenges(), loadContests(), loadInstances(), loadAuditLogs()]);
+    await Promise.all([
+      loadChallenges(),
+      loadContests(),
+      loadInstances(),
+      loadRuntimeOverview(),
+      loadAuditLogs()
+    ]);
     await loadContestBindings();
   } catch (err) {
     pageError.value = err instanceof ApiClientError ? err.message : "刷新失败";

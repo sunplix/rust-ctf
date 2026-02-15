@@ -124,17 +124,20 @@ rust-ctf/
 - `backend/`：已提供认证接口（`/api/v1/auth/register`、`/api/v1/auth/login`、`/api/v1/auth/refresh`、`/api/v1/auth/me`）
 - `backend/`：已提供比赛基础接口（`/api/v1/contests`、`/api/v1/contests/{contest_id}/challenges`、`/api/v1/submissions`）
 - `backend/`：已提供管理员接口（题目管理、比赛创建/编辑/状态控制、比赛题目挂载管理、实例监控）
+- `backend/`：已支持默认管理员账号自动初始化（可通过 `DEFAULT_ADMIN_*` 配置）
 - `backend/`：提交接口已接入 Redis 限频（30 秒窗口内最多 10 次）
 - `backend/`：已提供排行榜接口（`/api/v1/contests/{contest_id}/scoreboard`）
 - `backend/`：已提供排行榜 WebSocket 推送接口（`/api/v1/contests/{contest_id}/scoreboard/ws`）
 - `backend/`：排行榜 WebSocket 支持浏览器 Token Query 鉴权（`?access_token=...`，同时兼容 `Authorization: Bearer ...`）
 - `backend/`：已提供实例生命周期接口（`/api/v1/instances/start|stop|reset|destroy|{contest_id}/{challenge_id}`）
 - `backend/`：实例生命周期已接入真实 `docker compose` 编排（模板渲染、compose 文件落盘、启动/停止/重置/销毁）
+- `backend/`：已提供管理员审计日志与运行概览接口（`/api/v1/admin/audit-logs`、`/api/v1/admin/runtime/overview`）
 - `backend/`：判题已支持静态 flag（明文或 Argon2 哈希）与动态 flag（Redis 键 `flag:dynamic:{contest_id}:{challenge_id}:{team_id}`）
 - `backend/`：`script` 判题已支持按题目 metadata 执行外部校验脚本（返回码 0=正确，1=错误，其他=判题异常）
 - `frontend/`：已完成选手最小闭环页面（登录/注册、比赛列表、题目列表、Flag 提交、实例控制、实时榜单显示）
 - `frontend/`：已完成 API 客户端与本地登录态持久化（Pinia + localStorage）
 - `frontend/`：已完成管理员 v2 页面（题目创建/可见性切换、比赛创建与状态切换、题目挂载与排序、实例列表监控）
+- `frontend/`：管理员页面已新增审计日志查询与运行概览监控（失败实例告警、提交与实例统计）
 - `deploy/`：本地开发用 `docker-compose.dev.yml`（PostgreSQL / Redis / Backend / Frontend）
 - `docs/`：初始化后续开发任务说明
 
