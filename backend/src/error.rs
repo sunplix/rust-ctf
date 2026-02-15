@@ -1,5 +1,6 @@
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use serde::Serialize;
+use tracing::{error, warn};
 
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
@@ -73,10 +74,33 @@ struct ErrorEnvelope {
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
         let status = self.status();
+        let code = self.code();
+        let message = self.message();
+
+        match &self {
+            Self::Internal(err) => {
+                error!(
+                    status = status.as_u16(),
+                    code,
+                    message = %message,
+                    error = ?err,
+                    "api request failed with internal error"
+                );
+            }
+            _ => {
+                warn!(
+                    status = status.as_u16(),
+                    code,
+                    message = %message,
+                    "api request rejected"
+                );
+            }
+        }
+
         let body = ErrorEnvelope {
             error: ErrorBody {
-                code: self.code(),
-                message: self.message(),
+                code,
+                message,
             },
         };
 

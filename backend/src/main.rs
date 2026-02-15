@@ -10,8 +10,12 @@ use axum::Router;
 use config::AppConfig;
 use state::AppState;
 use tokio::signal;
-use tower_http::{cors::CorsLayer, trace::TraceLayer};
-use tracing::info;
+use tower_http::{
+    cors::CorsLayer,
+    trace::{DefaultMakeSpan, DefaultOnFailure, DefaultOnRequest, DefaultOnResponse, TraceLayer},
+    LatencyUnit,
+};
+use tracing::{info, Level};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -38,7 +42,21 @@ fn build_router(state: Arc<AppState>) -> Router {
     Router::new()
         .merge(routes::router())
         .with_state(state)
-        .layer(TraceLayer::new_for_http())
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(DefaultMakeSpan::new().level(Level::INFO).include_headers(false))
+                .on_request(DefaultOnRequest::new().level(Level::INFO))
+                .on_response(
+                    DefaultOnResponse::new()
+                        .level(Level::INFO)
+                        .latency_unit(LatencyUnit::Millis),
+                )
+                .on_failure(
+                    DefaultOnFailure::new()
+                        .level(Level::ERROR)
+                        .latency_unit(LatencyUnit::Millis),
+                ),
+        )
         .layer(CorsLayer::permissive())
 }
 

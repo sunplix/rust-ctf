@@ -11,7 +11,7 @@ use tokio::{
     process::Command,
     time::{timeout, Duration as TokioDuration},
 };
-use tracing::warn;
+use tracing::{info, warn};
 use uuid::Uuid;
 
 use crate::{
@@ -71,8 +71,22 @@ async fn submit_flag(
     current_user: AuthenticatedUser,
     Json(req): Json<SubmitFlagRequest>,
 ) -> AppResult<Json<SubmitFlagResponse>> {
+    info!(
+        user_id = %current_user.user_id,
+        user_role = %current_user.role,
+        contest_id = %req.contest_id,
+        challenge_id = %req.challenge_id,
+        "submission request received"
+    );
+
     let submitted_flag = req.flag.trim();
     if submitted_flag.is_empty() {
+        warn!(
+            user_id = %current_user.user_id,
+            contest_id = %req.contest_id,
+            challenge_id = %req.challenge_id,
+            "submission rejected: empty flag"
+        );
         return Err(AppError::BadRequest("flag is required".to_string()));
     }
 
@@ -82,8 +96,29 @@ async fn submit_flag(
     .bind(current_user.user_id)
     .fetch_optional(&state.db)
     .await
-    .map_err(AppError::internal)?
-    .ok_or(AppError::Forbidden)?;
+    .map_err(AppError::internal)?;
+
+    let membership = match membership {
+        Some(row) => row,
+        None => {
+            warn!(
+                user_id = %current_user.user_id,
+                user_role = %current_user.role,
+                contest_id = %req.contest_id,
+                challenge_id = %req.challenge_id,
+                "submission denied: user has no team membership"
+            );
+            return Err(AppError::Forbidden);
+        }
+    };
+
+    info!(
+        user_id = %current_user.user_id,
+        team_id = %membership.team_id,
+        contest_id = %req.contest_id,
+        challenge_id = %req.challenge_id,
+        "submission team membership resolved"
+    );
 
     let judge_ctx = sqlx::query_as::<_, JudgeContextRow>(
         "SELECT ct.status AS contest_status,
@@ -110,12 +145,33 @@ async fn submit_flag(
         "challenge is not available in this contest".to_string(),
     ))?;
 
-    validate_submission_window(&judge_ctx)?;
+    if let Err(err) = validate_submission_window(&judge_ctx) {
+        warn!(
+            user_id = %current_user.user_id,
+            team_id = %membership.team_id,
+            contest_id = %req.contest_id,
+            challenge_id = %req.challenge_id,
+            contest_status = %judge_ctx.contest_status,
+            is_visible = judge_ctx.is_visible,
+            release_at = ?judge_ctx.release_at,
+            error = %err,
+            "submission rejected by contest/challenge window validation"
+        );
+        return Err(err);
+    }
 
     if let Err(err) =
         enforce_submission_rate_limit(state.as_ref(), current_user.user_id, req.contest_id).await
     {
         if let AppError::TooManyRequests(message) = err {
+            warn!(
+                user_id = %current_user.user_id,
+                team_id = %membership.team_id,
+                contest_id = %req.contest_id,
+                challenge_id = %req.challenge_id,
+                message = %message,
+                "submission rate limited"
+            );
             let submitted_at = insert_submission(
                 state.as_ref(),
                 req.contest_id,
@@ -187,6 +243,17 @@ async fn submit_flag(
 
     let total_score = fetch_total_score(state.as_ref(), req.contest_id, membership.team_id).await?;
     publish_scoreboard_update(state.as_ref(), req.contest_id).await;
+
+    info!(
+        user_id = %current_user.user_id,
+        team_id = %membership.team_id,
+        contest_id = %req.contest_id,
+        challenge_id = %req.challenge_id,
+        verdict = %verdict,
+        score_awarded,
+        total_score,
+        "submission judged"
+    );
 
     Ok(Json(SubmitFlagResponse {
         verdict,
