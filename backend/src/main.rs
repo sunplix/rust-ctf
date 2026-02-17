@@ -2,6 +2,7 @@ mod auth;
 mod config;
 mod error;
 mod routes;
+mod runtime_template;
 mod state;
 
 use std::{net::SocketAddr, sync::Arc};

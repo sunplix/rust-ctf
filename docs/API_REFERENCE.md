@@ -312,9 +312,17 @@
 - 启动（或复用）队伍题目实例
 - 题目限制：
   - `challenge_type` 必须是 `dynamic` 或 `internal`
-  - 必须存在 `compose_template`
+  - 运行模式二选一：
+    - `metadata.runtime.mode=compose`（默认）：使用 `compose_template`
+    - `metadata.runtime.mode=single_image`：使用 `metadata.runtime.image + metadata.runtime.internal_port` 自动生成运行模板
   - 题目需可见且已到发布时间
   - 非 `admin|judge` 时比赛需 `running`
+- 访问入口：
+  - `compose` 模式默认启用 `ssh_bastion`（可通过 `metadata.runtime.access_mode=direct` 关闭）
+  - `single_image` 模式会自动分配随机高位端口并映射到指定内部端口
+- 启动自愈：
+  - 首次 `compose up` 失败时，后端会自动尝试一次 `compose down` + `compose up --force-recreate` 自愈重试
+  - 若重试仍失败，接口返回 `400`，并在实例记录上标记为 `failed`
 - 实例 TTL：2 小时（会写入 `expires_at`）
 
 ### `POST /instances/stop`
@@ -324,6 +332,7 @@
 ### `POST /instances/reset`
 
 - 先 `down` 再 `up --force-recreate` 重置实例
+- 若 `up` 阶段失败，同样会触发一次自动自愈重试（`down` + `up --force-recreate`）
 
 ### `POST /instances/destroy`
 
@@ -335,6 +344,18 @@
 - 仅当该队伍对应实例处于 `running` 状态时成功
 - 若实例不存在或非运行态，返回 `400`（`running instance not found`）
 
+### `POST /instances/heartbeat/report`
+
+- 供靶机内“心跳上报器”调用的无会话心跳接口
+- 请求体：
+  - `token`：实例心跳令牌（由后端在 `compose_template` 渲染阶段注入）
+- 行为：
+  - 校验令牌签名与有效期
+  - 将目标实例 `last_heartbeat_at` 刷新为 `now`
+- 错误：
+  - 令牌无效或过期：`401`
+  - 实例不存在或非 `running`：`400`
+
 ### `GET /instances/{contest_id}/{challenge_id}`
 
 - 查询当前用户所属队伍在该题目的实例
@@ -344,11 +365,23 @@
 - 后端默认启用后台实例回收器：按配置周期扫描 `expires_at <= now` 且未销毁实例，自动执行销毁与运行目录清理。
 - 回收器配置项：`INSTANCE_REAPER_ENABLED`、`INSTANCE_REAPER_INTERVAL_SECONDS`、`INSTANCE_REAPER_INITIAL_DELAY_SECONDS`、`INSTANCE_REAPER_BATCH_SIZE`。
 - 实例默认资源配额支持配置：`INSTANCE_DEFAULT_CPU_LIMIT`、`INSTANCE_DEFAULT_MEMORY_LIMIT_MB`。
+- 主机随机端口配置：`INSTANCE_HOST_PORT_MIN`、`INSTANCE_HOST_PORT_MAX`。
+- 选手外部访问主机名配置：`INSTANCE_PUBLIC_HOST`。
+- 靶机心跳上报配置：`INSTANCE_HEARTBEAT_REPORT_URL`、`INSTANCE_HEARTBEAT_REPORT_INTERVAL_SECONDS`。
 - 心跳超时阈值与自动处置配置：`INSTANCE_HEARTBEAT_STALE_SECONDS`、`INSTANCE_STALE_REAPER_ENABLED`、`INSTANCE_STALE_REAPER_BATCH_SIZE`（默认仅告警，不自动销毁）。
 
 ### 响应模型 `InstanceResponse`
 
-`id,contest_id,challenge_id,team_id,status,subnet,compose_project_name,entrypoint_url,cpu_limit,memory_limit_mb,started_at,expires_at,destroyed_at,last_heartbeat_at,message`
+`id,contest_id,challenge_id,team_id,status,subnet,compose_project_name,entrypoint_url,cpu_limit,memory_limit_mb,started_at,expires_at,destroyed_at,last_heartbeat_at,network_access?,message`
+
+`network_access`（仅 `ssh_bastion` 模式返回）：
+
+- `mode`：固定 `ssh_bastion`
+- `host`：连接主机
+- `port`：随机高位端口
+- `username`：跳板账号
+- `password`：跳板密码
+- `note`：接入说明
 
 ## 9. 排行榜 API
 
@@ -425,6 +458,28 @@
 - 列表字段：  
   `id,title,slug,category,difficulty,static_score,challenge_type,flag_mode,status,is_visible,tags,writeup_visibility,current_version,created_at,updated_at`
 
+### `GET /admin/challenges/runtime-template/lint`
+
+- 用途：批量扫描题库运行模板规范性（`compose_template` 或 `metadata.runtime.single_image`）
+- Query：
+  - `limit`（默认500，1..5000）
+  - `challenge_type`（`static|dynamic|internal`，可选）
+  - `status`（`draft|published|offline`，可选）
+  - `keyword`（按标题/slug 模糊过滤，可选）
+  - `only_errors`（默认 `false`；为 `true` 时只返回错误项）
+- 返回：
+  - `generated_at`
+  - `scanned_total`（扫描总数）
+  - `returned_total`（实际返回项数）
+  - `ok_count`
+  - `error_count`
+  - `items[]`
+
+`items[]` 字段：
+
+- `id,title,slug,challenge_type,status,is_visible,has_compose_template,lint_status,message,updated_at`
+- `lint_status` 目前为 `ok|error`
+
 ### `POST /admin/challenges`
 
 - 支持字段：
@@ -447,6 +502,27 @@
   - `writeup_content` 最长 20000
   - `slug` 唯一
 - 成功后自动写入 `challenge_versions` 初始快照
+- `metadata.runtime` 支持：
+  - `mode`：`compose`（默认）或 `single_image`
+  - `access_mode`：`direct` 或 `ssh_bastion`（`compose` 模式默认 `ssh_bastion`）
+  - `single_image` 模式专用：
+    - `image`：镜像仓库地址（如 `nginx:alpine`）
+    - `internal_port`：容器内部端口（1..65535）
+    - `protocol`：`http|https|tcp`（默认 `http`）
+- `compose_template` 常用占位符（渲染后替换）：
+  - 已有：`{{SUBNET}}`、`{{ENTRYPOINT_HOST}}`、`{{DYNAMIC_FLAG}}`、`{{CPU_LIMIT}}`、`{{MEMORY_LIMIT_MB}}` 等
+  - 端口映射/接入新增：`{{HOST_PORT}}`、`{{PUBLIC_HOST}}`、`{{ACCESS_HOST_PORT}}`、`{{ACCESS_USERNAME}}`、`{{ACCESS_PASSWORD}}`
+  - 心跳上报新增：`{{HEARTBEAT_REPORT_URL}}`、`{{HEARTBEAT_REPORT_TOKEN}}`、`{{HEARTBEAT_INTERVAL_SECONDS}}`
+  - 自定义变量：`{{VAR:NAME}}`
+- `compose_template` schema 约束：
+  - 仅允许使用“保留占位符”与 `{{VAR:NAME}}` 两类占位符
+  - `{{VAR:NAME}}` 必须在 `metadata.compose_variables` 中定义
+  - `dynamic/internal` 题型必须满足：
+    - `metadata.runtime.mode=compose` 时提供有效 `compose_template`
+    - `metadata.runtime.mode=single_image` 时提供有效 `metadata.runtime.image/internal_port`
+- `metadata.compose_variables` 支持两种格式：
+  - 对象映射：`{"APP_PORT":"8080","DB_HOST":{"value":"db","required":true}}`
+  - 数组定义：`[{"name":"APP_PORT","value":"8080","required":true}]`
 
 ### `PATCH /admin/challenges/{challenge_id}`
 
@@ -614,6 +690,7 @@
 - `400 challenge has not been released yet`：题目已挂载但 `release_at` 未到。
 - `200 verdict=rate_limited`：不是 HTTP 失败，而是业务限频（30 秒内超过 10 次）。
 - `400 challenge type does not require runtime instance`：仅 `dynamic/internal` 题型可启动实例。
+- `runtime alert: instance_heartbeat_stale`：见 `docs/STALE_HEARTBEAT_REMEDIATION_RUNBOOK.md` 进行定位与处置。
 
 ## 12. 后续维护建议
 

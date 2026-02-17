@@ -362,6 +362,60 @@ export type AdminRuntimeOverview = {
   recent_failed_instances: AdminRuntimeInstanceAlertItem[];
 };
 
+export type AdminRuntimeAlertItem = {
+  id: string;
+  alert_type: string;
+  severity: string;
+  status: string;
+  source_type: string;
+  source_id: string | null;
+  fingerprint: string;
+  title: string;
+  message: string;
+  detail: Record<string, unknown>;
+  first_seen_at: string;
+  last_seen_at: string;
+  acknowledged_at: string | null;
+  acknowledged_by: string | null;
+  acknowledged_by_username: string | null;
+  resolved_at: string | null;
+  resolved_by: string | null;
+  resolved_by_username: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdminRuntimeAlertScanResponse = {
+  generated_at: string;
+  upserted: number;
+  auto_resolved: number;
+  open_count: number;
+  acknowledged_count: number;
+  resolved_count: number;
+};
+
+export type AdminChallengeRuntimeLintItem = {
+  id: string;
+  title: string;
+  slug: string;
+  challenge_type: string;
+  status: string;
+  is_visible: boolean;
+  has_compose_template: boolean;
+  lint_status: string;
+  message: string | null;
+  updated_at: string;
+};
+
+export type AdminChallengeRuntimeLintResponse = {
+  generated_at: string;
+  scanned_total: number;
+  returned_total: number;
+  ok_count: number;
+  error_count: number;
+  items: AdminChallengeRuntimeLintItem[];
+};
+
 export async function register(payload: {
   username: string;
   email: string;
@@ -1207,6 +1261,99 @@ export async function listAdminAuditLogs(
 export async function getAdminRuntimeOverview(accessToken: string): Promise<AdminRuntimeOverview> {
   try {
     const { data } = await api.get<AdminRuntimeOverview>("/admin/runtime/overview", authHeaders(accessToken));
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function listAdminRuntimeAlerts(
+  accessToken: string,
+  query?: {
+    status?: string;
+    severity?: string;
+    alert_type?: string;
+    limit?: number;
+  }
+): Promise<AdminRuntimeAlertItem[]> {
+  try {
+    const { data } = await api.get<AdminRuntimeAlertItem[]>("/admin/runtime/alerts", {
+      ...authHeaders(accessToken),
+      params: query
+    });
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function scanAdminRuntimeAlerts(
+  accessToken: string
+): Promise<AdminRuntimeAlertScanResponse> {
+  try {
+    const { data } = await api.post<AdminRuntimeAlertScanResponse>(
+      "/admin/runtime/alerts/scan",
+      {},
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function acknowledgeAdminRuntimeAlert(
+  alertId: string,
+  accessToken: string,
+  payload?: { note?: string }
+): Promise<AdminRuntimeAlertItem> {
+  try {
+    const { data } = await api.post<AdminRuntimeAlertItem>(
+      `/admin/runtime/alerts/${alertId}/ack`,
+      payload ?? {},
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function resolveAdminRuntimeAlert(
+  alertId: string,
+  accessToken: string,
+  payload?: { note?: string }
+): Promise<AdminRuntimeAlertItem> {
+  try {
+    const { data } = await api.post<AdminRuntimeAlertItem>(
+      `/admin/runtime/alerts/${alertId}/resolve`,
+      payload ?? {},
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function listAdminChallengeRuntimeTemplateLint(
+  accessToken: string,
+  query?: {
+    limit?: number;
+    challenge_type?: string;
+    status?: string;
+    keyword?: string;
+    only_errors?: boolean;
+  }
+): Promise<AdminChallengeRuntimeLintResponse> {
+  try {
+    const { data } = await api.get<AdminChallengeRuntimeLintResponse>(
+      "/admin/challenges/runtime-template/lint",
+      {
+        ...authHeaders(accessToken),
+        params: query
+      }
+    );
     return data;
   } catch (error) {
     throw toApiClientError(error);

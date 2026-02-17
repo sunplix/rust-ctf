@@ -23,15 +23,23 @@
 19. Instance expired reaper is ready (startup background task + configurable interval/batch).
 20. Instance resource quota enforcement and heartbeat API are ready (`INSTANCE_DEFAULT_CPU_LIMIT`, `INSTANCE_DEFAULT_MEMORY_LIMIT_MB`, `POST /instances/heartbeat`).
 21. Stale-heartbeat remediation policy is ready (configurable threshold + optional auto-reaper, default off).
-22. Next: runtime alert UI integration + heartbeat reporter agent in challenge runtime.
+22. Runtime heartbeat reporter integration is ready (`POST /instances/heartbeat/report` + compose placeholders + reporter script template).
+23. Runtime alert UI integration is ready (admin runtime alert list/filter/scan/ack/resolve).
+24. Stale-heartbeat remediation runbook is ready (`docs/STALE_HEARTBEAT_REMEDIATION_RUNBOOK.md`).
+25. Compose variable schema validation is ready (`{{VAR:NAME}}` + `metadata.compose_variables` validation).
+26. Instance failure self-healing strategy is ready (start/reset failure auto retry with `down` + `up --force-recreate`).
+27. Template schema examples are ready (`README.md` section 8.9).
+28. Challenge library runtime-template lint tooling is ready (`GET /admin/challenges/runtime-template/lint` + `backend/scripts/runtime/challenge_template_lint.sh`).
+29. Runtime-template lint is integrated in admin UI (challenge module sub-tab: 模板校验).
+30. Next: add CI health/lint pipeline and failure-threshold policy for lint reports.
 
 ## Frontend
 
 1. API client layer and auth state persistence are ready.
 2. Player pages are ready: login/register, contest list, challenge detail, submission panel, instance controls.
 3. Scoreboard websocket consumer and polling fallback are ready.
-4. Admin v2 page is ready: challenge management, contest management, challenge binding management, instance monitor.
-5. Next: admin detail editors (challenge full metadata editor, contest advanced config) and operation audit views.
+4. Admin v2 page is ready: challenge management, contest management, challenge binding management, instance/runtime monitor.
+5. Next: admin detail editors (challenge full metadata editor, contest advanced config) and operation runbook shortcuts.
 
 ## Infrastructure
 

@@ -160,11 +160,14 @@ rust-ctf/
 - `backend/`：排行榜 WebSocket 支持浏览器 Token Query 鉴权（`?access_token=...`，同时兼容 `Authorization: Bearer ...`）
 - `backend/`：已提供实例生命周期接口（`/api/v1/instances/start|stop|reset|destroy|heartbeat|{contest_id}/{challenge_id}`）
 - `backend/`：实例生命周期已接入真实 `docker compose` 编排（模板渲染、compose 文件落盘、启动/停止/重置/销毁）
+- `backend/`：实例启动/重置已支持一次自动自愈重试（失败后自动执行 `down` + `up --force-recreate`）
 - `backend/`：实例已支持默认资源配额注入（CPU/内存）与心跳刷新（`last_heartbeat_at`）
 - `backend/`：已支持实例过期自动回收（后台定时扫描 `expires_at`，批量执行销毁与运行目录清理）
 - `backend/`：已支持心跳超时阈值配置与可选自动回收策略（默认关闭，避免误回收未接入心跳上报的靶机）
+- `backend/`：已支持靶机内部心跳上报接口（`POST /api/v1/instances/heartbeat/report`）与 compose 模板令牌注入占位符
 - `backend/`：已提供管理员审计日志与运行概览接口（`/api/v1/admin/audit-logs`、`/api/v1/admin/runtime/overview`）
 - `backend/`：已提供运行告警通知接口（`/api/v1/admin/runtime/alerts`、`/api/v1/admin/runtime/alerts/scan`、`/api/v1/admin/runtime/alerts/{alert_id}/ack|resolve`），并支持后台定时扫描与自动收敛
+- `backend/`：已支持 `compose_template` 变量 schema 校验（保留占位符 + `{{VAR:NAME}}` + `metadata.compose_variables` 定义校验）
 - `backend/`：已提供比赛公告管理与选手公告读取接口（管理员 CRUD + 选手只读已发布）
 - `backend/`：判题已支持静态 flag（明文或 Argon2 哈希）与动态 flag（Redis 键 `flag:dynamic:{contest_id}:{challenge_id}:{team_id}`）
 - `backend/`：判题已支持比赛级动态积分（根据已解队伍数按衰减公式计算实际得分）
@@ -174,13 +177,15 @@ rust-ctf/
 - `frontend/`：已新增账户中心页面（个人资料维护、密码修改、登录历史查看）
 - `frontend/`：已完成队伍中心增强版（邀请处理、队伍编辑、成员管理、队长转让、离队/解散）
 - `frontend/`：已完成管理员 v2 页面（模块/子导航拆分、题目创建/可见性切换、比赛创建与状态切换、题目挂载与排序、公告管理、实例列表监控）
-- `frontend/`：管理员页面已新增审计日志查询与运行概览监控（失败实例告警、提交与实例统计）
+- `frontend/`：管理员页面已新增审计日志、运行概览、运行告警与模板校验面板（支持筛选、触发扫描、ack/resolve）
 - `frontend/`：敏感/细节字段（如判题哈希与 compose 模板）已下沉到二次展开面板，降低主界面拥挤度
 - `deploy/`：本地开发用 `docker-compose.dev.yml`（PostgreSQL / Redis / Backend / Frontend）
 - `docs/`：初始化后续开发任务说明
 - `docs/`：全量后端接口文档 `docs/API_REFERENCE.md`（后续开发持续维护）
+- `docs/`：靶机心跳上报接入指南 `docs/RUNTIME_HEARTBEAT_REPORTER.md`
+- `docs/`：心跳超时处置手册 `docs/STALE_HEARTBEAT_REMEDIATION_RUNBOOK.md`
 
-下一步进入 M3 深化（心跳上报联动与资源策略细化）与管理端可观测性增强阶段。
+下一步进入 M3 深化（模板规范示例与批量校验工具）阶段。
 
 ## 8. 本地启动（可用版）
 
@@ -275,6 +280,9 @@ docker info >/dev/null && docker compose version
 - `DEFAULT_ADMIN_FORCE_PASSWORD_RESET=false`
 - `INSTANCE_DEFAULT_CPU_LIMIT=1.0`
 - `INSTANCE_DEFAULT_MEMORY_LIMIT_MB=512`
+- `INSTANCE_PUBLIC_HOST=127.0.0.1`
+- `INSTANCE_HOST_PORT_MIN=32768`
+- `INSTANCE_HOST_PORT_MAX=60999`
 - `RUNTIME_ALERT_SCAN_ENABLED=true`
 - `RUNTIME_ALERT_SCAN_INTERVAL_SECONDS=60`
 - `RUNTIME_ALERT_SCAN_INITIAL_DELAY_SECONDS=10`
@@ -283,6 +291,8 @@ docker info >/dev/null && docker compose version
 - `INSTANCE_REAPER_INITIAL_DELAY_SECONDS=20`
 - `INSTANCE_REAPER_BATCH_SIZE=30`
 - `INSTANCE_HEARTBEAT_STALE_SECONDS=300`
+- `INSTANCE_HEARTBEAT_REPORT_URL=http://host.docker.internal:8080/api/v1/instances/heartbeat/report`
+- `INSTANCE_HEARTBEAT_REPORT_INTERVAL_SECONDS=30`
 - `INSTANCE_STALE_REAPER_ENABLED=false`
 - `INSTANCE_STALE_REAPER_BATCH_SIZE=20`
 
@@ -306,3 +316,108 @@ docker info >/dev/null && docker compose version
 ```
 
 后端会向脚本注入环境变量：`SUBMITTED_FLAG`、`CONTEST_ID`、`CHALLENGE_ID`、`TEAM_ID`。
+
+### 8.8 靶机心跳上报接入示例
+
+可在题目 `compose_template` 中使用以下占位符：
+
+- `{{HEARTBEAT_REPORT_URL}}`
+- `{{HEARTBEAT_REPORT_TOKEN}}`
+- `{{HEARTBEAT_INTERVAL_SECONDS}}`
+
+示例（选手容器内后台上报心跳）：
+
+```yaml
+services:
+  box:
+    image: alpine:3.20
+    command: >
+      sh -c "apk add --no-cache curl >/dev/null 2>&1;
+             /opt/ctf/heartbeat_reporter.sh &
+             sleep 3600"
+    environment:
+      HEARTBEAT_REPORT_URL: "{{HEARTBEAT_REPORT_URL}}"
+      HEARTBEAT_REPORT_TOKEN: "{{HEARTBEAT_REPORT_TOKEN}}"
+      HEARTBEAT_INTERVAL_SECONDS: "{{HEARTBEAT_INTERVAL_SECONDS}}"
+```
+
+可复用脚本参考：`backend/scripts/runtime/heartbeat_reporter.sh`。
+
+### 8.9 Compose 变量 Schema（M3）
+
+`compose_template` 现支持自定义变量占位符 `{{VAR:NAME}}`，并要求在题目 `metadata.compose_variables` 中定义。
+
+示例：
+
+```yaml
+services:
+  web:
+    image: nginx:alpine
+    ports:
+      - "{{VAR:WEB_PORT}}:80"
+    environment:
+      APP_ENV: "{{VAR:APP_ENV}}"
+      HEARTBEAT_REPORT_URL: "{{HEARTBEAT_REPORT_URL}}"
+```
+
+```json
+{
+  "compose_variables": [
+    { "name": "WEB_PORT", "value": "18080", "required": true },
+    { "name": "APP_ENV", "default": "prod" }
+  ]
+}
+```
+
+校验规则：
+
+- 模板仅允许保留占位符与 `{{VAR:NAME}}`
+- `NAME` 仅允许 `A-Z0-9_`，最长 64
+- 模板引用到的每个变量都必须在 `metadata.compose_variables` 中定义
+
+### 8.10 运行模式：`compose` 与 `single_image`
+
+题目运行时支持两种模式（通过 `metadata.runtime` 控制）：
+
+1. `compose`（默认）
+- 使用题目提供的 `compose_template`
+- 默认自动注入队伍隔离 SSH 跳板（`access_mode=ssh_bastion`），选手进入跳板后可对 10.x.x.0/24 子网做端口扫描与横向渗透
+- 若要关闭跳板，可显式设置 `metadata.runtime.access_mode=direct`
+
+2. `single_image`
+- 适合 Web/Pwn 等“单镜像单端口”题
+- 无需 `compose_template`，由平台根据镜像仓库地址自动生成运行模板
+- 启动时自动选择随机高位端口并映射到指定内部端口
+
+示例：
+
+```json
+{
+  "runtime": {
+    "mode": "single_image",
+    "image": "nginx:alpine",
+    "internal_port": 80,
+    "protocol": "http"
+  }
+}
+```
+
+对应实例返回的 `entrypoint_url` 将类似：`http://127.0.0.1:32768`（端口随机）。
+
+### 8.11 题库模板批量 Lint
+
+可使用管理端 API：
+
+- `GET /api/v1/admin/challenges/runtime-template/lint`
+
+也可直接运行脚本（默认使用 `admin/admin123456`）：
+
+```bash
+backend/scripts/runtime/challenge_template_lint.sh
+```
+
+仅看错误项：
+
+```bash
+ONLY_ERRORS=true backend/scripts/runtime/challenge_template_lint.sh
+```

@@ -47,6 +47,14 @@
       >
         版本与附件
       </button>
+      <button
+        class="ghost"
+        type="button"
+        :class="{ active: challengeSubTab === 'lint' }"
+        @click="challengeSubTab = 'lint'"
+      >
+        模板校验
+      </button>
     </div>
 
     <div v-if="adminModule === 'contests'" class="actions-row module-tabs">
@@ -84,6 +92,14 @@
         @click="operationsSubTab = 'runtime'"
       >
         运行概览
+      </button>
+      <button
+        class="ghost"
+        type="button"
+        :class="{ active: operationsSubTab === 'alerts' }"
+        @click="operationsSubTab = 'alerts'"
+      >
+        运行告警
       </button>
       <button
         class="ghost"
@@ -342,6 +358,121 @@
         <p v-if="challengeSubTab === 'versions' && !selectedChallenge" class="muted">
           请先在“题库配置”中选择一个题目，再切换到版本管理。
         </p>
+
+        <template v-if="challengeSubTab === 'lint'">
+          <div class="row-between">
+            <h3>运行模板校验</h3>
+            <button
+              class="ghost"
+              type="button"
+              @click="loadChallengeRuntimeLint()"
+              :disabled="loadingChallengeRuntimeLint"
+            >
+              {{ loadingChallengeRuntimeLint ? "扫描中..." : "刷新校验" }}
+            </button>
+          </div>
+
+          <div class="actions-row">
+            <label>
+              <span>题型</span>
+              <select v-model="challengeLintTypeFilter">
+                <option value="">all</option>
+                <option value="static">static</option>
+                <option value="dynamic">dynamic</option>
+                <option value="internal">internal</option>
+              </select>
+            </label>
+            <label>
+              <span>状态</span>
+              <select v-model="challengeLintStatusFilter">
+                <option value="">all</option>
+                <option value="draft">draft</option>
+                <option value="published">published</option>
+                <option value="offline">offline</option>
+              </select>
+            </label>
+            <label>
+              <span>关键词</span>
+              <input v-model.trim="challengeLintKeywordFilter" placeholder="标题或 slug" />
+            </label>
+            <label>
+              <span>条数</span>
+              <input v-model.number="challengeLintLimit" type="number" min="1" max="5000" />
+            </label>
+            <label class="inline-check">
+              <span>仅错误</span>
+              <input v-model="challengeLintOnlyErrors" type="checkbox" />
+            </label>
+            <button
+              class="ghost"
+              type="button"
+              @click="loadChallengeRuntimeLint()"
+              :disabled="loadingChallengeRuntimeLint"
+            >
+              应用筛选
+            </button>
+          </div>
+
+          <p v-if="challengeLintError" class="error">{{ challengeLintError }}</p>
+
+          <div v-if="challengeRuntimeLint" class="challenge-lint-metrics">
+            <article class="metric-card">
+              <h4>扫描总数</h4>
+              <p>{{ challengeRuntimeLint.scanned_total }}</p>
+            </article>
+            <article class="metric-card">
+              <h4>通过</h4>
+              <p>{{ challengeRuntimeLint.ok_count }}</p>
+            </article>
+            <article class="metric-card">
+              <h4>错误</h4>
+              <p>{{ challengeRuntimeLint.error_count }}</p>
+            </article>
+            <article class="metric-card">
+              <h4>更新时间</h4>
+              <p>{{ formatTime(challengeRuntimeLint.generated_at) }}</p>
+            </article>
+          </div>
+
+          <table
+            v-if="challengeLintItems.length > 0"
+            class="scoreboard-table challenge-lint-table"
+          >
+            <thead>
+              <tr>
+                <th>题目</th>
+                <th>题型</th>
+                <th>状态</th>
+                <th>模板</th>
+                <th>校验</th>
+                <th>更新时间</th>
+                <th>信息</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in challengeLintItems" :key="item.id">
+                <td>
+                  <strong>{{ item.title }}</strong>
+                  <p class="muted mono">{{ item.slug }}</p>
+                </td>
+                <td>{{ item.challenge_type }}</td>
+                <td>{{ item.status }}</td>
+                <td>{{ item.has_compose_template ? "yes" : "no" }}</td>
+                <td>
+                  <span
+                    class="badge"
+                    :class="item.lint_status === 'error' ? 'lint-badge-error' : 'lint-badge-ok'"
+                  >
+                    {{ item.lint_status }}
+                  </span>
+                </td>
+                <td>{{ formatTime(item.updated_at) }}</td>
+                <td class="mono audit-detail">{{ item.message ?? "-" }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p v-else class="muted">暂无匹配的模板校验记录。</p>
+        </template>
       </section>
 
       <section v-if="adminModule === 'contests' && contestSubTab === 'contests'" class="panel">
@@ -789,6 +920,139 @@
       <p v-else class="muted">暂无失败实例。</p>
     </section>
 
+    <section v-if="adminModule === 'operations' && operationsSubTab === 'alerts'" class="panel">
+      <div class="row-between">
+        <h2>运行告警</h2>
+        <div class="actions-row compact-actions">
+          <button class="ghost" type="button" @click="loadRuntimeAlerts()" :disabled="loadingRuntimeAlerts">
+            {{ loadingRuntimeAlerts ? "加载中..." : "刷新告警" }}
+          </button>
+          <button class="primary" type="button" @click="handleScanRuntimeAlerts" :disabled="runtimeAlertScanBusy">
+            {{ runtimeAlertScanBusy ? "扫描中..." : "触发扫描" }}
+          </button>
+        </div>
+      </div>
+
+      <div class="actions-row">
+        <label>
+          <span>状态</span>
+          <select v-model="runtimeAlertStatusFilter">
+            <option value="">all</option>
+            <option value="open">open</option>
+            <option value="acknowledged">acknowledged</option>
+            <option value="resolved">resolved</option>
+          </select>
+        </label>
+        <label>
+          <span>级别</span>
+          <select v-model="runtimeAlertSeverityFilter">
+            <option value="">all</option>
+            <option value="info">info</option>
+            <option value="warning">warning</option>
+            <option value="critical">critical</option>
+          </select>
+        </label>
+        <label>
+          <span>告警类型</span>
+          <input v-model.trim="runtimeAlertTypeFilter" placeholder="instance_heartbeat_stale" />
+        </label>
+        <label>
+          <span>条数</span>
+          <input v-model.number="runtimeAlertLimit" type="number" min="1" max="500" />
+        </label>
+        <button class="ghost" type="button" @click="loadRuntimeAlerts()" :disabled="loadingRuntimeAlerts">
+          应用筛选
+        </button>
+      </div>
+
+      <p v-if="runtimeAlertError" class="error">{{ runtimeAlertError }}</p>
+
+      <div class="runtime-alert-layout">
+        <div class="runtime-alert-list">
+          <button
+            v-for="item in runtimeAlerts"
+            :key="item.id"
+            class="runtime-alert-item"
+            :class="[
+              { active: selectedRuntimeAlertId === item.id },
+              `severity-${item.severity}`,
+              `status-${item.status}`
+            ]"
+            type="button"
+            @click="selectRuntimeAlert(item.id)"
+          >
+            <div class="row-between">
+              <strong class="runtime-alert-title">{{ item.title }}</strong>
+              <span class="badge">{{ item.severity }}</span>
+            </div>
+            <p class="muted mono runtime-alert-line">{{ item.alert_type }}</p>
+            <p class="muted runtime-alert-line">状态 {{ item.status }} · 最近 {{ formatTime(item.last_seen_at) }}</p>
+          </button>
+          <p v-if="runtimeAlerts.length === 0" class="muted">暂无运行告警。</p>
+        </div>
+
+        <div class="runtime-alert-detail">
+          <template v-if="selectedRuntimeAlert">
+            <div class="row-between">
+              <h3>{{ selectedRuntimeAlert.title }}</h3>
+              <span class="badge">{{ selectedRuntimeAlert.status }}</span>
+            </div>
+            <p class="runtime-alert-message">{{ selectedRuntimeAlert.message }}</p>
+            <div class="runtime-alert-tags">
+              <span class="badge">{{ selectedRuntimeAlert.severity }}</span>
+              <span class="badge mono">{{ selectedRuntimeAlert.alert_type }}</span>
+              <span class="badge mono">{{ selectedRuntimeAlert.source_type }}</span>
+            </div>
+            <div class="runtime-alert-meta">
+              <p>首次发现：{{ formatTime(selectedRuntimeAlert.first_seen_at) }}</p>
+              <p>最近发现：{{ formatTime(selectedRuntimeAlert.last_seen_at) }}</p>
+              <p>确认人：{{ selectedRuntimeAlert.acknowledged_by_username ?? "-" }}</p>
+              <p>恢复人：{{ selectedRuntimeAlert.resolved_by_username ?? "-" }}</p>
+            </div>
+
+            <label>
+              <span>处理备注（可选）</span>
+              <input
+                v-model.trim="runtimeAlertActionNote"
+                placeholder="用于 ack / resolve 审计记录"
+              />
+            </label>
+
+            <div class="actions-row">
+              <button
+                class="ghost"
+                type="button"
+                @click="handleAcknowledgeRuntimeAlert(selectedRuntimeAlert)"
+                :disabled="
+                  runtimeAlertUpdatingId === selectedRuntimeAlert.id ||
+                  selectedRuntimeAlert.status !== 'open'
+                "
+              >
+                {{ runtimeAlertUpdatingId === selectedRuntimeAlert.id ? "处理中..." : "确认告警" }}
+              </button>
+              <button
+                class="primary"
+                type="button"
+                @click="handleResolveRuntimeAlert(selectedRuntimeAlert)"
+                :disabled="
+                  runtimeAlertUpdatingId === selectedRuntimeAlert.id ||
+                  selectedRuntimeAlert.status === 'resolved'
+                "
+              >
+                {{ runtimeAlertUpdatingId === selectedRuntimeAlert.id ? "处理中..." : "标记恢复" }}
+              </button>
+            </div>
+
+            <details class="runtime-alert-detail-json">
+              <summary>展示详细信息（JSON）</summary>
+              <pre class="mono">{{ formatJson(selectedRuntimeAlert.detail) }}</pre>
+            </details>
+          </template>
+          <p v-else class="muted">从左侧选择一个告警查看详情。</p>
+        </div>
+      </div>
+    </section>
+
     <section v-if="adminModule === 'users'" class="panel">
       <div class="row-between">
         <h2>用户管理</h2>
@@ -1018,10 +1282,13 @@ import {
   createAdminChallenge,
   createAdminContestAnnouncement,
   createAdminContest,
+  acknowledgeAdminRuntimeAlert,
   deleteAdminChallengeAttachment,
   deleteAdminContestAnnouncement,
   deleteAdminContestChallenge,
   getAdminRuntimeOverview,
+  listAdminRuntimeAlerts,
+  listAdminChallengeRuntimeTemplateLint,
   listAdminChallengeAttachments,
   listAdminChallengeVersions,
   listAdminContestAnnouncements,
@@ -1032,7 +1299,9 @@ import {
   listAdminContests,
   listAdminInstances,
   resetAdminUserPassword,
+  resolveAdminRuntimeAlert,
   rollbackAdminChallengeVersion,
+  scanAdminRuntimeAlerts,
   uploadAdminChallengeAttachment,
   updateAdminContestAnnouncement,
   updateAdminUserRole,
@@ -1040,11 +1309,14 @@ import {
   type AdminChallengeAttachmentItem,
   type AdminAuditLogItem,
   type AdminChallengeItem,
+  type AdminChallengeRuntimeLintItem,
+  type AdminChallengeRuntimeLintResponse,
   type AdminChallengeVersionItem,
   type AdminContestAnnouncementItem,
   type AdminContestChallengeItem,
   type AdminContestItem,
   type AdminInstanceItem,
+  type AdminRuntimeAlertItem,
   type AdminRuntimeOverview,
   type AdminUserItem,
   updateAdminChallenge,
@@ -1061,6 +1333,7 @@ const uiStore = useUiStore();
 const challenges = ref<AdminChallengeItem[]>([]);
 const challengeVersions = ref<AdminChallengeVersionItem[]>([]);
 const challengeAttachments = ref<AdminChallengeAttachmentItem[]>([]);
+const challengeRuntimeLint = ref<AdminChallengeRuntimeLintResponse | null>(null);
 const contests = ref<AdminContestItem[]>([]);
 const contestBindings = ref<AdminContestChallengeItem[]>([]);
 const contestAnnouncements = ref<AdminContestAnnouncementItem[]>([]);
@@ -1068,20 +1341,23 @@ const instances = ref<AdminInstanceItem[]>([]);
 const users = ref<AdminUserItem[]>([]);
 const auditLogs = ref<AdminAuditLogItem[]>([]);
 const runtimeOverview = ref<AdminRuntimeOverview | null>(null);
+const runtimeAlerts = ref<AdminRuntimeAlertItem[]>([]);
 
 const selectedContestId = ref("");
 const selectedChallengeId = ref("");
 const selectedBindingChallengeId = ref("");
 const selectedAnnouncementId = ref("");
+const selectedRuntimeAlertId = ref("");
 const adminModule = ref<"challenges" | "contests" | "operations" | "users" | "audit">("challenges");
-const challengeSubTab = ref<"library" | "versions">("library");
+const challengeSubTab = ref<"library" | "versions" | "lint">("library");
 const contestSubTab = ref<"contests" | "bindings" | "announcements">("contests");
-const operationsSubTab = ref<"runtime" | "instances">("runtime");
+const operationsSubTab = ref<"runtime" | "alerts" | "instances">("runtime");
 
 const pageError = ref("");
 const challengeError = ref("");
 const challengeVersionError = ref("");
 const challengeAttachmentError = ref("");
+const challengeLintError = ref("");
 const contestError = ref("");
 const bindingError = ref("");
 const announcementError = ref("");
@@ -1089,6 +1365,7 @@ const instanceError = ref("");
 const userError = ref("");
 const auditError = ref("");
 const runtimeError = ref("");
+const runtimeAlertError = ref("");
 
 const refreshing = ref(false);
 const creatingChallenge = ref(false);
@@ -1097,6 +1374,7 @@ const updatingChallengeId = ref("");
 const rollingBack = ref(false);
 const uploadingAttachment = ref(false);
 const deletingAttachmentId = ref("");
+const loadingChallengeRuntimeLint = ref(false);
 const updatingContestId = ref("");
 const bindingBusy = ref(false);
 const creatingAnnouncement = ref(false);
@@ -1105,13 +1383,26 @@ const deletingAnnouncementId = ref("");
 const savingAnnouncementId = ref("");
 const loadingUsers = ref(false);
 const auditLoading = ref(false);
+const loadingRuntimeAlerts = ref(false);
 const updatingUserId = ref("");
 const resettingUserId = ref("");
 const updatingUserRoleId = ref("");
+const runtimeAlertScanBusy = ref(false);
+const runtimeAlertUpdatingId = ref("");
 
 const instanceFilter = ref("");
 const challengeKeyword = ref("");
+const challengeLintTypeFilter = ref("");
+const challengeLintStatusFilter = ref("");
+const challengeLintKeywordFilter = ref("");
+const challengeLintOnlyErrors = ref(false);
+const challengeLintLimit = ref(500);
 const contestKeyword = ref("");
+const runtimeAlertStatusFilter = ref("");
+const runtimeAlertSeverityFilter = ref("");
+const runtimeAlertTypeFilter = ref("");
+const runtimeAlertActionNote = ref("");
+const runtimeAlertLimit = ref(100);
 const userKeyword = ref("");
 const userRoleFilter = ref("");
 const userStatusFilter = ref("");
@@ -1215,6 +1506,14 @@ const selectedAnnouncement = computed(() => {
   return contestAnnouncements.value.find((item) => item.id === selectedAnnouncementId.value) ?? null;
 });
 
+const selectedRuntimeAlert = computed(() => {
+  return runtimeAlerts.value.find((item) => item.id === selectedRuntimeAlertId.value) ?? null;
+});
+
+const challengeLintItems = computed<AdminChallengeRuntimeLintItem[]>(() => {
+  return challengeRuntimeLint.value?.items ?? [];
+});
+
 const filteredChallenges = computed(() => {
   const keyword = challengeKeyword.value.trim().toLowerCase();
   if (!keyword) {
@@ -1264,6 +1563,18 @@ function formatAuditDetail(detail: Record<string, unknown>) {
   }
 
   return `${text.slice(0, 180)}...`;
+}
+
+function formatJson(value: unknown) {
+  if (value === null || value === undefined) {
+    return "{}";
+  }
+
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return "{}";
+  }
 }
 
 function parseTagsInput(raw: string): string[] {
@@ -1430,6 +1741,33 @@ async function loadChallengeAttachments() {
   }
 }
 
+async function loadChallengeRuntimeLint(options?: { silentError?: boolean }) {
+  loadingChallengeRuntimeLint.value = true;
+  challengeLintError.value = "";
+
+  try {
+    challengeRuntimeLint.value = await listAdminChallengeRuntimeTemplateLint(
+      accessTokenOrThrow(),
+      {
+        limit: Number.isFinite(challengeLintLimit.value)
+          ? Math.max(1, Math.min(5000, challengeLintLimit.value))
+          : 500,
+        challenge_type: challengeLintTypeFilter.value || undefined,
+        status: challengeLintStatusFilter.value || undefined,
+        keyword: challengeLintKeywordFilter.value || undefined,
+        only_errors: challengeLintOnlyErrors.value
+      }
+    );
+  } catch (err) {
+    challengeLintError.value = err instanceof ApiClientError ? err.message : "加载模板校验结果失败";
+    if (!options?.silentError) {
+      uiStore.error("加载模板校验结果失败", challengeLintError.value);
+    }
+  } finally {
+    loadingChallengeRuntimeLint.value = false;
+  }
+}
+
 async function loadContests() {
   contestError.value = "";
   try {
@@ -1570,6 +1908,119 @@ async function loadRuntimeOverview(options?: { silentError?: boolean }) {
   }
 }
 
+async function loadRuntimeAlerts(options?: { silentError?: boolean; keepSelection?: boolean }) {
+  loadingRuntimeAlerts.value = true;
+  runtimeAlertError.value = "";
+
+  try {
+    const rows = await listAdminRuntimeAlerts(accessTokenOrThrow(), {
+      status: runtimeAlertStatusFilter.value || undefined,
+      severity: runtimeAlertSeverityFilter.value || undefined,
+      alert_type: runtimeAlertTypeFilter.value || undefined,
+      limit: Number.isFinite(runtimeAlertLimit.value)
+        ? Math.max(1, Math.min(500, runtimeAlertLimit.value))
+        : 100
+    });
+    runtimeAlerts.value = rows;
+
+    if (rows.length === 0) {
+      selectedRuntimeAlertId.value = "";
+      return;
+    }
+
+    if (
+      options?.keepSelection &&
+      selectedRuntimeAlertId.value &&
+      rows.some((item) => item.id === selectedRuntimeAlertId.value)
+    ) {
+      return;
+    }
+
+    selectedRuntimeAlertId.value = rows[0].id;
+  } catch (err) {
+    runtimeAlertError.value = err instanceof ApiClientError ? err.message : "加载运行告警失败";
+    if (!options?.silentError) {
+      uiStore.error("加载运行告警失败", runtimeAlertError.value);
+    }
+  } finally {
+    loadingRuntimeAlerts.value = false;
+  }
+}
+
+function selectRuntimeAlert(alertId: string) {
+  selectedRuntimeAlertId.value = alertId;
+}
+
+function runtimeAlertNotePayload() {
+  const note = runtimeAlertActionNote.value.trim();
+  return note ? { note } : undefined;
+}
+
+async function handleScanRuntimeAlerts() {
+  runtimeAlertScanBusy.value = true;
+  runtimeAlertError.value = "";
+
+  try {
+    const summary = await scanAdminRuntimeAlerts(accessTokenOrThrow());
+    await Promise.all([
+      loadRuntimeAlerts({ silentError: true, keepSelection: true }),
+      loadRuntimeOverview({ silentError: true })
+    ]);
+    uiStore.success(
+      "运行告警扫描完成",
+      `新增/更新 ${summary.upserted}，自动恢复 ${summary.auto_resolved}，open ${summary.open_count}。`,
+      3200
+    );
+  } catch (err) {
+    runtimeAlertError.value = err instanceof ApiClientError ? err.message : "触发运行告警扫描失败";
+    uiStore.error("触发运行告警扫描失败", runtimeAlertError.value);
+  } finally {
+    runtimeAlertScanBusy.value = false;
+  }
+}
+
+async function handleAcknowledgeRuntimeAlert(item: AdminRuntimeAlertItem) {
+  if (item.status !== "open") {
+    return;
+  }
+
+  runtimeAlertUpdatingId.value = item.id;
+  runtimeAlertError.value = "";
+
+  try {
+    await acknowledgeAdminRuntimeAlert(item.id, accessTokenOrThrow(), runtimeAlertNotePayload());
+    await loadRuntimeAlerts({ keepSelection: true });
+    runtimeAlertActionNote.value = "";
+    uiStore.info("告警已确认", item.title);
+  } catch (err) {
+    runtimeAlertError.value = err instanceof ApiClientError ? err.message : "确认运行告警失败";
+    uiStore.error("确认运行告警失败", runtimeAlertError.value);
+  } finally {
+    runtimeAlertUpdatingId.value = "";
+  }
+}
+
+async function handleResolveRuntimeAlert(item: AdminRuntimeAlertItem) {
+  if (item.status === "resolved") {
+    return;
+  }
+
+  runtimeAlertUpdatingId.value = item.id;
+  runtimeAlertError.value = "";
+
+  try {
+    await resolveAdminRuntimeAlert(item.id, accessTokenOrThrow(), runtimeAlertNotePayload());
+    await loadRuntimeAlerts({ keepSelection: true });
+    runtimeAlertActionNote.value = "";
+    uiStore.success("告警已恢复", item.title);
+  } catch (err) {
+    runtimeAlertError.value = err instanceof ApiClientError ? err.message : "恢复运行告警失败";
+    uiStore.error("恢复运行告警失败", runtimeAlertError.value);
+  } finally {
+    runtimeAlertUpdatingId.value = "";
+  }
+}
+
 async function loadAuditLogs() {
   auditLoading.value = true;
   auditError.value = "";
@@ -1599,6 +2050,7 @@ async function refreshAll() {
       loadInstances(),
       loadUsers(),
       loadRuntimeOverview(),
+      loadRuntimeAlerts(),
       loadAuditLogs()
     ]);
     await Promise.all([loadContestBindings(), loadContestAnnouncements()]);
@@ -2215,10 +2667,22 @@ watch(
   }
 );
 
+watch(
+  () => [adminModule.value, challengeSubTab.value] as const,
+  ([module, subTab]) => {
+    if (module !== "challenges" || subTab !== "lint") {
+      return;
+    }
+
+    loadChallengeRuntimeLint({ silentError: true });
+  }
+);
+
 function startRuntimePolling() {
   stopRuntimePolling();
   runtimePollTimer = window.setInterval(() => {
     loadRuntimeOverview({ silentError: true });
+    loadRuntimeAlerts({ silentError: true, keepSelection: true });
   }, RUNTIME_POLL_INTERVAL_MS);
 }
 
@@ -2375,6 +2839,145 @@ onUnmounted(() => {
   margin: 0;
 }
 
+.challenge-lint-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 0.65rem;
+}
+
+.challenge-lint-table td p {
+  margin: 0.12rem 0 0;
+}
+
+.lint-badge-ok {
+  border-color: rgba(22, 163, 74, 0.4);
+  color: #166534;
+  background: rgba(22, 163, 74, 0.08);
+}
+
+.lint-badge-error {
+  border-color: rgba(185, 28, 28, 0.4);
+  color: #991b1b;
+  background: rgba(185, 28, 28, 0.08);
+}
+
+.runtime-alert-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.5fr);
+  gap: 0.8rem;
+  min-height: 420px;
+}
+
+.runtime-alert-list {
+  border: 1px solid #d1deec;
+  border-radius: 12px;
+  background: #f8fbff;
+  padding: 0.6rem;
+  display: grid;
+  gap: 0.45rem;
+  overflow: auto;
+  min-height: 0;
+  align-content: start;
+}
+
+.runtime-alert-item {
+  text-align: left;
+  border: 1px solid #d1deec;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.58rem 0.6rem;
+  display: grid;
+  gap: 0.2rem;
+  cursor: pointer;
+  transition: border-color 130ms ease, transform 130ms ease;
+}
+
+.runtime-alert-item:hover {
+  border-color: #0f766e;
+  transform: translateY(-1px);
+}
+
+.runtime-alert-item.active {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.16);
+}
+
+.runtime-alert-item.severity-critical {
+  border-left: 3px solid #bb3e03;
+}
+
+.runtime-alert-item.severity-warning {
+  border-left: 3px solid #b07d00;
+}
+
+.runtime-alert-item.severity-info {
+  border-left: 3px solid #0a9396;
+}
+
+.runtime-alert-title {
+  margin-right: 0.5rem;
+}
+
+.runtime-alert-line {
+  margin: 0;
+}
+
+.runtime-alert-detail {
+  border: 1px solid #d1deec;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 0.8rem;
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  gap: 0.65rem;
+  align-content: start;
+}
+
+.runtime-alert-detail h3 {
+  margin: 0;
+}
+
+.runtime-alert-message {
+  margin: 0;
+}
+
+.runtime-alert-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.38rem;
+}
+
+.runtime-alert-meta {
+  border: 1px solid #d8e4f2;
+  border-radius: 10px;
+  background: #f8fbff;
+  padding: 0.5rem 0.55rem;
+}
+
+.runtime-alert-meta p {
+  margin: 0.16rem 0;
+}
+
+.runtime-alert-detail-json summary {
+  cursor: pointer;
+  color: #0f766e;
+  font-weight: 600;
+}
+
+.runtime-alert-detail-json pre {
+  margin: 0.5rem 0 0;
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid #d8e4f2;
+  border-radius: 10px;
+  background: #f8fbff;
+  padding: 0.58rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 @media (max-width: 1220px) {
   .challenge-split,
   .contest-split {
@@ -2382,6 +2985,10 @@ onUnmounted(() => {
   }
 
   .contest-browser {
+    grid-template-columns: 1fr;
+  }
+
+  .runtime-alert-layout {
     grid-template-columns: 1fr;
   }
 }

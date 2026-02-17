@@ -21,6 +21,10 @@ use uuid::Uuid;
 use crate::{
     auth::{self, AuthenticatedUser},
     error::{AppError, AppResult},
+    runtime_template::{
+        build_single_image_compose_template, parse_runtime_metadata_options,
+        validate_compose_template_schema, RuntimeMode,
+    },
     state::AppState,
 };
 
@@ -168,6 +172,13 @@ struct ChallengeSnapshotRow {
     updated_at: DateTime<Utc>,
 }
 
+#[derive(Debug, FromRow)]
+struct ChallengeRuntimeConfigRow {
+    challenge_type: String,
+    compose_template: Option<String>,
+    metadata: Value,
+}
+
 #[derive(Debug, Serialize, FromRow)]
 struct AdminChallengeVersionItem {
     id: Uuid,
@@ -182,6 +193,52 @@ struct AdminChallengeVersionItem {
 #[derive(Debug, Deserialize)]
 struct ChallengeVersionsQuery {
     limit: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+struct AdminChallengeRuntimeLintQuery {
+    limit: Option<i64>,
+    challenge_type: Option<String>,
+    status: Option<String>,
+    keyword: Option<String>,
+    only_errors: Option<bool>,
+}
+
+#[derive(Debug, FromRow)]
+struct ChallengeRuntimeLintSourceRow {
+    id: Uuid,
+    title: String,
+    slug: String,
+    challenge_type: String,
+    status: String,
+    is_visible: bool,
+    compose_template: Option<String>,
+    metadata: Value,
+    updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize)]
+struct AdminChallengeRuntimeLintItem {
+    id: Uuid,
+    title: String,
+    slug: String,
+    challenge_type: String,
+    status: String,
+    is_visible: bool,
+    has_compose_template: bool,
+    lint_status: String,
+    message: Option<String>,
+    updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize)]
+struct AdminChallengeRuntimeLintResponse {
+    generated_at: DateTime<Utc>,
+    scanned_total: i64,
+    returned_total: i64,
+    ok_count: i64,
+    error_count: i64,
+    items: Vec<AdminChallengeRuntimeLintItem>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -547,6 +604,10 @@ pub fn router() -> Router<Arc<AppState>> {
             "/admin/challenges",
             get(list_challenges).post(create_challenge),
         )
+        .route(
+            "/admin/challenges/runtime-template/lint",
+            get(lint_challenge_runtime_templates),
+        )
         .route("/admin/challenges/{challenge_id}", patch(update_challenge))
         .route(
             "/admin/challenges/{challenge_id}/versions",
@@ -844,6 +905,118 @@ async fn list_challenges(
     Ok(Json(rows))
 }
 
+async fn lint_challenge_runtime_templates(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Query(query): Query<AdminChallengeRuntimeLintQuery>,
+) -> AppResult<Json<AdminChallengeRuntimeLintResponse>> {
+    ensure_admin_or_judge(&current_user)?;
+
+    let challenge_type_filter = query
+        .challenge_type
+        .as_deref()
+        .map(|value| normalize_with_allowed(value, CHALLENGE_TYPE_ALLOWED, "challenge_type"))
+        .transpose()?;
+    let status_filter = query
+        .status
+        .as_deref()
+        .map(|value| normalize_with_allowed(value, CHALLENGE_STATUS_ALLOWED, "status"))
+        .transpose()?;
+    let keyword_filter = query
+        .keyword
+        .as_deref()
+        .and_then(normalize_optional_text)
+        .map(|value| format!("%{}%", value.to_lowercase()));
+    let only_errors = query.only_errors.unwrap_or(false);
+    let limit = query.limit.unwrap_or(500).clamp(1, 5000);
+
+    let rows = sqlx::query_as::<_, ChallengeRuntimeLintSourceRow>(
+        "SELECT id,
+                title,
+                slug,
+                challenge_type,
+                status,
+                is_visible,
+                compose_template,
+                metadata,
+                updated_at
+         FROM challenges
+         WHERE ($1::text IS NULL OR challenge_type = $1)
+           AND ($2::text IS NULL OR status = $2)
+           AND ($3::text IS NULL OR LOWER(title) LIKE $3 OR LOWER(slug) LIKE $3)
+         ORDER BY updated_at DESC
+         LIMIT $4",
+    )
+    .bind(challenge_type_filter)
+    .bind(status_filter)
+    .bind(keyword_filter)
+    .bind(limit)
+    .fetch_all(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    let mut ok_count = 0_i64;
+    let mut error_count = 0_i64;
+    let mut items: Vec<AdminChallengeRuntimeLintItem> = Vec::new();
+
+    for row in rows {
+        let has_compose_template = row
+            .compose_template
+            .as_deref()
+            .and_then(normalize_optional_text)
+            .is_some();
+
+        match validate_compose_runtime_configuration(
+            &row.challenge_type,
+            row.compose_template.as_deref(),
+            &row.metadata,
+        ) {
+            Ok(()) => {
+                ok_count += 1;
+                if !only_errors {
+                    items.push(AdminChallengeRuntimeLintItem {
+                        id: row.id,
+                        title: row.title,
+                        slug: row.slug,
+                        challenge_type: row.challenge_type,
+                        status: row.status,
+                        is_visible: row.is_visible,
+                        has_compose_template,
+                        lint_status: "ok".to_string(),
+                        message: None,
+                        updated_at: row.updated_at,
+                    });
+                }
+            }
+            Err(AppError::BadRequest(message)) => {
+                error_count += 1;
+                items.push(AdminChallengeRuntimeLintItem {
+                    id: row.id,
+                    title: row.title,
+                    slug: row.slug,
+                    challenge_type: row.challenge_type,
+                    status: row.status,
+                    is_visible: row.is_visible,
+                    has_compose_template,
+                    lint_status: "error".to_string(),
+                    message: Some(message),
+                    updated_at: row.updated_at,
+                });
+            }
+            Err(other) => return Err(other),
+        }
+    }
+
+    Ok(Json(AdminChallengeRuntimeLintResponse {
+        generated_at: Utc::now(),
+        scanned_total: ok_count + error_count,
+        returned_total: items.len() as i64,
+        ok_count,
+        error_count,
+        items,
+    }))
+}
+
 async fn create_challenge(
     State(state): State<Arc<AppState>>,
     current_user: AuthenticatedUser,
@@ -887,8 +1060,20 @@ async fn create_challenge(
 
     let description = req.description.unwrap_or_default();
     let flag_hash = req.flag_hash.unwrap_or_default();
-    let compose_template = req.compose_template;
+    let compose_template = req.compose_template.and_then(|value| {
+        let trimmed = value.trim().to_string();
+        if trimmed.is_empty() {
+            None
+        } else {
+            Some(trimmed)
+        }
+    });
     let metadata = req.metadata.unwrap_or(Value::Object(Default::default()));
+    validate_compose_runtime_configuration(
+        &challenge_type,
+        compose_template.as_deref(),
+        &metadata,
+    )?;
     let normalized_status = req
         .status
         .as_deref()
@@ -1151,6 +1336,31 @@ async fn update_challenge(
         .category
         .map(|v| v.trim().to_lowercase())
         .filter(|v| !v.is_empty());
+    let compose_template_patch = req
+        .compose_template
+        .as_ref()
+        .map(|value| value.trim().to_string());
+
+    let existing_runtime = load_challenge_runtime_config(state.as_ref(), challenge_id).await?;
+    let effective_challenge_type = normalized_challenge_type
+        .as_deref()
+        .unwrap_or(existing_runtime.challenge_type.as_str());
+    let effective_template = compose_template_patch
+        .as_deref()
+        .and_then(|value| if value.is_empty() { None } else { Some(value) })
+        .or_else(|| {
+            existing_runtime
+                .compose_template
+                .as_deref()
+                .and_then(normalize_optional_text)
+        });
+    let effective_metadata = req.metadata.as_ref().unwrap_or(&existing_runtime.metadata);
+
+    validate_compose_runtime_configuration(
+        effective_challenge_type,
+        effective_template,
+        effective_metadata,
+    )?;
 
     let mut tx = state.db.begin().await.map_err(AppError::internal)?;
 
@@ -1208,7 +1418,7 @@ async fn update_challenge(
     .bind(normalized_challenge_type)
     .bind(normalized_flag_mode)
     .bind(req.flag_hash)
-    .bind(req.compose_template)
+    .bind(compose_template_patch)
     .bind(req.metadata)
     .bind(resolved_is_visible)
     .bind(normalized_tags)
@@ -1340,6 +1550,11 @@ async fn rollback_challenge_version(
     let rollback_status =
         normalize_with_allowed(&target_snapshot.status, CHALLENGE_STATUS_ALLOWED, "status")?;
     let rollback_visible = rollback_status == "published";
+    validate_compose_runtime_configuration(
+        &target_snapshot.challenge_type,
+        target_snapshot.compose_template.as_deref(),
+        &target_snapshot.metadata,
+    )?;
 
     let mut tx = state.db.begin().await.map_err(AppError::internal)?;
     let row = sqlx::query_as::<_, ChallengeSnapshotRow>(
@@ -3347,6 +3562,42 @@ fn normalize_optional_text(value: &str) -> Option<&str> {
     }
 }
 
+fn validate_compose_runtime_configuration(
+    challenge_type: &str,
+    compose_template: Option<&str>,
+    metadata: &Value,
+) -> AppResult<()> {
+    let requires_runtime = challenge_type == "dynamic" || challenge_type == "internal";
+    let runtime_options = parse_runtime_metadata_options(metadata).map_err(AppError::BadRequest)?;
+
+    if runtime_options.mode == RuntimeMode::SingleImage {
+        if !requires_runtime {
+            return Err(AppError::BadRequest(
+                "metadata.runtime.mode=single_image requires challenge_type=dynamic/internal"
+                    .to_string(),
+            ));
+        }
+
+        let single = runtime_options.single_image.ok_or(AppError::BadRequest(
+            "metadata.runtime single_image config is missing".to_string(),
+        ))?;
+        let generated =
+            build_single_image_compose_template(single.image.as_str(), single.internal_port);
+        return validate_compose_template_schema(&generated, metadata)
+            .map_err(AppError::BadRequest);
+    }
+
+    match compose_template.and_then(normalize_optional_text) {
+        Some(template) => {
+            validate_compose_template_schema(template, metadata).map_err(AppError::BadRequest)
+        }
+        None if requires_runtime => Err(AppError::BadRequest(
+            "challenge runtime template is required for dynamic/internal challenge".to_string(),
+        )),
+        None => Ok(()),
+    }
+}
+
 fn default_challenge_status() -> String {
     "draft".to_string()
 }
@@ -3419,6 +3670,25 @@ fn challenge_snapshot_to_value(row: &ChallengeSnapshotRow) -> Value {
         writeup_content: row.writeup_content.clone(),
     })
     .unwrap_or_else(|_| json!({}))
+}
+
+async fn load_challenge_runtime_config(
+    state: &AppState,
+    challenge_id: Uuid,
+) -> AppResult<ChallengeRuntimeConfigRow> {
+    sqlx::query_as::<_, ChallengeRuntimeConfigRow>(
+        "SELECT challenge_type,
+                compose_template,
+                metadata
+         FROM challenges
+         WHERE id = $1
+         LIMIT 1",
+    )
+    .bind(challenge_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest("challenge not found".to_string()))
 }
 
 async fn ensure_challenge_exists(state: &AppState, challenge_id: Uuid) -> AppResult<()> {

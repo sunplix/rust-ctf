@@ -1,5 +1,6 @@
 use std::{
     io::ErrorKind,
+    net::TcpListener,
     path::{Path, PathBuf},
     process::Stdio,
     sync::Arc,
@@ -11,8 +12,10 @@ use axum::{
     Json, Router,
 };
 use chrono::{DateTime, Duration, Utc};
+use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use sqlx::FromRow;
 use tokio::{
     fs,
@@ -25,6 +28,11 @@ use uuid::Uuid;
 use crate::{
     auth::AuthenticatedUser,
     error::{AppError, AppResult},
+    runtime_template::{
+        build_single_image_compose_template, parse_runtime_metadata_options,
+        render_compose_template_variables, validate_compose_template_schema, RuntimeAccessMode,
+        RuntimeEndpointProtocol, RuntimeMode,
+    },
     state::AppState,
 };
 
@@ -32,11 +40,32 @@ const INSTANCE_TTL_HOURS: i64 = 2;
 const SUBNET_SECOND_OCTET_START: u16 = 16;
 const SUBNET_SECOND_OCTET_END: u16 = 223;
 const COMPOSE_FILE_NAME: &str = "docker-compose.generated.yml";
+const INSTANCE_HEARTBEAT_TOKEN_USE: &str = "instance_heartbeat";
+const INSTANCE_HEARTBEAT_TOKEN_GRACE_SECONDS: i64 = 10 * 60;
+const INSTANCE_HEARTBEAT_TOKEN_MAX_TTL_SECONDS: i64 = 24 * 60 * 60;
+const INSTANCE_SSH_GATEWAY_PORT: u16 = 2222;
+const INSTANCE_SSH_GATEWAY_IMAGE: &str = "linuxserver/openssh-server:latest";
+const INSTANCE_SSH_GATEWAY_SERVICE_NAME: &str = "ctf_access_gateway";
+const INSTANCE_SSH_GATEWAY_USERNAME: &str = "ctf";
+const INSTANCE_PORT_ALLOCATE_RETRIES: usize = 64;
 
 #[derive(Debug, Deserialize)]
 struct InstanceActionRequest {
     contest_id: Uuid,
     challenge_id: Uuid,
+}
+
+#[derive(Debug, Deserialize)]
+struct InternalHeartbeatReportRequest {
+    token: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct InstanceHeartbeatTokenClaims {
+    sub: String,
+    token_use: String,
+    iat: usize,
+    exp: usize,
 }
 
 #[derive(Debug, Serialize)]
@@ -55,7 +84,18 @@ struct InstanceResponse {
     expires_at: Option<DateTime<Utc>>,
     destroyed_at: Option<DateTime<Utc>>,
     last_heartbeat_at: Option<DateTime<Utc>>,
+    network_access: Option<InstanceNetworkAccess>,
     message: String,
+}
+
+#[derive(Debug, Serialize)]
+struct InstanceNetworkAccess {
+    mode: String,
+    host: String,
+    port: u16,
+    username: Option<String>,
+    password: Option<String>,
+    note: String,
 }
 
 #[derive(Debug, FromRow)]
@@ -70,6 +110,7 @@ struct RuntimePolicyRow {
     challenge_type: String,
     flag_mode: String,
     compose_template: Option<String>,
+    metadata: Value,
     is_visible: bool,
     release_at: Option<DateTime<Utc>>,
 }
@@ -78,6 +119,7 @@ struct RuntimePolicyRow {
 struct ComposeTemplateRow {
     compose_template: Option<String>,
     flag_mode: String,
+    metadata: Value,
 }
 
 #[derive(Debug, FromRow)]
@@ -102,6 +144,16 @@ struct InstanceRow {
 struct ComposeRenderSource {
     template: String,
     flag_mode: String,
+    metadata: Value,
+    entrypoint_mode: RuntimeEntrypointMode,
+    network_access_mode: RuntimeAccessMode,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RuntimeEntrypointMode {
+    InternalSubnet,
+    HostMapped(RuntimeEndpointProtocol),
+    SshBastion,
 }
 
 #[derive(Debug)]
@@ -128,6 +180,10 @@ pub fn router() -> Router<Arc<AppState>> {
         .route("/instances/destroy", post(destroy_instance))
         .route("/instances/heartbeat", post(heartbeat_instance))
         .route(
+            "/instances/heartbeat/report",
+            post(report_instance_heartbeat),
+        )
+        .route(
             "/instances/{contest_id}/{challenge_id}",
             get(get_instance_by_challenge),
         )
@@ -152,6 +208,7 @@ async fn start_instance(
     {
         if instance.status == "running" && !is_expired(&instance, now) {
             return Ok(Json(instance_to_response(
+                state.as_ref(),
                 instance,
                 "instance is already running".to_string(),
             )));
@@ -165,17 +222,13 @@ async fn start_instance(
         team_id,
         now,
         expires_at,
+        compose_source.entrypoint_mode,
     )
     .await?;
 
     let compose_file = persist_compose_file(state.as_ref(), &pending, &compose_source).await?;
-    if let Err(err) = compose_up(
-        state.as_ref(),
-        &pending.compose_project_name,
-        &compose_file,
-        false,
-    )
-    .await
+    if let Err(err) =
+        compose_up_with_self_heal(state.as_ref(), &pending, &compose_file, false).await
     {
         let _ = update_instance_status(state.as_ref(), pending.id, "failed").await;
         return Err(err);
@@ -183,6 +236,7 @@ async fn start_instance(
 
     let running = mark_instance_running(state.as_ref(), pending.id, now, expires_at).await?;
     Ok(Json(instance_to_response(
+        state.as_ref(),
         running,
         "instance started".to_string(),
     )))
@@ -219,6 +273,7 @@ async fn stop_instance(
 
     let updated = update_instance_status(state.as_ref(), instance.id, "stopped").await?;
     Ok(Json(instance_to_response(
+        state.as_ref(),
         updated,
         "instance stopped".to_string(),
     )))
@@ -245,6 +300,7 @@ async fn reset_instance(
         team_id,
         now,
         expires_at,
+        compose_source.entrypoint_mode,
     )
     .await?;
 
@@ -263,13 +319,7 @@ async fn reset_instance(
         );
     }
 
-    if let Err(err) = compose_up(
-        state.as_ref(),
-        &pending.compose_project_name,
-        &compose_file,
-        true,
-    )
-    .await
+    if let Err(err) = compose_up_with_self_heal(state.as_ref(), &pending, &compose_file, true).await
     {
         let _ = update_instance_status(state.as_ref(), pending.id, "failed").await;
         return Err(err);
@@ -277,6 +327,7 @@ async fn reset_instance(
 
     let running = mark_instance_running(state.as_ref(), pending.id, now, expires_at).await?;
     Ok(Json(instance_to_response(
+        state.as_ref(),
         running,
         "instance reset to running state".to_string(),
     )))
@@ -337,6 +388,7 @@ async fn destroy_instance(
     cleanup_runtime_dir(state.as_ref(), &updated.compose_project_name).await;
 
     Ok(Json(instance_to_response(
+        state.as_ref(),
         updated,
         "instance destroyed".to_string(),
     )))
@@ -357,8 +409,32 @@ async fn heartbeat_instance(
             ))?;
 
     Ok(Json(instance_to_response(
+        state.as_ref(),
         updated,
         "instance heartbeat updated".to_string(),
+    )))
+}
+
+async fn report_instance_heartbeat(
+    State(state): State<Arc<AppState>>,
+    Json(req): Json<InternalHeartbeatReportRequest>,
+) -> AppResult<Json<InstanceResponse>> {
+    let token = req.token.trim();
+    if token.is_empty() {
+        return Err(AppError::BadRequest("token is required".to_string()));
+    }
+
+    let instance_id = decode_instance_heartbeat_token(token, &state.config.jwt_secret)?;
+    let updated = touch_instance_heartbeat_by_id(state.as_ref(), instance_id)
+        .await?
+        .ok_or(AppError::BadRequest(
+            "running instance not found".to_string(),
+        ))?;
+
+    Ok(Json(instance_to_response(
+        state.as_ref(),
+        updated,
+        "instance heartbeat reported".to_string(),
     )))
 }
 
@@ -374,6 +450,7 @@ async fn get_instance_by_challenge(
         .ok_or(AppError::BadRequest("instance not found".to_string()))?;
 
     Ok(Json(instance_to_response(
+        state.as_ref(),
         instance,
         "instance query result".to_string(),
     )))
@@ -403,6 +480,7 @@ async fn fetch_runtime_policy(
                 c.challenge_type,
                 c.flag_mode,
                 c.compose_template,
+                c.metadata,
                 c.is_visible,
                 cc.release_at
          FROM contest_challenges cc
@@ -428,7 +506,8 @@ async fn fetch_compose_template_row(
 ) -> AppResult<ComposeTemplateRow> {
     sqlx::query_as::<_, ComposeTemplateRow>(
         "SELECT c.compose_template,
-                c.flag_mode
+                c.flag_mode,
+                c.metadata
          FROM contest_challenges cc
          JOIN challenges c ON c.id = cc.challenge_id
          WHERE cc.contest_id = $1 AND cc.challenge_id = $2
@@ -473,21 +552,24 @@ fn validate_runtime_policy(
         return Err(AppError::BadRequest("contest is not running".to_string()));
     }
 
-    if policy
-        .compose_template
-        .as_deref()
-        .unwrap_or_default()
-        .trim()
-        .is_empty()
-    {
-        return Err(AppError::BadRequest(
-            "challenge runtime template is missing".to_string(),
-        ));
-    }
-
     if policy.challenge_type != "dynamic" && policy.challenge_type != "internal" {
         return Err(AppError::BadRequest(
             "challenge type does not require runtime instance".to_string(),
+        ));
+    }
+
+    let runtime_options =
+        parse_runtime_metadata_options(&policy.metadata).map_err(AppError::BadRequest)?;
+    if runtime_options.mode == RuntimeMode::Compose
+        && policy
+            .compose_template
+            .as_deref()
+            .unwrap_or_default()
+            .trim()
+            .is_empty()
+    {
+        return Err(AppError::BadRequest(
+            "challenge runtime template is missing".to_string(),
         ));
     }
 
@@ -495,36 +577,108 @@ fn validate_runtime_policy(
 }
 
 fn compose_source_from_policy(policy: RuntimePolicyRow) -> AppResult<ComposeRenderSource> {
-    let template = policy
-        .compose_template
-        .unwrap_or_default()
-        .trim()
-        .to_string();
+    let runtime_options =
+        parse_runtime_metadata_options(&policy.metadata).map_err(AppError::BadRequest)?;
 
-    if template.is_empty() {
-        return Err(AppError::BadRequest(
-            "challenge runtime template is missing".to_string(),
-        ));
+    match runtime_options.mode {
+        RuntimeMode::SingleImage => {
+            let single = runtime_options.single_image.ok_or(AppError::BadRequest(
+                "metadata.runtime single_image config is missing".to_string(),
+            ))?;
+            let template =
+                build_single_image_compose_template(single.image.as_str(), single.internal_port);
+            validate_compose_template_schema(&template, &policy.metadata)
+                .map_err(AppError::BadRequest)?;
+
+            Ok(ComposeRenderSource {
+                template,
+                flag_mode: policy.flag_mode,
+                metadata: policy.metadata,
+                entrypoint_mode: RuntimeEntrypointMode::HostMapped(single.protocol),
+                network_access_mode: RuntimeAccessMode::Direct,
+            })
+        }
+        RuntimeMode::Compose => {
+            let template = policy
+                .compose_template
+                .unwrap_or_default()
+                .trim()
+                .to_string();
+
+            if template.is_empty() {
+                return Err(AppError::BadRequest(
+                    "challenge runtime template is missing".to_string(),
+                ));
+            }
+
+            validate_compose_template_schema(&template, &policy.metadata)
+                .map_err(AppError::BadRequest)?;
+
+            let entrypoint_mode = if runtime_options.access_mode == RuntimeAccessMode::SshBastion {
+                RuntimeEntrypointMode::SshBastion
+            } else {
+                RuntimeEntrypointMode::InternalSubnet
+            };
+
+            Ok(ComposeRenderSource {
+                template,
+                flag_mode: policy.flag_mode,
+                metadata: policy.metadata,
+                entrypoint_mode,
+                network_access_mode: runtime_options.access_mode,
+            })
+        }
     }
-
-    Ok(ComposeRenderSource {
-        template,
-        flag_mode: policy.flag_mode,
-    })
 }
 
 fn compose_source_from_row(row: ComposeTemplateRow) -> AppResult<ComposeRenderSource> {
-    let template = row.compose_template.unwrap_or_default().trim().to_string();
-    if template.is_empty() {
-        return Err(AppError::BadRequest(
-            "challenge runtime template is missing".to_string(),
-        ));
-    }
+    let runtime_options =
+        parse_runtime_metadata_options(&row.metadata).map_err(AppError::BadRequest)?;
 
-    Ok(ComposeRenderSource {
-        template,
-        flag_mode: row.flag_mode,
-    })
+    match runtime_options.mode {
+        RuntimeMode::SingleImage => {
+            let single = runtime_options.single_image.ok_or(AppError::BadRequest(
+                "metadata.runtime single_image config is missing".to_string(),
+            ))?;
+            let template =
+                build_single_image_compose_template(single.image.as_str(), single.internal_port);
+            validate_compose_template_schema(&template, &row.metadata)
+                .map_err(AppError::BadRequest)?;
+
+            Ok(ComposeRenderSource {
+                template,
+                flag_mode: row.flag_mode,
+                metadata: row.metadata,
+                entrypoint_mode: RuntimeEntrypointMode::HostMapped(single.protocol),
+                network_access_mode: RuntimeAccessMode::Direct,
+            })
+        }
+        RuntimeMode::Compose => {
+            let template = row.compose_template.unwrap_or_default().trim().to_string();
+            if template.is_empty() {
+                return Err(AppError::BadRequest(
+                    "challenge runtime template is missing".to_string(),
+                ));
+            }
+
+            validate_compose_template_schema(&template, &row.metadata)
+                .map_err(AppError::BadRequest)?;
+
+            let entrypoint_mode = if runtime_options.access_mode == RuntimeAccessMode::SshBastion {
+                RuntimeEntrypointMode::SshBastion
+            } else {
+                RuntimeEntrypointMode::InternalSubnet
+            };
+
+            Ok(ComposeRenderSource {
+                template,
+                flag_mode: row.flag_mode,
+                metadata: row.metadata,
+                entrypoint_mode,
+                network_access_mode: runtime_options.access_mode,
+            })
+        }
+    }
 }
 
 fn is_privileged_role(role: &str) -> bool {
@@ -571,12 +725,19 @@ async fn ensure_instance_pending(
     team_id: Uuid,
     now: DateTime<Utc>,
     expires_at: DateTime<Utc>,
+    entrypoint_mode: RuntimeEntrypointMode,
 ) -> AppResult<InstanceRow> {
     let cpu_limit = default_instance_cpu_limit_text(state);
     let memory_limit_mb = default_instance_memory_limit_mb(state);
 
     match fetch_instance_row(state, contest_id, challenge_id, team_id).await? {
         Some(existing) => {
+            let entrypoint_url = resolve_entrypoint_url(
+                state,
+                entrypoint_mode,
+                &existing.subnet,
+                Some(&existing.entrypoint_url),
+            )?;
             mark_instance_creating(
                 state,
                 existing.id,
@@ -584,13 +745,14 @@ async fn ensure_instance_pending(
                 expires_at,
                 cpu_limit.as_deref(),
                 memory_limit_mb,
+                &entrypoint_url,
             )
             .await
         }
         None => {
             let subnet = allocate_subnet(state, contest_id, challenge_id, team_id).await?;
             let compose_project_name = compose_project_name(contest_id, challenge_id, team_id);
-            let entrypoint_url = default_entrypoint_url(&subnet);
+            let entrypoint_url = resolve_entrypoint_url(state, entrypoint_mode, &subnet, None)?;
 
             insert_instance_row(
                 state,
@@ -677,6 +839,7 @@ async fn mark_instance_creating(
     expires_at: DateTime<Utc>,
     cpu_limit: Option<&str>,
     memory_limit_mb: Option<i32>,
+    entrypoint_url: &str,
 ) -> AppResult<InstanceRow> {
     sqlx::query_as::<_, InstanceRow>(
         "UPDATE instances
@@ -685,6 +848,7 @@ async fn mark_instance_creating(
              expires_at = $3,
              cpu_limit = $4::numeric,
              memory_limit_mb = $5,
+             entrypoint_url = $6,
              destroyed_at = NULL,
              updated_at = NOW()
          WHERE id = $1
@@ -708,6 +872,7 @@ async fn mark_instance_creating(
     .bind(expires_at)
     .bind(cpu_limit)
     .bind(memory_limit_mb)
+    .bind(entrypoint_url)
     .fetch_one(&state.db)
     .await
     .map_err(AppError::internal)
@@ -814,6 +979,37 @@ async fn touch_instance_heartbeat(
     .bind(contest_id)
     .bind(challenge_id)
     .bind(team_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)
+}
+
+async fn touch_instance_heartbeat_by_id(
+    state: &AppState,
+    instance_id: Uuid,
+) -> AppResult<Option<InstanceRow>> {
+    sqlx::query_as::<_, InstanceRow>(
+        "UPDATE instances
+         SET last_heartbeat_at = NOW(),
+             updated_at = NOW()
+         WHERE id = $1
+           AND status = 'running'
+         RETURNING id,
+                   contest_id,
+                   challenge_id,
+                   team_id,
+                   status,
+                   subnet::text AS subnet,
+                   compose_project_name,
+                   entrypoint_url,
+                   cpu_limit::text AS cpu_limit,
+                   memory_limit_mb,
+                   started_at,
+                   expires_at,
+                   destroyed_at,
+                   last_heartbeat_at",
+    )
+    .bind(instance_id)
     .fetch_optional(&state.db)
     .await
     .map_err(AppError::internal)
@@ -1158,6 +1354,64 @@ fn default_entrypoint_url(subnet: &str) -> String {
     }
 }
 
+fn resolve_entrypoint_url(
+    state: &AppState,
+    mode: RuntimeEntrypointMode,
+    subnet: &str,
+    existing_entrypoint_url: Option<&str>,
+) -> AppResult<String> {
+    match mode {
+        RuntimeEntrypointMode::InternalSubnet => Ok(default_entrypoint_url(subnet)),
+        RuntimeEntrypointMode::HostMapped(protocol) => {
+            let host = instance_public_host(state);
+            let port = existing_entrypoint_url
+                .and_then(parse_entrypoint_host_port)
+                .map(|(_, port)| port)
+                .unwrap_or(allocate_random_host_port(state)?);
+
+            let scheme = match protocol {
+                RuntimeEndpointProtocol::Http => "http",
+                RuntimeEndpointProtocol::Https => "https",
+                RuntimeEndpointProtocol::Tcp => "tcp",
+            };
+            Ok(format!("{scheme}://{host}:{port}"))
+        }
+        RuntimeEntrypointMode::SshBastion => {
+            let host = instance_public_host(state);
+            let port = existing_entrypoint_url
+                .and_then(parse_entrypoint_host_port)
+                .map(|(_, port)| port)
+                .unwrap_or(allocate_random_host_port(state)?);
+            Ok(format!("ssh://{host}:{port}"))
+        }
+    }
+}
+
+fn instance_public_host(state: &AppState) -> String {
+    let host = state.config.instance_public_host.trim();
+    if host.is_empty() {
+        "127.0.0.1".to_string()
+    } else {
+        host.to_string()
+    }
+}
+
+fn allocate_random_host_port(state: &AppState) -> AppResult<u16> {
+    let min = state.config.instance_host_port_min.max(1024);
+    let max = state.config.instance_host_port_max.max(min);
+    for _ in 0..INSTANCE_PORT_ALLOCATE_RETRIES {
+        let listener = TcpListener::bind(("0.0.0.0", 0)).map_err(AppError::internal)?;
+        let port = listener.local_addr().map_err(AppError::internal)?.port();
+        if port >= min && port <= max {
+            return Ok(port);
+        }
+    }
+
+    Err(AppError::internal(anyhow::anyhow!(
+        "failed to allocate random host port in configured range"
+    )))
+}
+
 fn default_instance_cpu_limit_text(state: &AppState) -> Option<String> {
     let cpu_limit = state.config.instance_default_cpu_limit;
     if cpu_limit <= 0.0 {
@@ -1174,6 +1428,55 @@ fn default_instance_memory_limit_mb(state: &AppState) -> Option<i32> {
     }
 
     Some(memory_limit_mb.clamp(64, 1_048_576) as i32)
+}
+
+fn issue_instance_heartbeat_token(state: &AppState, instance: &InstanceRow) -> AppResult<String> {
+    let now = Utc::now();
+    let mut expires_at = instance
+        .expires_at
+        .map(|value| value + Duration::seconds(INSTANCE_HEARTBEAT_TOKEN_GRACE_SECONDS))
+        .unwrap_or_else(|| now + Duration::hours(INSTANCE_TTL_HOURS));
+    let max_expires_at = now + Duration::seconds(INSTANCE_HEARTBEAT_TOKEN_MAX_TTL_SECONDS);
+
+    if expires_at > max_expires_at {
+        expires_at = max_expires_at;
+    }
+    if expires_at <= now {
+        expires_at = now + Duration::minutes(10);
+    }
+
+    let claims = InstanceHeartbeatTokenClaims {
+        sub: instance.id.to_string(),
+        token_use: INSTANCE_HEARTBEAT_TOKEN_USE.to_string(),
+        iat: now.timestamp() as usize,
+        exp: expires_at.timestamp() as usize,
+    };
+
+    encode(
+        &Header::new(Algorithm::HS256),
+        &claims,
+        &EncodingKey::from_secret(state.config.jwt_secret.as_bytes()),
+    )
+    .map_err(AppError::internal)
+}
+
+fn decode_instance_heartbeat_token(token: &str, jwt_secret: &str) -> AppResult<Uuid> {
+    let mut validation = Validation::new(Algorithm::HS256);
+    validation.validate_exp = true;
+
+    let claims = decode::<InstanceHeartbeatTokenClaims>(
+        token,
+        &DecodingKey::from_secret(jwt_secret.as_bytes()),
+        &validation,
+    )
+    .map_err(|_| AppError::Unauthorized)?
+    .claims;
+
+    if claims.token_use != INSTANCE_HEARTBEAT_TOKEN_USE {
+        return Err(AppError::Unauthorized);
+    }
+
+    Uuid::parse_str(&claims.sub).map_err(|_| AppError::Unauthorized)
 }
 
 fn subnet_host_ip(subnet: &str, host_octet: u8) -> Option<String> {
@@ -1208,9 +1511,13 @@ fn compose_file_path(state: &AppState, compose_project_name: &str) -> PathBuf {
 }
 
 fn render_compose_template(
+    state: &AppState,
     source: &str,
     instance: &InstanceRow,
     dynamic_flag: Option<&str>,
+    heartbeat_report_url: &str,
+    heartbeat_report_token: &str,
+    heartbeat_interval_seconds: u64,
 ) -> String {
     let network_name = format!("{}_net", instance.compose_project_name);
     let team_id = instance.team_id.to_string();
@@ -1218,6 +1525,14 @@ fn render_compose_template(
     let challenge_id = instance.challenge_id.to_string();
     let entrypoint_host = subnet_host_ip(&instance.subnet, 2).unwrap_or_default();
     let gateway_ip = subnet_host_ip(&instance.subnet, 1).unwrap_or_default();
+    let public_host = parse_entrypoint_host_port(&instance.entrypoint_url)
+        .map(|(host, _)| host)
+        .unwrap_or_else(|| instance_public_host(state));
+    let host_port = parse_entrypoint_host_port(&instance.entrypoint_url)
+        .map(|(_, port)| port.to_string())
+        .unwrap_or_default();
+    let ssh_username = instance_ssh_gateway_username();
+    let ssh_password = instance_ssh_gateway_password(state, instance);
     let cpu_limit = instance.cpu_limit.clone().unwrap_or_default();
     let memory_limit_mb = instance
         .memory_limit_mb
@@ -1227,6 +1542,7 @@ fn render_compose_template(
         .memory_limit_mb
         .map(|value| format!("{}m", value))
         .unwrap_or_default();
+    let heartbeat_interval_seconds = heartbeat_interval_seconds.to_string();
 
     let mut rendered = source.to_string();
     let replacements = [
@@ -1244,9 +1560,20 @@ fn render_compose_template(
         ("{{ENTRYPOINT_URL}}", instance.entrypoint_url.as_str()),
         ("{{ENTRYPOINT_HOST}}", entrypoint_host.as_str()),
         ("{{GATEWAY_IP}}", gateway_ip.as_str()),
+        ("{{PUBLIC_HOST}}", public_host.as_str()),
+        ("{{HOST_PORT}}", host_port.as_str()),
+        ("{{ACCESS_HOST_PORT}}", host_port.as_str()),
+        ("{{ACCESS_USERNAME}}", ssh_username.as_str()),
+        ("{{ACCESS_PASSWORD}}", ssh_password.as_str()),
         ("{{CPU_LIMIT}}", cpu_limit.as_str()),
         ("{{MEMORY_LIMIT_MB}}", memory_limit_mb.as_str()),
         ("{{MEMORY_LIMIT}}", memory_limit.as_str()),
+        ("{{HEARTBEAT_REPORT_URL}}", heartbeat_report_url),
+        ("{{HEARTBEAT_REPORT_TOKEN}}", heartbeat_report_token),
+        (
+            "{{HEARTBEAT_INTERVAL_SECONDS}}",
+            heartbeat_interval_seconds.as_str(),
+        ),
     ];
 
     for (token, value) in replacements {
@@ -1362,7 +1689,34 @@ async fn persist_compose_file(
     )
     .await?;
 
-    let rendered = render_compose_template(&source.template, instance, dynamic_flag.as_deref());
+    let heartbeat_report_url = state.config.instance_heartbeat_report_url.trim();
+    let heartbeat_report_interval_seconds = state
+        .config
+        .instance_heartbeat_report_interval_seconds
+        .clamp(5, 3600);
+    let heartbeat_report_token = issue_instance_heartbeat_token(state, instance)?;
+
+    let rendered = render_compose_template(
+        state,
+        &source.template,
+        instance,
+        dynamic_flag.as_deref(),
+        heartbeat_report_url,
+        &heartbeat_report_token,
+        heartbeat_report_interval_seconds,
+    );
+    let rendered = render_compose_template_variables(&rendered, &source.metadata)
+        .map_err(AppError::BadRequest)?;
+    let rendered = if source.network_access_mode == RuntimeAccessMode::SshBastion {
+        let (_, host_port) = parse_entrypoint_host_port(&instance.entrypoint_url).ok_or(
+            AppError::BadRequest("instance entrypoint host port is missing".to_string()),
+        )?;
+        let username = instance_ssh_gateway_username();
+        let password = instance_ssh_gateway_password(state, instance);
+        inject_ssh_gateway_service(&rendered, host_port, &username, &password)?
+    } else {
+        rendered
+    };
     let rendered = apply_compose_resource_limits(
         &rendered,
         instance.cpu_limit.as_deref(),
@@ -1421,6 +1775,62 @@ async fn compose_up(
             "instance start",
         )
         .await
+    }
+}
+
+async fn compose_up_with_self_heal(
+    state: &AppState,
+    instance: &InstanceRow,
+    compose_file: &Path,
+    force_recreate: bool,
+) -> AppResult<()> {
+    if let Err(initial_err) = compose_up(
+        state,
+        &instance.compose_project_name,
+        compose_file,
+        force_recreate,
+    )
+    .await
+    {
+        warn!(
+            instance_id = %instance.id,
+            contest_id = %instance.contest_id,
+            challenge_id = %instance.challenge_id,
+            team_id = %instance.team_id,
+            compose_project_name = %instance.compose_project_name,
+            error = %initial_err,
+            "instance compose up failed, starting self-heal retry"
+        );
+
+        if let Err(down_err) =
+            compose_down(state, &instance.compose_project_name, compose_file).await
+        {
+            warn!(
+                instance_id = %instance.id,
+                contest_id = %instance.contest_id,
+                challenge_id = %instance.challenge_id,
+                team_id = %instance.team_id,
+                compose_project_name = %instance.compose_project_name,
+                error = %down_err,
+                "instance self-heal cleanup failed before retry"
+            );
+        }
+
+        match compose_up(state, &instance.compose_project_name, compose_file, true).await {
+            Ok(()) => Ok(()),
+            Err(retry_err) => Err(append_self_heal_failure_context(retry_err)),
+        }
+    } else {
+        Ok(())
+    }
+}
+
+fn append_self_heal_failure_context(err: AppError) -> AppError {
+    match err {
+        AppError::BadRequest(message) => {
+            AppError::BadRequest(format!("{message}; self-heal retry also failed"))
+        }
+        other => other,
     }
 }
 
@@ -1582,6 +1992,140 @@ fn compact_message(primary: &str, secondary: &str, fallback: &str) -> String {
     message
 }
 
+fn parse_entrypoint_host_port(url: &str) -> Option<(String, u16)> {
+    let without_scheme = url.split_once("://").map(|(_, rest)| rest).unwrap_or(url);
+    let authority = without_scheme.split('/').next()?.trim();
+    let authority = authority.rsplit('@').next()?;
+    let (host, port_raw) = authority.rsplit_once(':')?;
+    if host.trim().is_empty() {
+        return None;
+    }
+    let port = port_raw.trim().parse::<u16>().ok()?;
+    Some((host.trim().to_string(), port))
+}
+
+fn instance_ssh_gateway_username() -> String {
+    INSTANCE_SSH_GATEWAY_USERNAME.to_string()
+}
+
+fn instance_ssh_gateway_password(state: &AppState, instance: &InstanceRow) -> String {
+    let seed = format!(
+        "{}:{}:{}:{}",
+        state.config.jwt_secret, instance.id, instance.team_id, instance.challenge_id
+    );
+    let digest = Uuid::new_v5(&Uuid::NAMESPACE_URL, seed.as_bytes())
+        .as_simple()
+        .to_string();
+    format!("ctf{}", &digest[..12])
+}
+
+fn inject_ssh_gateway_service(
+    compose_text: &str,
+    host_port: u16,
+    username: &str,
+    password: &str,
+) -> AppResult<String> {
+    let mut value: serde_yaml::Value = serde_yaml::from_str(compose_text).map_err(|err| {
+        AppError::BadRequest(format!("failed to parse rendered compose yaml: {err}"))
+    })?;
+
+    let Some(root_map) = value.as_mapping_mut() else {
+        return Err(AppError::BadRequest(
+            "rendered compose yaml root must be a mapping".to_string(),
+        ));
+    };
+
+    let services_key = serde_yaml::Value::String("services".to_string());
+    if !root_map.contains_key(&services_key) {
+        root_map.insert(
+            services_key.clone(),
+            serde_yaml::Value::Mapping(serde_yaml::Mapping::new()),
+        );
+    }
+
+    let primary_network_name = root_map
+        .get(&serde_yaml::Value::String("networks".to_string()))
+        .and_then(serde_yaml::Value::as_mapping)
+        .and_then(|networks| {
+            networks
+                .keys()
+                .find_map(|key| key.as_str().map(|name| name.to_string()))
+        });
+
+    let Some(services_map) = root_map
+        .get_mut(&services_key)
+        .and_then(serde_yaml::Value::as_mapping_mut)
+    else {
+        return Err(AppError::BadRequest(
+            "compose.services must be a mapping".to_string(),
+        ));
+    };
+
+    let gateway_service_key =
+        serde_yaml::Value::String(INSTANCE_SSH_GATEWAY_SERVICE_NAME.to_string());
+    if services_map.contains_key(&gateway_service_key) {
+        return Err(AppError::BadRequest(format!(
+            "compose template reserves service name '{INSTANCE_SSH_GATEWAY_SERVICE_NAME}', please rename your service"
+        )));
+    }
+
+    let mut env_map = serde_yaml::Mapping::new();
+    env_map.insert(
+        serde_yaml::Value::String("PUID".to_string()),
+        serde_yaml::Value::String("1000".to_string()),
+    );
+    env_map.insert(
+        serde_yaml::Value::String("PGID".to_string()),
+        serde_yaml::Value::String("1000".to_string()),
+    );
+    env_map.insert(
+        serde_yaml::Value::String("TZ".to_string()),
+        serde_yaml::Value::String("UTC".to_string()),
+    );
+    env_map.insert(
+        serde_yaml::Value::String("PASSWORD_ACCESS".to_string()),
+        serde_yaml::Value::String("true".to_string()),
+    );
+    env_map.insert(
+        serde_yaml::Value::String("USER_NAME".to_string()),
+        serde_yaml::Value::String(username.to_string()),
+    );
+    env_map.insert(
+        serde_yaml::Value::String("USER_PASSWORD".to_string()),
+        serde_yaml::Value::String(password.to_string()),
+    );
+
+    let mut service_map = serde_yaml::Mapping::new();
+    service_map.insert(
+        serde_yaml::Value::String("image".to_string()),
+        serde_yaml::Value::String(INSTANCE_SSH_GATEWAY_IMAGE.to_string()),
+    );
+    service_map.insert(
+        serde_yaml::Value::String("environment".to_string()),
+        serde_yaml::Value::Mapping(env_map),
+    );
+    service_map.insert(
+        serde_yaml::Value::String("ports".to_string()),
+        serde_yaml::Value::Sequence(vec![serde_yaml::Value::String(format!(
+            "{host_port}:{INSTANCE_SSH_GATEWAY_PORT}"
+        ))]),
+    );
+    if let Some(network_name) = primary_network_name {
+        service_map.insert(
+            serde_yaml::Value::String("networks".to_string()),
+            serde_yaml::Value::Sequence(vec![serde_yaml::Value::String(network_name)]),
+        );
+    }
+
+    services_map.insert(gateway_service_key, serde_yaml::Value::Mapping(service_map));
+
+    serde_yaml::to_string(&value).map_err(|err| {
+        AppError::BadRequest(format!(
+            "failed to serialize compose yaml with ssh gateway: {err}"
+        ))
+    })
+}
+
 async fn cleanup_runtime_dir(state: &AppState, compose_project_name: &str) {
     let runtime_dir = runtime_project_dir(state, compose_project_name);
 
@@ -1603,7 +2147,20 @@ fn is_expired(instance: &InstanceRow, now: DateTime<Utc>) -> bool {
         .is_some_and(|expires_at| now > expires_at)
 }
 
-fn instance_to_response(row: InstanceRow, message: String) -> InstanceResponse {
+fn instance_to_response(state: &AppState, row: InstanceRow, message: String) -> InstanceResponse {
+    let network_access = if row.entrypoint_url.starts_with("ssh://") {
+        parse_entrypoint_host_port(&row.entrypoint_url).map(|(host, port)| InstanceNetworkAccess {
+            mode: "ssh_bastion".to_string(),
+            host,
+            port,
+            username: Some(instance_ssh_gateway_username()),
+            password: Some(instance_ssh_gateway_password(state, &row)),
+            note: "Use SSH access box, then scan your isolated 10.x.x.0/24 subnet".to_string(),
+        })
+    } else {
+        None
+    };
+
     InstanceResponse {
         id: row.id,
         contest_id: row.contest_id,
@@ -1619,6 +2176,7 @@ fn instance_to_response(row: InstanceRow, message: String) -> InstanceResponse {
         expires_at: row.expires_at,
         destroyed_at: row.destroyed_at,
         last_heartbeat_at: row.last_heartbeat_at,
+        network_access,
         message,
     }
 }

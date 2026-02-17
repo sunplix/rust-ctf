@@ -11,6 +11,9 @@ pub struct AppConfig {
     pub compose_command_timeout_seconds: u64,
     pub instance_default_cpu_limit: f64,
     pub instance_default_memory_limit_mb: i64,
+    pub instance_public_host: String,
+    pub instance_host_port_min: u16,
+    pub instance_host_port_max: u16,
     pub default_admin_enabled: bool,
     pub default_admin_username: String,
     pub default_admin_email: String,
@@ -24,6 +27,8 @@ pub struct AppConfig {
     pub instance_reaper_initial_delay_seconds: u64,
     pub instance_reaper_batch_size: i64,
     pub instance_heartbeat_stale_seconds: u64,
+    pub instance_heartbeat_report_url: String,
+    pub instance_heartbeat_report_interval_seconds: u64,
     pub instance_stale_reaper_enabled: bool,
     pub instance_stale_reaper_batch_size: i64,
 }
@@ -40,6 +45,9 @@ impl AppConfig {
             .set_default("compose_command_timeout_seconds", 120_u64)?
             .set_default("instance_default_cpu_limit", 1.0_f64)?
             .set_default("instance_default_memory_limit_mb", 512_i64)?
+            .set_default("instance_public_host", "127.0.0.1")?
+            .set_default("instance_host_port_min", 32768_u16)?
+            .set_default("instance_host_port_max", 60999_u16)?
             .set_default("default_admin_enabled", true)?
             .set_default("default_admin_username", "admin")?
             .set_default("default_admin_email", "admin@rust-ctf.local")?
@@ -53,6 +61,11 @@ impl AppConfig {
             .set_default("instance_reaper_initial_delay_seconds", 20_u64)?
             .set_default("instance_reaper_batch_size", 30_i64)?
             .set_default("instance_heartbeat_stale_seconds", 300_u64)?
+            .set_default(
+                "instance_heartbeat_report_url",
+                "http://host.docker.internal:8080/api/v1/instances/heartbeat/report",
+            )?
+            .set_default("instance_heartbeat_report_interval_seconds", 30_u64)?
             .set_default("instance_stale_reaper_enabled", false)?
             .set_default("instance_stale_reaper_batch_size", 20_i64)?
             .add_source(::config::Environment::default().separator("__"));
