@@ -96,6 +96,51 @@
               <p>subnet={{ instance.subnet }}</p>
               <p>entrypoint={{ instance.entrypoint_url || '-' }}</p>
               <p>expires_at={{ instance.expires_at || '-' }}</p>
+              <template v-if="instance.network_access">
+                <p>access_mode={{ instance.network_access.mode }}</p>
+                <template v-if="instance.network_access.mode === 'ssh_bastion'">
+                  <p>ssh={{ instanceSshCommand || "-" }}</p>
+                  <p v-if="instance.network_access.username">username={{ instance.network_access.username }}</p>
+                  <p v-if="instance.network_access.password">password={{ instance.network_access.password }}</p>
+                  <p>note={{ instance.network_access.note }}</p>
+                  <div class="actions-row">
+                    <button class="ghost" type="button" @click="copyNetworkAccessCommand" :disabled="!instanceSshCommand">
+                      复制 SSH 命令
+                    </button>
+                    <button
+                      class="ghost"
+                      type="button"
+                      @click="copyNetworkAccessPassword"
+                      :disabled="!instance.network_access.password"
+                    >
+                      复制 SSH 密码
+                    </button>
+                  </div>
+                </template>
+                <template v-else-if="instance.network_access.mode === 'wireguard'">
+                  <p>endpoint={{ instanceWireguardEndpoint || "-" }}</p>
+                  <p>config_path={{ instance.network_access.download_url || "-" }}</p>
+                  <p>note={{ instance.network_access.note }}</p>
+                  <div class="actions-row">
+                    <button
+                      class="ghost"
+                      type="button"
+                      @click="downloadWireguardConfig"
+                      :disabled="downloadingWireguardConfig"
+                    >
+                      {{ downloadingWireguardConfig ? "下载中..." : "下载 WireGuard 配置" }}
+                    </button>
+                    <button
+                      class="ghost"
+                      type="button"
+                      @click="copyToClipboard(instanceWireguardEndpoint, 'WireGuard 端点已复制')"
+                      :disabled="!instanceWireguardEndpoint"
+                    >
+                      复制端点
+                    </button>
+                  </div>
+                </template>
+              </template>
               <p>message={{ instance.message }}</p>
             </div>
             <p v-else class="muted">尚未创建实例。</p>
@@ -177,6 +222,7 @@ import {
   buildScoreboardWsUrl,
   destroyInstance,
   getInstance,
+  getInstanceWireguardConfig,
   listContestAnnouncements,
   getScoreboard,
   listContestChallenges,
@@ -214,6 +260,7 @@ const submitError = ref("");
 const instance = ref<InstanceResponse | null>(null);
 const loadingInstance = ref(false);
 const mutatingInstance = ref(false);
+const downloadingWireguardConfig = ref(false);
 const instanceError = ref("");
 
 const scoreboard = ref<ScoreboardEntry[]>([]);
@@ -239,6 +286,20 @@ const canManageInstance = computed(() => {
 });
 
 const instanceBusy = computed(() => loadingInstance.value || mutatingInstance.value);
+const instanceSshCommand = computed(() => {
+  const access = instance.value?.network_access;
+  if (!access || access.mode !== "ssh_bastion" || !access.username) {
+    return "";
+  }
+  return `ssh ${access.username}@${access.host} -p ${access.port}`;
+});
+const instanceWireguardEndpoint = computed(() => {
+  const access = instance.value?.network_access;
+  if (!access || access.mode !== "wireguard") {
+    return "";
+  }
+  return `${access.host}:${access.port}/udp`;
+});
 
 function formatTime(input: string) {
   return new Date(input).toLocaleString();
@@ -250,6 +311,63 @@ function requireAccessToken() {
     throw new ApiClientError("未登录或会话已失效", "unauthorized");
   }
   return token;
+}
+
+async function copyToClipboard(value: string, successTitle: string) {
+  if (!value) {
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(value);
+    uiStore.success(successTitle, value, 2200);
+  } catch {
+    uiStore.error("复制失败", "当前浏览器环境不支持剪贴板写入，请手动复制。");
+  }
+}
+
+async function copyNetworkAccessCommand() {
+  await copyToClipboard(instanceSshCommand.value, "SSH 命令已复制");
+}
+
+async function copyNetworkAccessPassword() {
+  const password = instance.value?.network_access?.password ?? "";
+  await copyToClipboard(password, "SSH 密码已复制");
+}
+
+async function downloadWireguardConfig() {
+  if (!selectedChallenge.value) {
+    return;
+  }
+
+  downloadingWireguardConfig.value = true;
+  try {
+    const token = requireAccessToken();
+    const response = await getInstanceWireguardConfig(
+      props.contestId,
+      selectedChallenge.value.id,
+      token
+    );
+
+    const blob = new Blob([response.content], {
+      type: "text/plain;charset=utf-8"
+    });
+    const link = document.createElement("a");
+    const objectUrl = URL.createObjectURL(blob);
+    link.href = objectUrl;
+    link.download = response.filename || "wireguard.conf";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+
+    uiStore.success("WireGuard 配置已下载", response.filename, 2600);
+  } catch (err) {
+    const message = err instanceof ApiClientError ? err.message : "下载 WireGuard 配置失败";
+    uiStore.error("下载 WireGuard 配置失败", message);
+  } finally {
+    downloadingWireguardConfig.value = false;
+  }
 }
 
 async function loadChallenges() {

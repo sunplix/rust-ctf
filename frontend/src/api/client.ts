@@ -191,6 +191,16 @@ export type ScoreboardPushPayload = {
   entries: ScoreboardEntry[];
 };
 
+export type InstanceNetworkAccess = {
+  mode: string;
+  host: string;
+  port: number;
+  username: string | null;
+  password: string | null;
+  download_url?: string | null;
+  note: string;
+};
+
 export type InstanceResponse = {
   id: string;
   contest_id: string;
@@ -204,6 +214,7 @@ export type InstanceResponse = {
   expires_at: string | null;
   destroyed_at: string | null;
   last_heartbeat_at: string | null;
+  network_access?: InstanceNetworkAccess | null;
   message: string;
 };
 
@@ -414,6 +425,15 @@ export type AdminChallengeRuntimeLintResponse = {
   ok_count: number;
   error_count: number;
   items: AdminChallengeRuntimeLintItem[];
+};
+
+export type WireguardConfigResponse = {
+  contest_id: string;
+  challenge_id: string;
+  team_id: string;
+  endpoint: string;
+  filename: string;
+  content: string;
 };
 
 export async function register(payload: {
@@ -836,6 +856,22 @@ export async function getInstance(
   }
 }
 
+export async function getInstanceWireguardConfig(
+  contestId: string,
+  challengeId: string,
+  accessToken: string
+): Promise<WireguardConfigResponse> {
+  try {
+    const { data } = await api.get<WireguardConfigResponse>(
+      `/instances/${contestId}/${challengeId}/wireguard-config`,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
 export async function listAdminChallenges(accessToken: string): Promise<AdminChallengeItem[]> {
   try {
     const { data } = await api.get<AdminChallengeItem[]>("/admin/challenges", authHeaders(accessToken));
@@ -863,6 +899,7 @@ export async function createAdminChallenge(
     writeup_visibility?: string;
     writeup_content?: string;
     change_note?: string;
+    metadata?: Record<string, unknown>;
   },
   accessToken: string
 ): Promise<AdminChallengeItem> {
@@ -893,6 +930,7 @@ export async function updateAdminChallenge(
     writeup_visibility?: string;
     writeup_content?: string;
     change_note?: string;
+    metadata?: Record<string, unknown>;
   },
   accessToken: string
 ): Promise<AdminChallengeItem> {

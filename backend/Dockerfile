@@ -9,7 +9,7 @@ RUN cargo build --release
 
 FROM debian:bookworm-slim
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates docker.io docker-compose \
+    && apt-get install -y --no-install-recommends ca-certificates curl docker.io docker-compose \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

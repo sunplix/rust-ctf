@@ -1,6 +1,6 @@
 use std::{
     io::ErrorKind,
-    net::TcpListener,
+    net::{TcpListener, UdpSocket},
     path::{Path, PathBuf},
     process::Stdio,
     sync::Arc,
@@ -47,6 +47,19 @@ const INSTANCE_SSH_GATEWAY_PORT: u16 = 2222;
 const INSTANCE_SSH_GATEWAY_IMAGE: &str = "linuxserver/openssh-server:latest";
 const INSTANCE_SSH_GATEWAY_SERVICE_NAME: &str = "ctf_access_gateway";
 const INSTANCE_SSH_GATEWAY_USERNAME: &str = "ctf";
+const INSTANCE_SSH_GATEWAY_ENABLE_SUDO: &str = "true";
+const INSTANCE_WIREGUARD_IMAGE: &str = "linuxserver/wireguard:latest";
+const INSTANCE_WIREGUARD_SERVICE_NAME: &str = "ctf_access_wireguard";
+const INSTANCE_WIREGUARD_SERVICE_PORT: u16 = 51820;
+const INSTANCE_WIREGUARD_PEERS: &str = "1";
+const INSTANCE_WIREGUARD_PEER_DNS: &str = "1.1.1.1";
+const INSTANCE_WIREGUARD_CONFIG_SERVICE_NAME: &str = "ctf_access_wireguard_config_api";
+const INSTANCE_WIREGUARD_CONFIG_SERVICE_IMAGE: &str = INSTANCE_WIREGUARD_IMAGE;
+const INSTANCE_WIREGUARD_CONFIG_SERVICE_PORT: u16 = 8000;
+const INSTANCE_WIREGUARD_CONFIG_VOLUME_NAME: &str = "ctf_access_wireguard_config";
+const INSTANCE_WIREGUARD_ACCESS_META_FILE: &str = "wireguard-access.json";
+const INSTANCE_WIREGUARD_CONFIG_FETCH_RETRIES: usize = 6;
+const INSTANCE_WIREGUARD_CONFIG_FETCH_DELAY_MS: u64 = 1000;
 const INSTANCE_PORT_ALLOCATE_RETRIES: usize = 64;
 
 #[derive(Debug, Deserialize)]
@@ -95,7 +108,23 @@ struct InstanceNetworkAccess {
     port: u16,
     username: Option<String>,
     password: Option<String>,
+    download_url: Option<String>,
     note: String,
+}
+
+#[derive(Debug, Serialize)]
+struct WireguardConfigResponse {
+    contest_id: Uuid,
+    challenge_id: Uuid,
+    team_id: Uuid,
+    endpoint: String,
+    filename: String,
+    content: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct WireguardAccessMeta {
+    config_host_port: u16,
 }
 
 #[derive(Debug, FromRow)]
@@ -149,11 +178,24 @@ struct ComposeRenderSource {
     network_access_mode: RuntimeAccessMode,
 }
 
+#[derive(Debug)]
+struct WireguardComposeInjected {
+    compose: String,
+    config_host_port: u16,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum RuntimeEntrypointMode {
     InternalSubnet,
     HostMapped(RuntimeEndpointProtocol),
     SshBastion,
+    Wireguard,
+}
+
+#[derive(Debug, Clone, Copy)]
+enum HostPortProtocol {
+    Tcp,
+    Udp,
 }
 
 #[derive(Debug)]
@@ -186,6 +228,10 @@ pub fn router() -> Router<Arc<AppState>> {
         .route(
             "/instances/{contest_id}/{challenge_id}",
             get(get_instance_by_challenge),
+        )
+        .route(
+            "/instances/{contest_id}/{challenge_id}/wireguard-config",
+            get(get_instance_wireguard_config),
         )
 }
 
@@ -456,6 +502,48 @@ async fn get_instance_by_challenge(
     )))
 }
 
+async fn get_instance_wireguard_config(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    AxumPath((contest_id, challenge_id)): AxumPath<(Uuid, Uuid)>,
+) -> AppResult<Json<WireguardConfigResponse>> {
+    let team_id = fetch_user_team_id(state.as_ref(), current_user.user_id).await?;
+
+    let instance = fetch_instance_row(state.as_ref(), contest_id, challenge_id, team_id)
+        .await?
+        .ok_or(AppError::BadRequest("instance not found".to_string()))?;
+
+    if instance.status == "destroyed" {
+        return Err(AppError::BadRequest(
+            "instance has already been destroyed".to_string(),
+        ));
+    }
+
+    if !instance.entrypoint_url.starts_with("wg://") {
+        return Err(AppError::BadRequest(
+            "instance access mode is not wireguard".to_string(),
+        ));
+    }
+
+    let content = read_instance_wireguard_config(state.as_ref(), &instance).await?;
+
+    let filename = format!(
+        "{}-{}-{}.conf",
+        contest_id.as_simple(),
+        challenge_id.as_simple(),
+        team_id.as_simple()
+    );
+
+    Ok(Json(WireguardConfigResponse {
+        contest_id,
+        challenge_id,
+        team_id,
+        endpoint: instance.entrypoint_url,
+        filename,
+        content,
+    }))
+}
+
 async fn fetch_user_team_id(state: &AppState, user_id: Uuid) -> AppResult<Uuid> {
     let team = sqlx::query_as::<_, TeamMembershipRow>(
         "SELECT team_id FROM team_members WHERE user_id = $1 LIMIT 1",
@@ -616,6 +704,8 @@ fn compose_source_from_policy(policy: RuntimePolicyRow) -> AppResult<ComposeRend
 
             let entrypoint_mode = if runtime_options.access_mode == RuntimeAccessMode::SshBastion {
                 RuntimeEntrypointMode::SshBastion
+            } else if runtime_options.access_mode == RuntimeAccessMode::Wireguard {
+                RuntimeEntrypointMode::Wireguard
             } else {
                 RuntimeEntrypointMode::InternalSubnet
             };
@@ -666,6 +756,8 @@ fn compose_source_from_row(row: ComposeTemplateRow) -> AppResult<ComposeRenderSo
 
             let entrypoint_mode = if runtime_options.access_mode == RuntimeAccessMode::SshBastion {
                 RuntimeEntrypointMode::SshBastion
+            } else if runtime_options.access_mode == RuntimeAccessMode::Wireguard {
+                RuntimeEntrypointMode::Wireguard
             } else {
                 RuntimeEntrypointMode::InternalSubnet
             };
@@ -756,34 +848,40 @@ async fn ensure_instance_pending(
 
             insert_instance_row(
                 state,
-                contest_id,
-                challenge_id,
-                team_id,
-                &subnet,
-                &compose_project_name,
-                &entrypoint_url,
-                now,
-                expires_at,
-                cpu_limit.as_deref(),
-                memory_limit_mb,
+                InsertInstanceRowParams {
+                    contest_id,
+                    challenge_id,
+                    team_id,
+                    subnet: &subnet,
+                    compose_project_name: &compose_project_name,
+                    entrypoint_url: &entrypoint_url,
+                    now,
+                    expires_at,
+                    cpu_limit: cpu_limit.as_deref(),
+                    memory_limit_mb,
+                },
             )
             .await
         }
     }
 }
 
-async fn insert_instance_row(
-    state: &AppState,
+struct InsertInstanceRowParams<'a> {
     contest_id: Uuid,
     challenge_id: Uuid,
     team_id: Uuid,
-    subnet: &str,
-    compose_project_name: &str,
-    entrypoint_url: &str,
+    subnet: &'a str,
+    compose_project_name: &'a str,
+    entrypoint_url: &'a str,
     now: DateTime<Utc>,
     expires_at: DateTime<Utc>,
-    cpu_limit: Option<&str>,
+    cpu_limit: Option<&'a str>,
     memory_limit_mb: Option<i32>,
+}
+
+async fn insert_instance_row(
+    state: &AppState,
+    params: InsertInstanceRowParams<'_>,
 ) -> AppResult<InstanceRow> {
     sqlx::query_as::<_, InstanceRow>(
         "INSERT INTO instances (
@@ -817,16 +915,16 @@ async fn insert_instance_row(
                    destroyed_at,
                    last_heartbeat_at",
     )
-    .bind(contest_id)
-    .bind(challenge_id)
-    .bind(team_id)
-    .bind(subnet)
-    .bind(compose_project_name)
-    .bind(entrypoint_url)
-    .bind(cpu_limit)
-    .bind(memory_limit_mb)
-    .bind(now)
-    .bind(expires_at)
+    .bind(params.contest_id)
+    .bind(params.challenge_id)
+    .bind(params.team_id)
+    .bind(params.subnet)
+    .bind(params.compose_project_name)
+    .bind(params.entrypoint_url)
+    .bind(params.cpu_limit)
+    .bind(params.memory_limit_mb)
+    .bind(params.now)
+    .bind(params.expires_at)
     .fetch_one(&state.db)
     .await
     .map_err(AppError::internal)
@@ -945,6 +1043,23 @@ async fn update_instance_status(
     .fetch_one(&state.db)
     .await
     .map_err(AppError::internal)
+}
+
+async fn mark_instance_reaper_failed(state: &AppState, instance_id: Uuid) -> AppResult<()> {
+    sqlx::query(
+        "UPDATE instances
+         SET status = 'failed',
+             expires_at = NULL,
+             updated_at = NOW()
+         WHERE id = $1
+           AND status <> 'destroyed'",
+    )
+    .bind(instance_id)
+    .execute(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    Ok(())
 }
 
 async fn touch_instance_heartbeat(
@@ -1181,7 +1296,13 @@ pub(crate) async fn run_expired_instance_reaper(
                     error = %err,
                     "instance reaper failed to prepare compose file"
                 );
-                let _ = update_instance_status(state, instance.id, "failed").await;
+                if let Err(mark_err) = mark_instance_reaper_failed(state, instance.id).await {
+                    warn!(
+                        instance_id = %instance.id,
+                        error = %mark_err,
+                        "instance reaper failed to mark instance as failed"
+                    );
+                }
                 continue;
             }
         };
@@ -1197,7 +1318,13 @@ pub(crate) async fn run_expired_instance_reaper(
                 error = %err,
                 "instance reaper failed during compose down"
             );
-            let _ = update_instance_status(state, instance.id, "failed").await;
+            if let Err(mark_err) = mark_instance_reaper_failed(state, instance.id).await {
+                warn!(
+                    instance_id = %instance.id,
+                    error = %mark_err,
+                    "instance reaper failed to mark instance as failed"
+                );
+            }
             continue;
         }
 
@@ -1367,7 +1494,7 @@ fn resolve_entrypoint_url(
             let port = existing_entrypoint_url
                 .and_then(parse_entrypoint_host_port)
                 .map(|(_, port)| port)
-                .unwrap_or(allocate_random_host_port(state)?);
+                .unwrap_or(allocate_random_host_port(state, HostPortProtocol::Tcp)?);
 
             let scheme = match protocol {
                 RuntimeEndpointProtocol::Http => "http",
@@ -1381,8 +1508,16 @@ fn resolve_entrypoint_url(
             let port = existing_entrypoint_url
                 .and_then(parse_entrypoint_host_port)
                 .map(|(_, port)| port)
-                .unwrap_or(allocate_random_host_port(state)?);
+                .unwrap_or(allocate_random_host_port(state, HostPortProtocol::Tcp)?);
             Ok(format!("ssh://{host}:{port}"))
+        }
+        RuntimeEntrypointMode::Wireguard => {
+            let host = instance_public_host(state);
+            let port = existing_entrypoint_url
+                .and_then(parse_entrypoint_host_port)
+                .map(|(_, port)| port)
+                .unwrap_or(allocate_random_host_port(state, HostPortProtocol::Udp)?);
+            Ok(format!("wg://{host}:{port}"))
         }
     }
 }
@@ -1396,12 +1531,20 @@ fn instance_public_host(state: &AppState) -> String {
     }
 }
 
-fn allocate_random_host_port(state: &AppState) -> AppResult<u16> {
+fn allocate_random_host_port(state: &AppState, protocol: HostPortProtocol) -> AppResult<u16> {
     let min = state.config.instance_host_port_min.max(1024);
     let max = state.config.instance_host_port_max.max(min);
     for _ in 0..INSTANCE_PORT_ALLOCATE_RETRIES {
-        let listener = TcpListener::bind(("0.0.0.0", 0)).map_err(AppError::internal)?;
-        let port = listener.local_addr().map_err(AppError::internal)?.port();
+        let port = match protocol {
+            HostPortProtocol::Tcp => {
+                let listener = TcpListener::bind(("0.0.0.0", 0)).map_err(AppError::internal)?;
+                listener.local_addr().map_err(AppError::internal)?.port()
+            }
+            HostPortProtocol::Udp => {
+                let socket = UdpSocket::bind(("0.0.0.0", 0)).map_err(AppError::internal)?;
+                socket.local_addr().map_err(AppError::internal)?.port()
+            }
+        };
         if port >= min && port <= max {
             return Ok(port);
         }
@@ -1508,6 +1651,41 @@ fn runtime_project_dir(state: &AppState, compose_project_name: &str) -> PathBuf 
 
 fn compose_file_path(state: &AppState, compose_project_name: &str) -> PathBuf {
     runtime_project_dir(state, compose_project_name).join(COMPOSE_FILE_NAME)
+}
+
+fn wireguard_access_meta_path(state: &AppState, compose_project_name: &str) -> PathBuf {
+    runtime_project_dir(state, compose_project_name).join(INSTANCE_WIREGUARD_ACCESS_META_FILE)
+}
+
+async fn write_wireguard_access_meta(
+    state: &AppState,
+    compose_project_name: &str,
+    config_host_port: u16,
+) -> AppResult<()> {
+    let path = wireguard_access_meta_path(state, compose_project_name);
+    let meta = WireguardAccessMeta { config_host_port };
+    let data = serde_json::to_vec(&meta).map_err(AppError::internal)?;
+    fs::write(path, data).await.map_err(AppError::internal)
+}
+
+async fn read_wireguard_access_meta(
+    state: &AppState,
+    compose_project_name: &str,
+) -> AppResult<WireguardAccessMeta> {
+    let path = wireguard_access_meta_path(state, compose_project_name);
+    let data = fs::read(path).await.map_err(|err| {
+        AppError::BadRequest(format!("wireguard access metadata is missing: {err}"))
+    })?;
+    serde_json::from_slice::<WireguardAccessMeta>(&data).map_err(AppError::internal)
+}
+
+async fn cleanup_wireguard_access_meta(state: &AppState, compose_project_name: &str) {
+    let path = wireguard_access_meta_path(state, compose_project_name);
+    if let Err(err) = fs::remove_file(path).await {
+        if err.kind() != ErrorKind::NotFound {
+            warn!(error = %err, compose_project_name, "failed to cleanup wireguard meta file");
+        }
+    }
 }
 
 fn render_compose_template(
@@ -1707,15 +1885,27 @@ async fn persist_compose_file(
     );
     let rendered = render_compose_template_variables(&rendered, &source.metadata)
         .map_err(AppError::BadRequest)?;
-    let rendered = if source.network_access_mode == RuntimeAccessMode::SshBastion {
-        let (_, host_port) = parse_entrypoint_host_port(&instance.entrypoint_url).ok_or(
-            AppError::BadRequest("instance entrypoint host port is missing".to_string()),
-        )?;
-        let username = instance_ssh_gateway_username();
-        let password = instance_ssh_gateway_password(state, instance);
-        inject_ssh_gateway_service(&rendered, host_port, &username, &password)?
-    } else {
-        rendered
+    let mut wireguard_config_host_port: Option<u16> = None;
+    let rendered = match source.network_access_mode {
+        RuntimeAccessMode::SshBastion => {
+            let (_, host_port) = parse_entrypoint_host_port(&instance.entrypoint_url).ok_or(
+                AppError::BadRequest("instance entrypoint host port is missing".to_string()),
+            )?;
+            let username = instance_ssh_gateway_username();
+            let password = instance_ssh_gateway_password(state, instance);
+            inject_ssh_gateway_service(&rendered, host_port, &username, &password)?
+        }
+        RuntimeAccessMode::Wireguard => {
+            let (public_host, host_port) = parse_entrypoint_host_port(&instance.entrypoint_url)
+                .ok_or(AppError::BadRequest(
+                    "instance entrypoint host port is missing".to_string(),
+                ))?;
+            let injected =
+                inject_wireguard_service(state, instance, &rendered, &public_host, host_port)?;
+            wireguard_config_host_port = Some(injected.config_host_port);
+            injected.compose
+        }
+        RuntimeAccessMode::Direct => rendered,
     };
     let rendered = apply_compose_resource_limits(
         &rendered,
@@ -1734,6 +1924,13 @@ async fn persist_compose_file(
         .await
         .map_err(AppError::internal)?;
 
+    if let Some(config_host_port) = wireguard_config_host_port {
+        write_wireguard_access_meta(state, &instance.compose_project_name, config_host_port)
+            .await?;
+    } else {
+        cleanup_wireguard_access_meta(state, &instance.compose_project_name).await;
+    }
+
     Ok(compose_file)
 }
 
@@ -1749,6 +1946,46 @@ async fn ensure_compose_file_for_existing(
     let row = fetch_compose_template_row(state, instance.contest_id, instance.challenge_id).await?;
     let source = compose_source_from_row(row)?;
     persist_compose_file(state, instance, &source).await
+}
+
+async fn read_instance_wireguard_config(
+    state: &AppState,
+    instance: &InstanceRow,
+) -> AppResult<String> {
+    let meta = read_wireguard_access_meta(state, &instance.compose_project_name).await?;
+    let url = format!(
+        "http://host.docker.internal:{}/peer1/peer1.conf",
+        meta.config_host_port
+    );
+    let mut last_error: Option<String> = None;
+
+    for attempt in 0..INSTANCE_WIREGUARD_CONFIG_FETCH_RETRIES {
+        match fetch_wireguard_config_via_http(state, &url).await {
+            Ok(content) => {
+                let normalized = content.replace("\r\n", "\n");
+                if normalized.contains("[Interface]") && normalized.contains("[Peer]") {
+                    return Ok(normalized);
+                }
+                last_error = Some("wireguard config is not ready yet".to_string());
+            }
+            Err(AppError::BadRequest(message)) => {
+                last_error = Some(message);
+            }
+            Err(err) => return Err(err),
+        }
+
+        if attempt + 1 < INSTANCE_WIREGUARD_CONFIG_FETCH_RETRIES {
+            tokio::time::sleep(TokioDuration::from_millis(
+                INSTANCE_WIREGUARD_CONFIG_FETCH_DELAY_MS,
+            ))
+            .await;
+        }
+    }
+
+    Err(AppError::BadRequest(format!(
+        "wireguard config is not ready: {}",
+        last_error.unwrap_or_else(|| "unknown error".to_string())
+    )))
 }
 
 async fn compose_up(
@@ -1934,6 +2171,16 @@ async fn run_single_compose_command(
     program: &str,
     args: &[String],
 ) -> Result<(), ComposeCommandError> {
+    run_single_compose_command_capture(state, program, args)
+        .await
+        .map(|_| ())
+}
+
+async fn run_single_compose_command_capture(
+    state: &AppState,
+    program: &str,
+    args: &[String],
+) -> Result<String, ComposeCommandError> {
     let timeout_secs = state.config.compose_command_timeout_seconds.clamp(5, 600);
 
     let mut command = Command::new(program);
@@ -1952,16 +2199,67 @@ async fn run_single_compose_command(
         Err(_) => return Err(ComposeCommandError::Timeout),
     };
 
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
     if output.status.success() {
-        return Ok(());
+        let trimmed = stdout.trim();
+        if !trimmed.is_empty() {
+            return Ok(trimmed.to_string());
+        }
+        return Ok(stderr.trim().to_string());
     }
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let stderr = String::from_utf8_lossy(&output.stderr);
     Err(ComposeCommandError::Failed(compact_message(
         &stderr,
         &stdout,
         "compose command failed",
+    )))
+}
+
+async fn fetch_wireguard_config_via_http(state: &AppState, url: &str) -> AppResult<String> {
+    let timeout_secs = state.config.compose_command_timeout_seconds.clamp(5, 120);
+    let curl_max_time = timeout_secs.min(2).to_string();
+
+    let mut command = Command::new("curl");
+    command
+        .args(["-fsS", "--max-time", curl_max_time.as_str(), url])
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+
+    let output = match timeout(TokioDuration::from_secs(timeout_secs), command.output()).await {
+        Ok(Ok(output)) => output,
+        Ok(Err(err)) if err.kind() == ErrorKind::NotFound => {
+            return Err(AppError::BadRequest(
+                "curl command is unavailable for wireguard config fetch".to_string(),
+            ));
+        }
+        Ok(Err(err)) => {
+            return Err(AppError::BadRequest(format!(
+                "wireguard config fetch failed to start: {}",
+                err
+            )));
+        }
+        Err(_) => {
+            return Err(AppError::BadRequest(format!(
+                "wireguard config fetch timed out after {} seconds",
+                timeout_secs
+            )));
+        }
+    };
+
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
+    if output.status.success() {
+        return Ok(stdout);
+    }
+
+    Err(AppError::BadRequest(compact_message(
+        &stderr,
+        &stdout,
+        "wireguard config fetch failed",
     )))
 }
 
@@ -1985,7 +2283,7 @@ fn compact_message(primary: &str, secondary: &str, fallback: &str) -> String {
         fallback
     };
 
-    let mut message = source.replace('\n', " ").replace('\r', " ");
+    let mut message = source.replace(['\n', '\r'], " ");
     if message.chars().count() > 240 {
         message = message.chars().take(240).collect::<String>() + "...";
     }
@@ -2044,7 +2342,7 @@ fn inject_ssh_gateway_service(
     }
 
     let primary_network_name = root_map
-        .get(&serde_yaml::Value::String("networks".to_string()))
+        .get(serde_yaml::Value::String("networks".to_string()))
         .and_then(serde_yaml::Value::as_mapping)
         .and_then(|networks| {
             networks
@@ -2087,6 +2385,10 @@ fn inject_ssh_gateway_service(
         serde_yaml::Value::String("true".to_string()),
     );
     env_map.insert(
+        serde_yaml::Value::String("SUDO_ACCESS".to_string()),
+        serde_yaml::Value::String(INSTANCE_SSH_GATEWAY_ENABLE_SUDO.to_string()),
+    );
+    env_map.insert(
         serde_yaml::Value::String("USER_NAME".to_string()),
         serde_yaml::Value::String(username.to_string()),
     );
@@ -2126,6 +2428,230 @@ fn inject_ssh_gateway_service(
     })
 }
 
+fn inject_wireguard_service(
+    state: &AppState,
+    instance: &InstanceRow,
+    compose_text: &str,
+    public_host: &str,
+    host_port: u16,
+) -> AppResult<WireguardComposeInjected> {
+    let config_host_port = allocate_random_host_port(state, HostPortProtocol::Tcp)?;
+    let mut value: serde_yaml::Value = serde_yaml::from_str(compose_text).map_err(|err| {
+        AppError::BadRequest(format!("failed to parse rendered compose yaml: {err}"))
+    })?;
+
+    let Some(root_map) = value.as_mapping_mut() else {
+        return Err(AppError::BadRequest(
+            "rendered compose yaml root must be a mapping".to_string(),
+        ));
+    };
+
+    let services_key = serde_yaml::Value::String("services".to_string());
+    if !root_map.contains_key(&services_key) {
+        root_map.insert(
+            services_key.clone(),
+            serde_yaml::Value::Mapping(serde_yaml::Mapping::new()),
+        );
+    }
+
+    let primary_network_name = root_map
+        .get(serde_yaml::Value::String("networks".to_string()))
+        .and_then(serde_yaml::Value::as_mapping)
+        .and_then(|networks| {
+            networks
+                .keys()
+                .find_map(|key| key.as_str().map(|name| name.to_string()))
+        });
+
+    let Some(services_map) = root_map
+        .get_mut(&services_key)
+        .and_then(serde_yaml::Value::as_mapping_mut)
+    else {
+        return Err(AppError::BadRequest(
+            "compose.services must be a mapping".to_string(),
+        ));
+    };
+
+    let wireguard_service_key =
+        serde_yaml::Value::String(INSTANCE_WIREGUARD_SERVICE_NAME.to_string());
+    if services_map.contains_key(&wireguard_service_key) {
+        return Err(AppError::BadRequest(format!(
+            "compose template reserves service name '{INSTANCE_WIREGUARD_SERVICE_NAME}', please rename your service"
+        )));
+    }
+    let config_service_key =
+        serde_yaml::Value::String(INSTANCE_WIREGUARD_CONFIG_SERVICE_NAME.to_string());
+    if services_map.contains_key(&config_service_key) {
+        return Err(AppError::BadRequest(format!(
+            "compose template reserves service name '{INSTANCE_WIREGUARD_CONFIG_SERVICE_NAME}', please rename your service"
+        )));
+    }
+
+    let mut env_map = serde_yaml::Mapping::new();
+    env_map.insert(
+        serde_yaml::Value::String("PUID".to_string()),
+        serde_yaml::Value::String("1000".to_string()),
+    );
+    env_map.insert(
+        serde_yaml::Value::String("PGID".to_string()),
+        serde_yaml::Value::String("1000".to_string()),
+    );
+    env_map.insert(
+        serde_yaml::Value::String("TZ".to_string()),
+        serde_yaml::Value::String("UTC".to_string()),
+    );
+    env_map.insert(
+        serde_yaml::Value::String("SERVERURL".to_string()),
+        serde_yaml::Value::String(public_host.to_string()),
+    );
+    env_map.insert(
+        serde_yaml::Value::String("SERVERPORT".to_string()),
+        serde_yaml::Value::String(host_port.to_string()),
+    );
+    env_map.insert(
+        serde_yaml::Value::String("PEERS".to_string()),
+        serde_yaml::Value::String(INSTANCE_WIREGUARD_PEERS.to_string()),
+    );
+    env_map.insert(
+        serde_yaml::Value::String("PEERDNS".to_string()),
+        serde_yaml::Value::String(INSTANCE_WIREGUARD_PEER_DNS.to_string()),
+    );
+    env_map.insert(
+        serde_yaml::Value::String("ALLOWEDIPS".to_string()),
+        serde_yaml::Value::String(instance.subnet.clone()),
+    );
+    env_map.insert(
+        serde_yaml::Value::String("LOG_CONFS".to_string()),
+        serde_yaml::Value::String("true".to_string()),
+    );
+
+    let mut service_map = serde_yaml::Mapping::new();
+    service_map.insert(
+        serde_yaml::Value::String("image".to_string()),
+        serde_yaml::Value::String(INSTANCE_WIREGUARD_IMAGE.to_string()),
+    );
+    service_map.insert(
+        serde_yaml::Value::String("environment".to_string()),
+        serde_yaml::Value::Mapping(env_map),
+    );
+    service_map.insert(
+        serde_yaml::Value::String("ports".to_string()),
+        serde_yaml::Value::Sequence(vec![serde_yaml::Value::String(format!(
+            "{host_port}:{INSTANCE_WIREGUARD_SERVICE_PORT}/udp"
+        ))]),
+    );
+    service_map.insert(
+        serde_yaml::Value::String("cap_add".to_string()),
+        serde_yaml::Value::Sequence(vec![serde_yaml::Value::String("NET_ADMIN".to_string())]),
+    );
+    service_map.insert(
+        serde_yaml::Value::String("sysctls".to_string()),
+        serde_yaml::Value::Mapping({
+            let mut map = serde_yaml::Mapping::new();
+            map.insert(
+                serde_yaml::Value::String("net.ipv4.conf.all.src_valid_mark".to_string()),
+                serde_yaml::Value::String("1".to_string()),
+            );
+            map
+        }),
+    );
+    service_map.insert(
+        serde_yaml::Value::String("volumes".to_string()),
+        serde_yaml::Value::Sequence(vec![serde_yaml::Value::String(format!(
+            "{INSTANCE_WIREGUARD_CONFIG_VOLUME_NAME}:/config"
+        ))]),
+    );
+
+    if let Some(network_name) = primary_network_name {
+        service_map.insert(
+            serde_yaml::Value::String("networks".to_string()),
+            serde_yaml::Value::Sequence(vec![serde_yaml::Value::String(network_name)]),
+        );
+    }
+
+    services_map.insert(
+        wireguard_service_key,
+        serde_yaml::Value::Mapping(service_map),
+    );
+
+    let config_api_command = format!(
+        "while true; do if [ -f /config/peer1/peer1.conf ]; then {{ printf 'HTTP/1.1 200 OK\\r\\nContent-Type: text/plain\\r\\nConnection: close\\r\\n\\r\\n'; cat /config/peer1/peer1.conf; }} | nc -l -p {port} -q 1; else printf 'HTTP/1.1 503 Service Unavailable\\r\\nConnection: close\\r\\n\\r\\nwireguard config not ready\\n' | nc -l -p {port} -q 1; fi; done",
+        port = INSTANCE_WIREGUARD_CONFIG_SERVICE_PORT
+    );
+
+    let mut config_service_map = serde_yaml::Mapping::new();
+    config_service_map.insert(
+        serde_yaml::Value::String("image".to_string()),
+        serde_yaml::Value::String(INSTANCE_WIREGUARD_CONFIG_SERVICE_IMAGE.to_string()),
+    );
+    config_service_map.insert(
+        serde_yaml::Value::String("entrypoint".to_string()),
+        serde_yaml::Value::Sequence(vec![
+            serde_yaml::Value::String("sh".to_string()),
+            serde_yaml::Value::String("-lc".to_string()),
+            serde_yaml::Value::String(config_api_command),
+        ]),
+    );
+    config_service_map.insert(
+        serde_yaml::Value::String("depends_on".to_string()),
+        serde_yaml::Value::Sequence(vec![serde_yaml::Value::String(
+            INSTANCE_WIREGUARD_SERVICE_NAME.to_string(),
+        )]),
+    );
+    config_service_map.insert(
+        serde_yaml::Value::String("ports".to_string()),
+        serde_yaml::Value::Sequence(vec![serde_yaml::Value::String(format!(
+            "{}:{INSTANCE_WIREGUARD_CONFIG_SERVICE_PORT}",
+            config_host_port
+        ))]),
+    );
+    config_service_map.insert(
+        serde_yaml::Value::String("volumes".to_string()),
+        serde_yaml::Value::Sequence(vec![serde_yaml::Value::String(format!(
+            "{INSTANCE_WIREGUARD_CONFIG_VOLUME_NAME}:/config:ro"
+        ))]),
+    );
+
+    services_map.insert(
+        config_service_key,
+        serde_yaml::Value::Mapping(config_service_map),
+    );
+
+    let volumes_key = serde_yaml::Value::String("volumes".to_string());
+    if !root_map.contains_key(&volumes_key) {
+        root_map.insert(
+            volumes_key.clone(),
+            serde_yaml::Value::Mapping(serde_yaml::Mapping::new()),
+        );
+    }
+    let Some(volumes_map) = root_map
+        .get_mut(&volumes_key)
+        .and_then(serde_yaml::Value::as_mapping_mut)
+    else {
+        return Err(AppError::BadRequest(
+            "compose.volumes must be a mapping".to_string(),
+        ));
+    };
+    let volume_key = serde_yaml::Value::String(INSTANCE_WIREGUARD_CONFIG_VOLUME_NAME.to_string());
+    if !volumes_map.contains_key(&volume_key) {
+        volumes_map.insert(
+            volume_key,
+            serde_yaml::Value::Mapping(serde_yaml::Mapping::new()),
+        );
+    }
+
+    let compose = serde_yaml::to_string(&value).map_err(|err| {
+        AppError::BadRequest(format!(
+            "failed to serialize compose yaml with wireguard: {err}"
+        ))
+    })?;
+
+    Ok(WireguardComposeInjected {
+        compose,
+        config_host_port,
+    })
+}
+
 async fn cleanup_runtime_dir(state: &AppState, compose_project_name: &str) {
     let runtime_dir = runtime_project_dir(state, compose_project_name);
 
@@ -2155,7 +2681,20 @@ fn instance_to_response(state: &AppState, row: InstanceRow, message: String) -> 
             port,
             username: Some(instance_ssh_gateway_username()),
             password: Some(instance_ssh_gateway_password(state, &row)),
-            note: "Use SSH access box, then scan your isolated 10.x.x.0/24 subnet".to_string(),
+            download_url: None,
+            note: "Use SSH access box to scan your isolated 10.x.x.0/24 subnet; install extra tools when needed via sudo".to_string(),
+        })
+    } else if row.entrypoint_url.starts_with("wg://") {
+        parse_entrypoint_host_port(&row.entrypoint_url).map(|(host, port)| InstanceNetworkAccess {
+            mode: "wireguard".to_string(),
+            host,
+            port,
+            username: None,
+            password: None,
+            download_url: Some(instance_wireguard_config_download_url(&row)),
+            note:
+                "Download WireGuard config, connect VPN, then scan your isolated 10.x.x.0/24 subnet"
+                    .to_string(),
         })
     } else {
         None
@@ -2179,4 +2718,11 @@ fn instance_to_response(state: &AppState, row: InstanceRow, message: String) -> 
         network_access,
         message,
     }
+}
+
+fn instance_wireguard_config_download_url(instance: &InstanceRow) -> String {
+    format!(
+        "/api/v1/instances/{}/{}/wireguard-config",
+        instance.contest_id, instance.challenge_id
+    )
 }

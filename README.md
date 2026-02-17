@@ -382,6 +382,8 @@ services:
 1. `compose`（默认）
 - 使用题目提供的 `compose_template`
 - 默认自动注入队伍隔离 SSH 跳板（`access_mode=ssh_bastion`），选手进入跳板后可对 10.x.x.0/24 子网做端口扫描与横向渗透
+- 跳板账号默认支持 `sudo`，可按需安装额外扫描工具（如 `sudo apk add --no-cache nmap`）
+- 也可切换为 WireGuard VPN（`access_mode=wireguard`），下载专属 `.conf` 后从本地终端直接访问队伍子网
 - 若要关闭跳板，可显式设置 `metadata.runtime.access_mode=direct`
 
 2. `single_image`
@@ -404,7 +406,34 @@ services:
 
 对应实例返回的 `entrypoint_url` 将类似：`http://127.0.0.1:32768`（端口随机）。
 
-### 8.11 题库模板批量 Lint
+### 8.11 WireGuard 接入步骤（选手端）
+
+1. 启动实例：`POST /api/v1/instances/start`
+2. 获取配置：`GET /api/v1/instances/{contest_id}/{challenge_id}/wireguard-config`
+3. 导入返回的 `content` 到本地 WireGuard 客户端（或保存为返回的 `filename`）
+4. 连接后对队伍子网执行扫描与渗透测试（例如 `nmap 10.x.x.0/24`）
+
+常见问题：
+
+- `instance access mode is not wireguard`：题目未设置 `metadata.runtime.access_mode=wireguard`
+- `wireguard config is not ready`：实例刚启动，稍后重试下载
+
+### 8.12 WireGuard 一键冒烟测试脚本
+
+仓库内提供脚本：`backend/scripts/runtime/wireguard_smoke.sh`
+
+```bash
+backend/scripts/runtime/wireguard_smoke.sh
+```
+
+脚本会自动完成：
+
+- 管理员创建运行中赛事
+- 创建 `access_mode=wireguard` 的 compose 题目并挂载
+- 注册选手、创建队伍、启动实例
+- 轮询 `wireguard-config` 直到拿到有效配置
+
+### 8.13 题库模板批量 Lint
 
 可使用管理端 API：
 
@@ -421,3 +450,20 @@ backend/scripts/runtime/challenge_template_lint.sh
 ```bash
 ONLY_ERRORS=true backend/scripts/runtime/challenge_template_lint.sh
 ```
+
+### 8.14 运行时全量回归脚本
+
+可使用统一脚本串行执行：
+
+- 健康检查（`/api/v1/health`）
+- 运行模板 Lint 汇总
+- WireGuard 动态实例冒烟测试
+
+```bash
+backend/scripts/runtime/runtime_full_regression.sh
+```
+
+可选参数：
+
+- `FAIL_ON_LINT_ERRORS=true`：当模板 Lint 存在错误时直接失败
+- `LINT_LIMIT=500`：调整 Lint 扫描题目上限

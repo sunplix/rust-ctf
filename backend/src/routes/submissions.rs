@@ -182,14 +182,16 @@ async fn submit_flag(
             );
             let submitted_at = insert_submission(
                 state.as_ref(),
-                req.contest_id,
-                req.challenge_id,
-                membership.team_id,
-                current_user.user_id,
-                submitted_flag,
-                "rate_limited",
-                0,
-                &message,
+                SubmissionInsertParams {
+                    contest_id: req.contest_id,
+                    challenge_id: req.challenge_id,
+                    team_id: membership.team_id,
+                    user_id: current_user.user_id,
+                    submitted_flag,
+                    verdict: "rate_limited",
+                    score_awarded: 0,
+                    message: &message,
+                },
             )
             .await?;
 
@@ -238,14 +240,16 @@ async fn submit_flag(
 
     let submitted_at = insert_submission(
         state.as_ref(),
-        req.contest_id,
-        req.challenge_id,
-        membership.team_id,
-        current_user.user_id,
-        submitted_flag,
-        &verdict,
-        score_awarded,
-        &message,
+        SubmissionInsertParams {
+            contest_id: req.contest_id,
+            challenge_id: req.challenge_id,
+            team_id: membership.team_id,
+            user_id: current_user.user_id,
+            submitted_flag,
+            verdict: &verdict,
+            score_awarded,
+            message: &message,
+        },
     )
     .await?;
 
@@ -298,16 +302,20 @@ async fn enforce_submission_rate_limit(
     Ok(())
 }
 
-async fn insert_submission(
-    state: &AppState,
+struct SubmissionInsertParams<'a> {
     contest_id: Uuid,
     challenge_id: Uuid,
     team_id: Uuid,
     user_id: Uuid,
-    submitted_flag: &str,
-    verdict: &str,
+    submitted_flag: &'a str,
+    verdict: &'a str,
     score_awarded: i32,
-    message: &str,
+    message: &'a str,
+}
+
+async fn insert_submission(
+    state: &AppState,
+    params: SubmissionInsertParams<'_>,
 ) -> AppResult<DateTime<Utc>> {
     let submitted_at = sqlx::query_as::<_, SubmittedAtRow>(
         "INSERT INTO submissions (
@@ -324,14 +332,14 @@ async fn insert_submission(
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
          RETURNING submitted_at",
     )
-    .bind(contest_id)
-    .bind(challenge_id)
-    .bind(team_id)
-    .bind(user_id)
-    .bind(submitted_flag)
-    .bind(verdict)
-    .bind(score_awarded)
-    .bind(message)
+    .bind(params.contest_id)
+    .bind(params.challenge_id)
+    .bind(params.team_id)
+    .bind(params.user_id)
+    .bind(params.submitted_flag)
+    .bind(params.verdict)
+    .bind(params.score_awarded)
+    .bind(params.message)
     .fetch_one(&state.db)
     .await
     .map_err(AppError::internal)?
@@ -647,7 +655,7 @@ fn compact_message(primary: &str, secondary: &str, fallback: &str) -> String {
         fallback
     };
 
-    let mut message = source.replace('\n', " ").replace('\r', " ");
+    let mut message = source.replace(['\n', '\r'], " ");
     if message.chars().count() > 240 {
         message = message.chars().take(240).collect::<String>() + "...";
     }

@@ -49,6 +49,7 @@ pub enum RuntimeEndpointProtocol {
 pub enum RuntimeAccessMode {
     Direct,
     SshBastion,
+    Wireguard,
 }
 
 #[derive(Debug, Clone)]
@@ -104,9 +105,10 @@ pub fn parse_runtime_metadata_options(metadata: &Value) -> Result<RuntimeMetadat
         Some(value) if value == "ssh_bastion" || value == "ssh-bastion" || value == "bastion" => {
             RuntimeAccessMode::SshBastion
         }
+        Some(value) if value == "wireguard" || value == "wg" => RuntimeAccessMode::Wireguard,
         Some(value) => {
             return Err(format!(
-                "metadata.runtime.access_mode is invalid: '{value}', allowed: direct,ssh_bastion"
+                "metadata.runtime.access_mode is invalid: '{value}', allowed: direct,ssh_bastion,wireguard"
             ));
         }
         None => {
@@ -518,6 +520,19 @@ mod tests {
         let options = parse_runtime_metadata_options(&metadata).unwrap();
         assert_eq!(options.mode, RuntimeMode::Compose);
         assert_eq!(options.access_mode, RuntimeAccessMode::SshBastion);
+    }
+
+    #[test]
+    fn parses_wireguard_access_mode() {
+        let metadata = json!({
+            "runtime": {
+                "mode": "compose",
+                "access_mode": "wireguard"
+            }
+        });
+        let options = parse_runtime_metadata_options(&metadata).unwrap();
+        assert_eq!(options.mode, RuntimeMode::Compose);
+        assert_eq!(options.access_mode, RuntimeAccessMode::Wireguard);
     }
 
     #[test]

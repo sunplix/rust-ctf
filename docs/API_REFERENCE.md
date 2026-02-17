@@ -318,7 +318,7 @@
   - 题目需可见且已到发布时间
   - 非 `admin|judge` 时比赛需 `running`
 - 访问入口：
-  - `compose` 模式默认启用 `ssh_bastion`（可通过 `metadata.runtime.access_mode=direct` 关闭）
+  - `compose` 模式默认启用 `ssh_bastion`（可通过 `metadata.runtime.access_mode=direct|wireguard` 切换）
   - `single_image` 模式会自动分配随机高位端口并映射到指定内部端口
 - 启动自愈：
   - 首次 `compose up` 失败时，后端会自动尝试一次 `compose down` + `compose up --force-recreate` 自愈重试
@@ -360,6 +360,16 @@
 
 - 查询当前用户所属队伍在该题目的实例
 
+### `GET /instances/{contest_id}/{challenge_id}/wireguard-config`
+
+- 获取当前队伍实例的 WireGuard 客户端配置
+- 前置条件：
+  - 当前实例访问模式为 `wireguard`
+  - 实例未销毁，且 WireGuard 容器已生成配置
+- 返回：`contest_id,challenge_id,team_id,endpoint,filename,content`
+- `content` 为完整客户端配置文本，可直接保存为 `.conf` 导入 WireGuard 客户端
+- 若实例刚启动，可能短暂返回 `400 wireguard config is not ready`，应按 1~2 秒间隔重试
+
 ### 生命周期补充说明
 
 - 后端默认启用后台实例回收器：按配置周期扫描 `expires_at <= now` 且未销毁实例，自动执行销毁与运行目录清理。
@@ -374,14 +384,28 @@
 
 `id,contest_id,challenge_id,team_id,status,subnet,compose_project_name,entrypoint_url,cpu_limit,memory_limit_mb,started_at,expires_at,destroyed_at,last_heartbeat_at,network_access?,message`
 
-`network_access`（仅 `ssh_bastion` 模式返回）：
+`network_access`（`ssh_bastion` 或 `wireguard` 模式返回）：
 
-- `mode`：固定 `ssh_bastion`
+- `mode`：`ssh_bastion` 或 `wireguard`
 - `host`：连接主机
 - `port`：随机高位端口
 - `username`：跳板账号
 - `password`：跳板密码
-- `note`：接入说明
+- `download_url`：WireGuard 配置下载路径（仅 `wireguard`）
+- `note`：接入说明（`ssh_bastion` 默认支持 `sudo`，可在跳板中按需安装扫描工具）
+
+`wireguard-config` 响应示例：
+
+```json
+{
+  "contest_id": "uuid",
+  "challenge_id": "uuid",
+  "team_id": "uuid",
+  "endpoint": "wg://127.0.0.1:51888",
+  "filename": "contestid-challengeid-teamid.conf",
+  "content": "[Interface]\\nAddress = 10.13.13.2\\n..."
+}
+```
 
 ## 9. 排行榜 API
 
@@ -504,7 +528,7 @@
 - 成功后自动写入 `challenge_versions` 初始快照
 - `metadata.runtime` 支持：
   - `mode`：`compose`（默认）或 `single_image`
-  - `access_mode`：`direct` 或 `ssh_bastion`（`compose` 模式默认 `ssh_bastion`）
+  - `access_mode`：`direct` 或 `ssh_bastion` 或 `wireguard`（`compose` 模式默认 `ssh_bastion`）
   - `single_image` 模式专用：
     - `image`：镜像仓库地址（如 `nginx:alpine`）
     - `internal_port`：容器内部端口（1..65535）
@@ -691,6 +715,7 @@
 - `200 verdict=rate_limited`：不是 HTTP 失败，而是业务限频（30 秒内超过 10 次）。
 - `400 challenge type does not require runtime instance`：仅 `dynamic/internal` 题型可启动实例。
 - `runtime alert: instance_heartbeat_stale`：见 `docs/STALE_HEARTBEAT_REMEDIATION_RUNBOOK.md` 进行定位与处置。
+- 推荐先执行 `backend/scripts/runtime/runtime_full_regression.sh` 做基线排查（包含 health、运行模板 lint、WireGuard 冒烟）。
 
 ## 12. 后续维护建议
 

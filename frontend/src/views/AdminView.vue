@@ -177,6 +177,37 @@
                   <input v-model="newChallenge.flag_hash" />
                 </label>
                 <label>
+                  <span>运行模式</span>
+                  <select v-model="newChallenge.runtime_mode">
+                    <option value="compose">compose（多容器）</option>
+                    <option value="single_image">single_image（单镜像）</option>
+                  </select>
+                </label>
+                <label v-if="newChallenge.runtime_mode === 'compose'">
+                  <span>访问模式</span>
+                  <select v-model="newChallenge.runtime_access_mode">
+                    <option value="ssh_bastion">ssh_bastion（默认）</option>
+                    <option value="wireguard">wireguard（VPN）</option>
+                    <option value="direct">direct（直连入口）</option>
+                  </select>
+                </label>
+                <label v-if="newChallenge.runtime_mode === 'single_image'">
+                  <span>镜像仓库地址</span>
+                  <input v-model.trim="newChallenge.runtime_image" placeholder="nginx:alpine" />
+                </label>
+                <label v-if="newChallenge.runtime_mode === 'single_image'">
+                  <span>内部端口</span>
+                  <input v-model.number="newChallenge.runtime_internal_port" type="number" min="1" max="65535" />
+                </label>
+                <label v-if="newChallenge.runtime_mode === 'single_image'">
+                  <span>入口协议</span>
+                  <select v-model="newChallenge.runtime_protocol">
+                    <option value="http">http</option>
+                    <option value="https">https</option>
+                    <option value="tcp">tcp</option>
+                  </select>
+                </label>
+                <label v-if="newChallenge.runtime_mode === 'compose'">
                   <span>compose 模板（可选）</span>
                   <textarea v-model="newChallenge.compose_template" rows="4" />
                 </label>
@@ -1440,6 +1471,11 @@ const newChallenge = reactive({
   writeup_content: "",
   change_note: "",
   compose_template: "",
+  runtime_mode: "compose",
+  runtime_access_mode: "ssh_bastion",
+  runtime_image: "",
+  runtime_internal_port: 80,
+  runtime_protocol: "http",
 });
 
 const rollbackForm = reactive({
@@ -1582,6 +1618,23 @@ function parseTagsInput(raw: string): string[] {
     .split(/[,，\n]/g)
     .map((item) => item.trim())
     .filter((item) => item.length > 0);
+}
+
+function buildChallengeRuntimeMetadata() {
+  const runtime: Record<string, unknown> = {
+    mode: newChallenge.runtime_mode
+  };
+
+  if (newChallenge.runtime_mode === "single_image") {
+    runtime.image = newChallenge.runtime_image.trim();
+    runtime.internal_port = Number(newChallenge.runtime_internal_port);
+    runtime.protocol = newChallenge.runtime_protocol;
+    runtime.access_mode = "direct";
+  } else {
+    runtime.access_mode = newChallenge.runtime_access_mode;
+  }
+
+  return { runtime };
 }
 
 function formatSize(sizeBytes: number): string {
@@ -2071,6 +2124,36 @@ async function handleCreateChallenge() {
   challengeError.value = "";
 
   try {
+    if (newChallenge.runtime_mode === "single_image") {
+      if (!newChallenge.runtime_image.trim()) {
+        challengeError.value = "single_image 模式必须填写镜像仓库地址";
+        return;
+      }
+      if (
+        !Number.isFinite(newChallenge.runtime_internal_port) ||
+        newChallenge.runtime_internal_port < 1 ||
+        newChallenge.runtime_internal_port > 65535
+      ) {
+        challengeError.value = "single_image 模式内部端口必须在 1~65535";
+        return;
+      }
+      if (newChallenge.challenge_type === "static") {
+        challengeError.value = "single_image 模式仅支持 dynamic 或 internal 题型";
+        return;
+      }
+    }
+
+    if (
+      newChallenge.runtime_mode === "compose" &&
+      (newChallenge.challenge_type === "dynamic" || newChallenge.challenge_type === "internal") &&
+      !newChallenge.compose_template.trim()
+    ) {
+      challengeError.value = "dynamic/internal 题型在 compose 模式下必须提供 compose 模板";
+      return;
+    }
+
+    const runtimeMetadata = buildChallengeRuntimeMetadata();
+
     await createAdminChallenge(
       {
         title: newChallenge.title,
@@ -2083,7 +2166,11 @@ async function handleCreateChallenge() {
         challenge_type: newChallenge.challenge_type,
         flag_mode: newChallenge.flag_mode,
         flag_hash: newChallenge.flag_hash,
-        compose_template: newChallenge.compose_template || undefined,
+        compose_template:
+          newChallenge.runtime_mode === "compose"
+            ? newChallenge.compose_template || undefined
+            : undefined,
+        metadata: runtimeMetadata,
         tags: parseTagsInput(newChallenge.tags_input),
         writeup_visibility: newChallenge.writeup_visibility,
         writeup_content: newChallenge.writeup_content || undefined,
@@ -2103,6 +2190,11 @@ async function handleCreateChallenge() {
     newChallenge.change_note = "";
     newChallenge.flag_hash = "";
     newChallenge.compose_template = "";
+    newChallenge.runtime_mode = "compose";
+    newChallenge.runtime_access_mode = "ssh_bastion";
+    newChallenge.runtime_image = "";
+    newChallenge.runtime_internal_port = 80;
+    newChallenge.runtime_protocol = "http";
 
     await loadChallenges();
     uiStore.success("题目已创建", "可以继续管理版本、附件或挂载到比赛。");
