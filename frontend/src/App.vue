@@ -39,6 +39,13 @@
       </section>
     </main>
 
+    <nav class="mobile-dock" :class="{ 'with-admin': isAdminLike }" v-if="authStore.isAuthenticated">
+      <RouterLink class="mobile-dock-link" to="/contests">比赛</RouterLink>
+      <RouterLink class="mobile-dock-link" to="/teams">队伍</RouterLink>
+      <RouterLink class="mobile-dock-link" to="/profile">账户</RouterLink>
+      <RouterLink v-if="isAdminLike" class="mobile-dock-link" to="/admin">管理</RouterLink>
+    </nav>
+
     <TransitionGroup name="toast" tag="section" class="toast-stack">
       <article
         v-for="toast in uiStore.toasts"

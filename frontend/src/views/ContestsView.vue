@@ -256,11 +256,12 @@ onMounted(() => {
 }
 
 .focus-media {
-  border: 1px solid rgba(20, 33, 61, 0.14);
-  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  border-radius: 18px;
   overflow: hidden;
-  background: rgba(250, 253, 255, 0.9);
+  background: rgba(255, 255, 255, 0.72);
   min-height: 240px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
 .focus-media img {
@@ -279,7 +280,7 @@ onMounted(() => {
 .timeline-fallback {
   font-size: 0.78rem;
   letter-spacing: 0.06em;
-  color: rgba(20, 33, 61, 0.52);
+  color: rgba(15, 23, 42, 0.52);
 }
 
 .focus-content {
@@ -298,10 +299,10 @@ onMounted(() => {
 }
 
 .focus-announcement {
-  border: 1px solid rgba(10, 147, 150, 0.22);
-  border-radius: 12px;
-  background: rgba(236, 254, 255, 0.64);
-  padding: 0.62rem;
+  border: 1px solid rgba(45, 107, 255, 0.28);
+  border-radius: 14px;
+  background: rgba(236, 244, 255, 0.82);
+  padding: 0.68rem;
   display: grid;
   gap: 0.24rem;
 }
@@ -324,13 +325,14 @@ onMounted(() => {
   grid-template-columns: 132px minmax(0, 1fr);
   gap: 0.62rem;
   align-items: stretch;
+  border-radius: 18px;
 }
 
 .timeline-media {
-  border-radius: 10px;
+  border-radius: 14px;
   overflow: hidden;
-  border: 1px solid rgba(20, 33, 61, 0.12);
-  background: rgba(246, 251, 255, 0.86);
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  background: rgba(255, 255, 255, 0.68);
   min-height: 110px;
 }
 
@@ -356,7 +358,7 @@ onMounted(() => {
 
 .timeline-announcement {
   margin: 0;
-  color: rgba(20, 33, 61, 0.9);
+  color: rgba(15, 23, 42, 0.88);
 }
 
 .ended-section {
@@ -379,6 +381,7 @@ onMounted(() => {
 
 .ended-card {
   grid-template-columns: minmax(0, 1fr);
+  opacity: 0.88;
 }
 
 @media (max-width: 980px) {

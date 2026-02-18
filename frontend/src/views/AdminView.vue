@@ -3584,9 +3584,9 @@ onUnmounted(() => {
 }
 
 .module-tabs .ghost.active {
-  border-color: #0f766e;
-  color: #0f766e;
-  background: #ecfeff;
+  border-color: var(--brand-strong);
+  color: var(--brand-strong);
+  background: rgba(64, 132, 255, 0.12);
 }
 
 .module-split {
@@ -3605,9 +3605,9 @@ onUnmounted(() => {
 }
 
 .module-column {
-  border: 1px solid #d8e4f2;
+  border: 1px solid rgba(96, 120, 160, 0.24);
   border-radius: 14px;
-  background: #f8fbff;
+  background: rgba(255, 255, 255, 0.58);
   padding: 0.85rem;
   display: flex;
   flex-direction: column;
@@ -3651,8 +3651,8 @@ onUnmounted(() => {
 }
 
 .challenge-card.active {
-  border-color: #0f766e;
-  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.16);
+  border-color: var(--brand-strong);
+  box-shadow: 0 0 0 2px rgba(45, 107, 255, 0.16);
 }
 
 .compact-actions {
@@ -3679,10 +3679,10 @@ onUnmounted(() => {
 
 .contest-list-item {
   text-align: left;
-  border: 1px solid #d1deec;
+  border: 1px solid rgba(96, 120, 160, 0.28);
   border-radius: 10px;
   padding: 0.6rem 0.62rem;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.82);
   display: grid;
   gap: 0.2rem;
   cursor: pointer;
@@ -3690,14 +3690,14 @@ onUnmounted(() => {
 }
 
 .contest-list-item.active {
-  border-color: #0f766e;
-  background: #ecfeff;
+  border-color: var(--brand-strong);
+  background: rgba(64, 132, 255, 0.12);
 }
 
 .contest-detail-pane {
-  border: 1px solid #d1deec;
+  border: 1px solid rgba(96, 120, 160, 0.28);
   border-radius: 12px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.82);
   padding: 0.8rem;
   min-height: 0;
   display: grid;
@@ -3712,9 +3712,9 @@ onUnmounted(() => {
 
 .image-test-block {
   grid-column: 1 / -1;
-  border: 1px solid #d8e4f2;
+  border: 1px solid rgba(96, 120, 160, 0.24);
   border-radius: 10px;
-  background: #f8fbff;
+  background: rgba(255, 255, 255, 0.58);
   padding: 0.58rem;
 }
 
@@ -3729,22 +3729,22 @@ onUnmounted(() => {
 }
 
 .image-test-step {
-  border: 1px solid #d8e4f2;
+  border: 1px solid rgba(96, 120, 160, 0.24);
   border-radius: 8px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.82);
   padding: 0.4rem 0.5rem;
 }
 
 .image-test-step summary {
   cursor: pointer;
-  color: #0f766e;
+  color: var(--brand-strong);
 }
 
 .image-test-step pre {
   margin: 0.45rem 0 0;
   max-height: 220px;
   overflow: auto;
-  background: #f8fbff;
+  background: rgba(255, 255, 255, 0.58);
   border-radius: 8px;
   padding: 0.5rem;
   white-space: pre-wrap;
@@ -3756,8 +3756,8 @@ onUnmounted(() => {
   max-height: 220px;
   object-fit: cover;
   border-radius: 10px;
-  border: 1px solid #d1deec;
-  background: #f8fbff;
+  border: 1px solid rgba(96, 120, 160, 0.28);
+  background: rgba(255, 255, 255, 0.58);
 }
 
 .challenge-lint-metrics {
@@ -3792,18 +3792,18 @@ onUnmounted(() => {
 
 .instance-metrics-panel {
   margin-top: 0.8rem;
-  border: 1px solid #d1deec;
+  border: 1px solid rgba(96, 120, 160, 0.28);
   border-radius: 12px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.82);
   padding: 0.75rem;
   display: grid;
   gap: 0.65rem;
 }
 
 .runtime-alert-list {
-  border: 1px solid #d1deec;
+  border: 1px solid rgba(96, 120, 160, 0.28);
   border-radius: 12px;
-  background: #f8fbff;
+  background: rgba(255, 255, 255, 0.58);
   padding: 0.6rem;
   display: grid;
   gap: 0.45rem;
@@ -3814,9 +3814,9 @@ onUnmounted(() => {
 
 .runtime-alert-item {
   text-align: left;
-  border: 1px solid #d1deec;
+  border: 1px solid rgba(96, 120, 160, 0.28);
   border-radius: 10px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.82);
   padding: 0.58rem 0.6rem;
   display: grid;
   gap: 0.2rem;
@@ -3825,25 +3825,25 @@ onUnmounted(() => {
 }
 
 .runtime-alert-item:hover {
-  border-color: #0f766e;
+  border-color: var(--brand-strong);
   transform: translateY(-1px);
 }
 
 .runtime-alert-item.active {
-  border-color: #0f766e;
-  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.16);
+  border-color: var(--brand-strong);
+  box-shadow: 0 0 0 2px rgba(45, 107, 255, 0.16);
 }
 
 .runtime-alert-item.severity-critical {
-  border-left: 3px solid #bb3e03;
+  border-left: 3px solid var(--danger);
 }
 
 .runtime-alert-item.severity-warning {
-  border-left: 3px solid #b07d00;
+  border-left: 3px solid var(--warning);
 }
 
 .runtime-alert-item.severity-info {
-  border-left: 3px solid #0a9396;
+  border-left: 3px solid var(--brand-strong);
 }
 
 .runtime-alert-title {
@@ -3855,9 +3855,9 @@ onUnmounted(() => {
 }
 
 .runtime-alert-detail {
-  border: 1px solid #d1deec;
+  border: 1px solid rgba(96, 120, 160, 0.28);
   border-radius: 12px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.82);
   padding: 0.8rem;
   min-height: 0;
   overflow: auto;
@@ -3881,9 +3881,9 @@ onUnmounted(() => {
 }
 
 .runtime-alert-meta {
-  border: 1px solid #d8e4f2;
+  border: 1px solid rgba(96, 120, 160, 0.24);
   border-radius: 10px;
-  background: #f8fbff;
+  background: rgba(255, 255, 255, 0.58);
   padding: 0.5rem 0.55rem;
 }
 
@@ -3893,7 +3893,7 @@ onUnmounted(() => {
 
 .runtime-alert-detail-json summary {
   cursor: pointer;
-  color: #0f766e;
+  color: var(--brand-strong);
   font-weight: 600;
 }
 
@@ -3901,9 +3901,9 @@ onUnmounted(() => {
   margin: 0.5rem 0 0;
   max-height: 260px;
   overflow: auto;
-  border: 1px solid #d8e4f2;
+  border: 1px solid rgba(96, 120, 160, 0.24);
   border-radius: 10px;
-  background: #f8fbff;
+  background: rgba(255, 255, 255, 0.58);
   padding: 0.58rem;
   white-space: pre-wrap;
   word-break: break-word;
