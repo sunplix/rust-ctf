@@ -1197,6 +1197,64 @@ async fn fetch_stale_instance_candidates(
     .map_err(AppError::internal)
 }
 
+async fn fetch_instance_candidates_for_contest(
+    state: &AppState,
+    contest_id: Uuid,
+) -> AppResult<Vec<InstanceRow>> {
+    sqlx::query_as::<_, InstanceRow>(
+        "SELECT id,
+                contest_id,
+                challenge_id,
+                team_id,
+                status,
+                subnet::text AS subnet,
+                compose_project_name,
+                entrypoint_url,
+                cpu_limit::text AS cpu_limit,
+                memory_limit_mb,
+                started_at,
+                expires_at,
+                destroyed_at,
+                last_heartbeat_at
+         FROM instances
+         WHERE contest_id = $1
+         ORDER BY created_at DESC",
+    )
+    .bind(contest_id)
+    .fetch_all(&state.db)
+    .await
+    .map_err(AppError::internal)
+}
+
+async fn fetch_instance_candidates_for_challenge(
+    state: &AppState,
+    challenge_id: Uuid,
+) -> AppResult<Vec<InstanceRow>> {
+    sqlx::query_as::<_, InstanceRow>(
+        "SELECT id,
+                contest_id,
+                challenge_id,
+                team_id,
+                status,
+                subnet::text AS subnet,
+                compose_project_name,
+                entrypoint_url,
+                cpu_limit::text AS cpu_limit,
+                memory_limit_mb,
+                started_at,
+                expires_at,
+                destroyed_at,
+                last_heartbeat_at
+         FROM instances
+         WHERE challenge_id = $1
+         ORDER BY created_at DESC",
+    )
+    .bind(challenge_id)
+    .fetch_all(&state.db)
+    .await
+    .map_err(AppError::internal)
+}
+
 async fn mark_instance_destroyed_if_expired(
     state: &AppState,
     instance_id: Uuid,
@@ -1264,6 +1322,39 @@ async fn mark_instance_destroyed_if_stale(
     )
     .bind(instance_id)
     .bind(stale_after_seconds)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)
+}
+
+async fn mark_instance_destroyed(
+    state: &AppState,
+    instance_id: Uuid,
+) -> AppResult<Option<InstanceRow>> {
+    sqlx::query_as::<_, InstanceRow>(
+        "UPDATE instances
+         SET status = 'destroyed',
+             destroyed_at = COALESCE(destroyed_at, NOW()),
+             expires_at = NULL,
+             updated_at = NOW()
+         WHERE id = $1
+           AND status <> 'destroyed'
+         RETURNING id,
+                   contest_id,
+                   challenge_id,
+                   team_id,
+                   status,
+                   subnet::text AS subnet,
+                   compose_project_name,
+                   entrypoint_url,
+                   cpu_limit::text AS cpu_limit,
+                   memory_limit_mb,
+                   started_at,
+                   expires_at,
+                   destroyed_at,
+                   last_heartbeat_at",
+    )
+    .bind(instance_id)
     .fetch_optional(&state.db)
     .await
     .map_err(AppError::internal)
@@ -1402,6 +1493,92 @@ pub(crate) async fn run_stale_instance_reaper(
                 reaped += 1;
             }
             None => {
+                skipped += 1;
+            }
+        }
+    }
+
+    Ok(InstanceReaperSummary {
+        scanned,
+        reaped,
+        failed,
+        skipped,
+    })
+}
+
+pub(crate) async fn destroy_instances_for_contest(
+    state: &AppState,
+    contest_id: Uuid,
+) -> AppResult<InstanceReaperSummary> {
+    let candidates = fetch_instance_candidates_for_contest(state, contest_id).await?;
+    destroy_instance_candidates(state, candidates).await
+}
+
+pub(crate) async fn destroy_instances_for_challenge(
+    state: &AppState,
+    challenge_id: Uuid,
+) -> AppResult<InstanceReaperSummary> {
+    let candidates = fetch_instance_candidates_for_challenge(state, challenge_id).await?;
+    destroy_instance_candidates(state, candidates).await
+}
+
+async fn destroy_instance_candidates(
+    state: &AppState,
+    candidates: Vec<InstanceRow>,
+) -> AppResult<InstanceReaperSummary> {
+    let mut scanned = 0_i64;
+    let mut reaped = 0_i64;
+    let mut failed = 0_i64;
+    let mut skipped = 0_i64;
+
+    for instance in candidates {
+        scanned += 1;
+
+        if instance.status == "destroyed" {
+            cleanup_runtime_dir(state, &instance.compose_project_name).await;
+            skipped += 1;
+            continue;
+        }
+
+        let compose_file = match ensure_compose_file_for_existing(state, &instance).await {
+            Ok(path) => path,
+            Err(err) => {
+                failed += 1;
+                warn!(
+                    instance_id = %instance.id,
+                    contest_id = %instance.contest_id,
+                    challenge_id = %instance.challenge_id,
+                    team_id = %instance.team_id,
+                    error = %err,
+                    "failed to prepare compose file for force destroy"
+                );
+                let _ = update_instance_status(state, instance.id, "failed").await;
+                continue;
+            }
+        };
+
+        if let Err(err) = compose_down(state, &instance.compose_project_name, &compose_file).await {
+            failed += 1;
+            warn!(
+                instance_id = %instance.id,
+                contest_id = %instance.contest_id,
+                challenge_id = %instance.challenge_id,
+                team_id = %instance.team_id,
+                compose_project_name = %instance.compose_project_name,
+                error = %err,
+                "failed to compose down during force destroy"
+            );
+            let _ = update_instance_status(state, instance.id, "failed").await;
+            continue;
+        }
+
+        match mark_instance_destroyed(state, instance.id).await? {
+            Some(updated) => {
+                cleanup_runtime_dir(state, &updated.compose_project_name).await;
+                reaped += 1;
+            }
+            None => {
+                cleanup_runtime_dir(state, &instance.compose_project_name).await;
                 skipped += 1;
             }
         }

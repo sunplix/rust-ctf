@@ -1,6 +1,6 @@
 # Rust CTF API Reference
 
-最后更新：2026-02-15  
+最后更新：2026-02-18  
 适用后端版本：`backend`（Axum / `/api/v1` 路由）
 
 ## 1. 维护约定
@@ -133,6 +133,15 @@
   - `new_password`：必填，最少 8 位，且不能与旧密码相同
 - 成功后：会撤销该用户所有旧会话并签发新 token
 
+## `DELETE /auth/account`
+
+- 鉴权：必须
+- 作用：删除当前账号（逻辑删除：匿名化并禁用，立即撤销全部会话）
+- 约束：
+  - 若当前用户是队长，需先移交队长或解散队伍，否则返回 `409`
+  - 若当前用户是最后一个 active admin，返回 `409`
+- 成功：`204`
+
 ## `GET /auth/login-history`
 
 - 鉴权：必须
@@ -234,7 +243,23 @@
 - 鉴权：无需
 - 仅返回 `public` 且状态在 `scheduled|running|ended` 的比赛
 - 响应字段：
-  - `id,title,slug,status,scoring_mode,dynamic_decay,start_at,end_at`
+  - `id,title,slug,description,poster_url,status,scoring_mode,dynamic_decay,latest_announcement_title,latest_announcement_content,latest_announcement_published_at,start_at,end_at`
+  - `poster_url` 为空表示未上传海报
+  - `latest_announcement_*` 为空表示暂无已发布公告
+- 排序：
+  - `running` 优先，其次 `scheduled`，最后 `ended`
+  - `running` 内按 `end_at` 升序，其他按 `start_at` 升序
+
+## `GET /contests/{contest_id}/poster`
+
+- 鉴权：无需
+- 用于比赛中心展示海报图片
+- 访问控制：
+  - 仅 `public` 且状态为 `scheduled|running|ended` 的比赛可访问
+- 成功：返回海报二进制（`Content-Type` 为上传时记录的 `image/*`）
+- 失败：
+  - 比赛不存在或海报不存在：`400`
+  - 比赛不对公众可见：`403`
 
 ## `GET /contests/{contest_id}/challenges`
 
@@ -472,6 +497,12 @@
 - `POST /admin/users/{user_id}/reset-password`
   - Body：`new_password`（>=8）
   - 成功后撤销目标用户全部会话
+- `DELETE /admin/users/{user_id}`
+  - 删除账号（逻辑删除：匿名化并禁用）
+  - 限制：
+    - 不能删除当前管理员自己
+    - 不能删除最后一个 active admin
+  - 成功：`204`
 
 `AdminUserItem`：`id,username,email,role,status,created_at,updated_at`
 
@@ -481,6 +512,12 @@
 
 - 列表字段：  
   `id,title,slug,category,difficulty,static_score,challenge_type,flag_mode,status,is_visible,tags,writeup_visibility,current_version,created_at,updated_at`
+
+### `GET /admin/challenges/{challenge_id}`
+
+- 返回题目完整配置（用于管理端“编辑题目”）
+- 字段包含：  
+  `id,title,slug,category,difficulty,description,static_score,min_score,max_score,challenge_type,flag_mode,status,flag_hash,compose_template,metadata,is_visible,tags,writeup_visibility,writeup_content,current_version,created_at,updated_at`
 
 ### `GET /admin/challenges/runtime-template/lint`
 
@@ -503,6 +540,20 @@
 
 - `id,title,slug,challenge_type,status,is_visible,has_compose_template,lint_status,message,updated_at`
 - `lint_status` 目前为 `ok|error`
+
+### `POST /admin/challenges/runtime-template/test-image`
+
+- 用途：管理员在创建/编辑容器题目时测试镜像可用性，并查看拉取与构建探测日志
+- Body：
+  - `image`（必填，镜像引用）
+  - `force_pull`（可选，默认 `true`）
+  - `run_build_probe`（可选，默认 `true`，会执行一次基于该镜像的最小构建探测）
+  - `timeout_seconds`（可选；默认后端 compose 命令超时值，范围 10..900）
+- 返回：
+  - `image,force_pull,run_build_probe,succeeded,generated_at,steps[]`
+  - `steps[]` 字段：`step,success,exit_code,duration_ms,output,truncated`
+  - 常见 step：`runtime_pull`、`runtime_config_validate`、`runtime_build_probe`、`runtime_cleanup_probe`
+  - 执行器策略：优先 `docker compose`，不可用时自动回退 `docker-compose`（`output` 会带 `[executor=docker-compose]` 前缀）
 
 ### `POST /admin/challenges`
 
@@ -554,6 +605,15 @@
 - `status/is_visible` 一致性规则同创建
 - 成功后 `current_version + 1` 并写入版本快照
 
+### `DELETE /admin/challenges/{challenge_id}`
+
+- 销毁题目（含实例清理）
+- 行为：
+  - 先尝试销毁该题目相关所有运行实例
+  - 若实例清理失败（如 compose down 失败），返回 `409`，题目不会被删除
+  - 清理通过后删除题目记录（级联删除挂载、提交、版本、附件元数据等），并回收附件文件目录
+- 成功：`204`
+
 ### `GET /admin/challenges/{challenge_id}/versions`
 
 - Query：`limit`（默认30，1..200）
@@ -593,7 +653,7 @@
 ### `GET /admin/contests`
 
 - 返回字段：  
-  `id,title,slug,description,visibility,status,scoring_mode,dynamic_decay,start_at,end_at,freeze_at,created_at,updated_at`
+  `id,title,slug,description,poster_url,visibility,status,scoring_mode,dynamic_decay,start_at,end_at,freeze_at,created_at,updated_at`
 
 ### `POST /admin/contests`
 
@@ -618,6 +678,30 @@
 ### `PATCH /admin/contests/{contest_id}/status`
 
 - Body：`status`（同上枚举）
+
+### `DELETE /admin/contests/{contest_id}`
+
+- 销毁比赛（含实例清理）
+- 行为：
+  - 先尝试销毁该比赛下所有运行实例
+  - 若实例清理失败，返回 `409`，比赛不会被删除
+  - 清理通过后删除比赛记录（级联删除挂载、公告、提交、实例等），并回收海报文件目录
+- 成功：`204`
+
+### `POST /admin/contests/{contest_id}/poster`
+
+- 上传或替换比赛海报
+- Body：
+  - `filename`（必填，<=255）
+  - `content_base64`（必填）
+  - `content_type`（可选，但必须是 `image/*`；未填时按默认值处理后校验）
+- 约束：海报内容不能为空，且 <= 8MB
+- 成功：返回更新后的 `AdminContestItem`（包含 `poster_url`）
+
+### `DELETE /admin/contests/{contest_id}/poster`
+
+- 删除比赛海报
+- 成功：`204`
 
 ## 10.5 比赛题目挂载（admin|judge）
 
@@ -661,6 +745,11 @@
   - Query：
     - `status`（`creating|running|stopped|destroyed|expired|failed`）
     - `limit`（默认100，1..500）
+- `GET /admin/instances/{instance_id}/runtime-metrics`
+  - 用途：采集该实例所属 compose 项目的容器运行指标（CPU、内存、网络、健康状态）
+  - 说明：
+    - 指标基于 `docker ps/inspect/stats --no-stream` 实时采样
+    - 若实例已无容器（例如已销毁），`services` 为空，并在 `warnings[]` 说明原因
 - `GET /admin/audit-logs`
   - Query：
     - `action`（精确匹配）
@@ -680,6 +769,13 @@
   - 自动去重（按 `fingerprint`）、刷新 `last_seen_at`，并自动关闭不再命中的历史告警
   - 说明：后端默认也会按配置后台定时执行同一套扫描逻辑
   - 心跳超时判定阈值由 `INSTANCE_HEARTBEAT_STALE_SECONDS` 控制（默认 300 秒）
+- `POST /admin/runtime/reaper/expired`
+  - 立即执行一次“过期实例回收”（同后台 reaper 逻辑）
+  - 批大小使用 `INSTANCE_REAPER_BATCH_SIZE`
+- `POST /admin/runtime/reaper/stale`
+  - 立即执行一次“心跳超时实例回收”
+  - 超时阈值使用 `INSTANCE_HEARTBEAT_STALE_SECONDS`
+  - 批大小使用 `INSTANCE_STALE_REAPER_BATCH_SIZE`
 - `POST /admin/runtime/alerts/{alert_id}/ack`
   - 将告警标记为 `acknowledged`
   - 可选 Body：`{"note":"..."}`（用于审计备注）
@@ -690,6 +786,14 @@
 `AdminInstanceItem`：
 
 - `id,contest_id,contest_title,challenge_id,challenge_title,team_id,team_name,status,subnet,compose_project_name,entrypoint_url,started_at,expires_at,destroyed_at,last_heartbeat_at,created_at,updated_at`
+
+`AdminInstanceRuntimeMetricsResponse`：
+
+- `generated_at,instance,summary,services,warnings`
+- `summary`：
+  - `services_total,running_services,unhealthy_services,restarting_services,cpu_percent_total,memory_usage_bytes_total,memory_limit_bytes_total`
+- `services[]`：
+  - `container_id,container_name,service_name,image,state,health_status,restart_count,started_at,finished_at,ip_addresses,cpu_percent,memory_usage_bytes,memory_limit_bytes,memory_percent,net_rx_bytes,net_tx_bytes,block_read_bytes,block_write_bytes,pids`
 
 `AdminAuditLogItem`：
 
@@ -707,6 +811,10 @@
 
 - `generated_at,upserted,auto_resolved,open_count,acknowledged_count,resolved_count`
 
+`AdminInstanceReaperRunResponse`：
+
+- `generated_at,mode,heartbeat_stale_seconds,scanned,reaped,failed,skipped`
+
 ## 11. 常见排障提示
 
 - `403 permission denied`（提交/实例启动）：通常是“用户不在队伍中”或角色无权限。
@@ -715,7 +823,7 @@
 - `200 verdict=rate_limited`：不是 HTTP 失败，而是业务限频（30 秒内超过 10 次）。
 - `400 challenge type does not require runtime instance`：仅 `dynamic/internal` 题型可启动实例。
 - `runtime alert: instance_heartbeat_stale`：见 `docs/STALE_HEARTBEAT_REMEDIATION_RUNBOOK.md` 进行定位与处置。
-- 推荐先执行 `backend/scripts/runtime/runtime_full_regression.sh` 做基线排查（包含 health、运行模板 lint、WireGuard 冒烟）。
+- 推荐先执行 `backend/scripts/runtime/runtime_full_regression.sh` 做基线排查（包含 health、运行模板 lint、WireGuard/SingleImage 冒烟、runtime-metrics/reaper 健全性、scoreboard ws 冒烟）。
 
 ## 12. 后续维护建议
 

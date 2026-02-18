@@ -74,15 +74,25 @@
       </table>
       <p v-else class="muted">暂无登录历史记录。</p>
     </section>
+
+    <section class="panel team-panel">
+      <h2>危险操作</h2>
+      <p class="muted">删除账号后将立即失效并退出登录，且无法恢复。</p>
+      <button class="danger" type="button" @click="handleDeleteAccount" :disabled="deletingAccount">
+        {{ deletingAccount ? "删除中..." : "删除我的账号" }}
+      </button>
+    </section>
   </section>
 </template>
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from "vue";
+import { useRouter } from "vue-router";
 
 import {
   ApiClientError,
   changePassword,
+  deleteAccount,
   getLoginHistory,
   type LoginHistoryItem,
   updateProfile
@@ -92,11 +102,13 @@ import { useUiStore } from "../stores/ui";
 
 const authStore = useAuthStore();
 const uiStore = useUiStore();
+const router = useRouter();
 
 const pageError = ref("");
 
 const updatingProfile = ref(false);
 const changingPassword = ref(false);
+const deletingAccount = ref(false);
 const loadingHistory = ref(false);
 const historyError = ref("");
 
@@ -203,6 +215,30 @@ async function loadHistory() {
     historyError.value = err instanceof ApiClientError ? err.message : "加载登录历史失败";
   } finally {
     loadingHistory.value = false;
+  }
+}
+
+async function handleDeleteAccount() {
+  if (!window.confirm("确认删除当前账号？该操作不可恢复。")) {
+    return;
+  }
+
+  deletingAccount.value = true;
+  pageError.value = "";
+
+  try {
+    const token = requireAccessToken();
+    await deleteAccount(token);
+    const username = authStore.user?.username ?? "当前账号";
+    authStore.clearSession();
+    uiStore.warning("账号已删除", `${username} 已被删除并退出登录。`, 3600);
+    router.replace("/login");
+  } catch (err) {
+    const message = err instanceof ApiClientError ? err.message : "删除账号失败";
+    pageError.value = message;
+    uiStore.error("删除账号失败", message);
+  } finally {
+    deletingAccount.value = false;
   }
 }
 

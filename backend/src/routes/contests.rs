@@ -2,12 +2,15 @@ use std::sync::Arc;
 
 use axum::{
     extract::{Path, State},
+    http::header,
+    response::IntoResponse,
     routing::get,
     Json, Router,
 };
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use sqlx::FromRow;
+use tokio::fs;
 use uuid::Uuid;
 
 use crate::{
@@ -21,9 +24,14 @@ struct ContestListItem {
     id: Uuid,
     title: String,
     slug: String,
+    description: String,
+    poster_url: Option<String>,
     status: String,
     scoring_mode: String,
     dynamic_decay: i32,
+    latest_announcement_title: Option<String>,
+    latest_announcement_content: Option<String>,
+    latest_announcement_published_at: Option<DateTime<Utc>>,
     start_at: DateTime<Utc>,
     end_at: DateTime<Utc>,
 }
@@ -55,9 +63,18 @@ struct ContestAccessRow {
     status: String,
 }
 
+#[derive(Debug, FromRow)]
+struct ContestPosterAccessRow {
+    visibility: String,
+    status: String,
+    poster_storage_path: Option<String>,
+    poster_content_type: Option<String>,
+}
+
 pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/contests", get(list_contests))
+        .route("/contests/{contest_id}/poster", get(get_contest_poster))
         .route(
             "/contests/{contest_id}/challenges",
             get(list_contest_challenges),
@@ -72,16 +89,98 @@ async fn list_contests(
     State(state): State<Arc<AppState>>,
 ) -> AppResult<Json<Vec<ContestListItem>>> {
     let contests = sqlx::query_as::<_, ContestListItem>(
-        "SELECT id, title, slug, status, scoring_mode, dynamic_decay, start_at, end_at
-         FROM contests
-         WHERE visibility = 'public' AND status IN ('scheduled', 'running', 'ended')
-         ORDER BY start_at DESC",
+        "SELECT c.id,
+                c.title,
+                c.slug,
+                c.description,
+                CASE
+                    WHEN c.poster_storage_path IS NULL OR c.poster_storage_path = '' THEN NULL
+                    ELSE '/api/v1/contests/' || c.id::text || '/poster'
+                END AS poster_url,
+                c.status,
+                c.scoring_mode,
+                c.dynamic_decay,
+                latest_announcement.title AS latest_announcement_title,
+                latest_announcement.content AS latest_announcement_content,
+                COALESCE(latest_announcement.published_at, latest_announcement.created_at) AS latest_announcement_published_at,
+                c.start_at,
+                c.end_at
+         FROM contests c
+         LEFT JOIN LATERAL (
+             SELECT a.title, a.content, a.published_at, a.created_at
+             FROM contest_announcements a
+             WHERE a.contest_id = c.id
+               AND a.is_published = TRUE
+               AND (a.published_at IS NULL OR a.published_at <= NOW())
+             ORDER BY a.is_pinned DESC, COALESCE(a.published_at, a.created_at) DESC, a.created_at DESC
+             LIMIT 1
+         ) AS latest_announcement ON TRUE
+         WHERE c.visibility = 'public'
+           AND c.status IN ('scheduled', 'running', 'ended')
+         ORDER BY CASE c.status
+                      WHEN 'running' THEN 0
+                      WHEN 'scheduled' THEN 1
+                      ELSE 2
+                  END ASC,
+                  CASE
+                      WHEN c.status = 'running' THEN c.end_at
+                      ELSE c.start_at
+                  END ASC,
+                  c.start_at ASC",
     )
     .fetch_all(&state.db)
     .await
     .map_err(AppError::internal)?;
 
     Ok(Json(contests))
+}
+
+async fn get_contest_poster(
+    State(state): State<Arc<AppState>>,
+    Path(contest_id): Path<Uuid>,
+) -> AppResult<impl IntoResponse> {
+    let row = sqlx::query_as::<_, ContestPosterAccessRow>(
+        "SELECT visibility, status, poster_storage_path, poster_content_type
+         FROM contests
+         WHERE id = $1
+         LIMIT 1",
+    )
+    .bind(contest_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest("contest not found".to_string()))?;
+
+    let public_status =
+        row.status == "scheduled" || row.status == "running" || row.status == "ended";
+    if row.visibility != "public" || !public_status {
+        return Err(AppError::Forbidden);
+    }
+
+    let storage_path = row
+        .poster_storage_path
+        .ok_or(AppError::BadRequest("contest poster not found".to_string()))?;
+
+    let content_type = row
+        .poster_content_type
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "application/octet-stream".to_string());
+
+    let bytes = fs::read(&storage_path).await.map_err(|err| {
+        if err.kind() == std::io::ErrorKind::NotFound {
+            AppError::BadRequest("contest poster not found".to_string())
+        } else {
+            AppError::internal(err)
+        }
+    })?;
+
+    Ok((
+        [
+            (header::CONTENT_TYPE, content_type),
+            (header::CACHE_CONTROL, "public, max-age=60".to_string()),
+        ],
+        bytes,
+    ))
 }
 
 async fn list_contest_challenges(

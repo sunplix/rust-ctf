@@ -1,0 +1,153 @@
+name: M5 Acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      load_team_count:
+        description: "Team count for load benchmark"
+        required: false
+        default: "20"
+      load_requests_total:
+        description: "Total submission requests for load benchmark"
+        required: false
+        default: "400"
+      load_concurrency:
+        description: "Concurrency for load benchmark"
+        required: false
+        default: "20"
+      load_valid_flag_percent:
+        description: "Valid flag ratio (0-100)"
+        required: false
+        default: "35"
+      load_warmup_rounds:
+        description: "Warmup rounds before benchmark"
+        required: false
+        default: "1"
+      enable_wireguard_smoke:
+        description: "Enable wireguard smoke in runtime regression (may fail on hosted runners)"
+        required: false
+        default: "false"
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Ensure Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Start Postgres and Redis
+        run: docker compose -f deploy/docker-compose.dev.yml up -d postgres redis
+
+      - name: Wait Dependencies Ready
+        run: |
+          for _ in $(seq 1 60); do
+            if docker exec rust-ctf-postgres pg_isready -U ctf -d rust_ctf >/dev/null 2>&1 \
+              && docker exec rust-ctf-redis redis-cli ping >/dev/null 2>&1; then
+              echo "dependencies ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "dependencies not ready in time" >&2
+          exit 1
+
+      - name: Start Backend (Host Process)
+        run: |
+          mkdir -p /tmp/rust-ctf-runtime/instances
+          APP__HOST=127.0.0.1 \
+          APP__PORT=8080 \
+          DATABASE_URL=postgres://ctf:ctf@127.0.0.1:5432/rust_ctf \
+          REDIS_URL=redis://127.0.0.1:6379 \
+          JWT_SECRET=ci_jwt_secret_replace_with_real_prod_secret_123456789 \
+          INSTANCE_RUNTIME_ROOT=/tmp/rust-ctf-runtime/instances \
+          COMPOSE_COMMAND_TIMEOUT_SECONDS=180 \
+          DEFAULT_ADMIN_ENABLED=true \
+          DEFAULT_ADMIN_USERNAME=admin \
+          DEFAULT_ADMIN_EMAIL=admin@rust-ctf.local \
+          DEFAULT_ADMIN_PASSWORD=admin123456 \
+          DEFAULT_ADMIN_FORCE_PASSWORD_RESET=false \
+          RUNTIME_ALERT_SCAN_ENABLED=true \
+          INSTANCE_REAPER_ENABLED=true \
+          cargo run --manifest-path backend/Cargo.toml >/tmp/m5-backend.log 2>&1 &
+          echo $! >/tmp/m5-backend.pid
+
+      - name: Wait Backend Healthy
+        run: |
+          for _ in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:8080/api/v1/health >/dev/null 2>&1; then
+              echo "backend healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "backend health check timeout" >&2
+          tail -n 200 /tmp/m5-backend.log || true
+          exit 1
+
+      - name: Run M5 Full Acceptance
+        id: m5_run
+        continue-on-error: true
+        env:
+          API_BASE: http://127.0.0.1:8080/api/v1
+          LOAD_TEAM_COUNT: ${{ inputs.load_team_count }}
+          LOAD_REQUESTS_TOTAL: ${{ inputs.load_requests_total }}
+          LOAD_CONCURRENCY: ${{ inputs.load_concurrency }}
+          LOAD_VALID_FLAG_PERCENT: ${{ inputs.load_valid_flag_percent }}
+          LOAD_WARMUP_ROUNDS: ${{ inputs.load_warmup_rounds }}
+          ENABLE_WIREGUARD_SMOKE: ${{ inputs.enable_wireguard_smoke }}
+        run: |
+          backend/scripts/m5/full_acceptance.sh | tee /tmp/m5-run.log
+
+      - name: Collect Artifacts
+        if: always()
+        run: |
+          mkdir -p /tmp/m5-artifacts
+          latest_dir="$(ls -dt /tmp/rust-ctf-m5-acceptance-* 2>/dev/null | head -n 1 || true)"
+          if [[ -n "$latest_dir" ]]; then
+            cp -R "$latest_dir" /tmp/m5-artifacts/acceptance
+          fi
+          cp /tmp/m5-backend.log /tmp/m5-run.log /tmp/m5-backend.pid /tmp/m5-artifacts/ 2>/dev/null || true
+          docker compose -f deploy/docker-compose.dev.yml logs > /tmp/m5-artifacts/docker-compose.log 2>&1 || true
+          docker ps -a > /tmp/m5-artifacts/docker-ps.txt 2>&1 || true
+
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-acceptance-artifacts
+          path: /tmp/m5-artifacts
+          if-no-files-found: warn
+
+      - name: Stop Services
+        if: always()
+        run: |
+          if [[ -f /tmp/m5-backend.pid ]]; then
+            kill "$(cat /tmp/m5-backend.pid)" 2>/dev/null || true
+          fi
+          docker compose -f deploy/docker-compose.dev.yml down -v || true
+
+      - name: Fail If Acceptance Failed
+        if: steps.m5_run.outcome != 'success'
+        run: |
+          echo "M5 full acceptance failed. Check uploaded artifacts." >&2
+          exit 1

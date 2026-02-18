@@ -167,6 +167,8 @@ rust-ctf/
 - `backend/`：已支持靶机内部心跳上报接口（`POST /api/v1/instances/heartbeat/report`）与 compose 模板令牌注入占位符
 - `backend/`：已提供管理员审计日志与运行概览接口（`/api/v1/admin/audit-logs`、`/api/v1/admin/runtime/overview`）
 - `backend/`：已提供运行告警通知接口（`/api/v1/admin/runtime/alerts`、`/api/v1/admin/runtime/alerts/scan`、`/api/v1/admin/runtime/alerts/{alert_id}/ack|resolve`），并支持后台定时扫描与自动收敛
+- `backend/`：已提供实例运行指标采集接口（`GET /api/v1/admin/instances/{instance_id}/runtime-metrics`），可返回容器 CPU/内存/网络/健康状态
+- `backend/`：已提供手动回收触发接口（`POST /api/v1/admin/runtime/reaper/expired`、`POST /api/v1/admin/runtime/reaper/stale`），支持赛中即时处置
 - `backend/`：已支持 `compose_template` 变量 schema 校验（保留占位符 + `{{VAR:NAME}}` + `metadata.compose_variables` 定义校验）
 - `backend/`：已提供比赛公告管理与选手公告读取接口（管理员 CRUD + 选手只读已发布）
 - `backend/`：判题已支持静态 flag（明文或 Argon2 哈希）与动态 flag（Redis 键 `flag:dynamic:{contest_id}:{challenge_id}:{team_id}`）
@@ -178,14 +180,17 @@ rust-ctf/
 - `frontend/`：已完成队伍中心增强版（邀请处理、队伍编辑、成员管理、队长转让、离队/解散）
 - `frontend/`：已完成管理员 v2 页面（模块/子导航拆分、题目创建/可见性切换、比赛创建与状态切换、题目挂载与排序、公告管理、实例列表监控）
 - `frontend/`：管理员页面已新增审计日志、运行概览、运行告警与模板校验面板（支持筛选、触发扫描、ack/resolve）
+- `frontend/`：实例监控页已支持单实例“运行指标”详情（容器级资源与健康状态）与手动回收操作入口
 - `frontend/`：敏感/细节字段（如判题哈希与 compose 模板）已下沉到二次展开面板，降低主界面拥挤度
 - `deploy/`：本地开发用 `docker-compose.dev.yml`（PostgreSQL / Redis / Backend / Frontend）
 - `docs/`：初始化后续开发任务说明
 - `docs/`：全量后端接口文档 `docs/API_REFERENCE.md`（后续开发持续维护）
 - `docs/`：靶机心跳上报接入指南 `docs/RUNTIME_HEARTBEAT_REPORTER.md`
 - `docs/`：心跳超时处置手册 `docs/STALE_HEARTBEAT_REMEDIATION_RUNBOOK.md`
+- `backend/scripts/m5/`：M5 压测与验收脚本（并发压测、安全回归、一键验收报告）
+- `docs/`：M5 验收指南 `docs/M5_ACCEPTANCE.md`
 
-下一步进入 M3 深化（模板规范示例与批量校验工具）阶段。
+当前 M3（多容器编排）与 M4（实时化与可观测性）已完成，M5（压测与验收）已启动并具备可执行脚本基线。
 
 ## 8. 本地启动（可用版）
 
@@ -458,6 +463,9 @@ ONLY_ERRORS=true backend/scripts/runtime/challenge_template_lint.sh
 - 健康检查（`/api/v1/health`）
 - 运行模板 Lint 汇总
 - WireGuard 动态实例冒烟测试
+- Single Image 动态实例冒烟测试（随机端口映射）
+- 运行指标与手动回收接口健全性检查（`runtime-metrics` / `reaper`）
+- Scoreboard WebSocket 推送冒烟测试（快照 + 提交后增量推送）
 
 ```bash
 backend/scripts/runtime/runtime_full_regression.sh
@@ -467,3 +475,50 @@ backend/scripts/runtime/runtime_full_regression.sh
 
 - `FAIL_ON_LINT_ERRORS=true`：当模板 Lint 存在错误时直接失败
 - `LINT_LIMIT=500`：调整 Lint 扫描题目上限
+- `ADMIN_USER` / `ADMIN_PASSWORD`：覆盖管理员登录账号
+- `USER_PASSWORD`：覆盖冒烟选手密码
+- `ENABLE_WIREGUARD_SMOKE=false`：跳过 WireGuard 冒烟（适用于不支持 WireGuard 的 CI 环境）
+- `ENABLE_SINGLE_IMAGE_SMOKE=false`：跳过 single image 冒烟
+- `ENABLE_RUNTIME_API_SANITY=false`：跳过 runtime-metrics/reaper 健全性检查
+- `ENABLE_SCOREBOARD_WS_SMOKE=false`：跳过 scoreboard websocket 冒烟
+
+### 8.15 M5 压测与验收
+
+推荐先阅读：`docs/M5_ACCEPTANCE.md`
+
+并发压测：
+
+```bash
+API_BASE=http://127.0.0.1:8080/api/v1 \
+TEAM_COUNT=20 REQUESTS_TOTAL=400 CONCURRENCY=20 \
+backend/scripts/m5/load_benchmark.sh
+```
+
+安全回归：
+
+```bash
+API_BASE=http://127.0.0.1:8080/api/v1 \
+backend/scripts/m5/security_smoke.sh
+```
+
+一键验收（生成报告）：
+
+```bash
+API_BASE=http://127.0.0.1:8080/api/v1 \
+LOAD_TEAM_COUNT=20 LOAD_REQUESTS_TOTAL=400 LOAD_CONCURRENCY=20 \
+backend/scripts/m5/full_acceptance.sh
+```
+
+默认报告输出目录：`/tmp/rust-ctf-m5-acceptance-<timestamp>/`。
+
+### 8.16 CI 工作流
+
+仓库已新增 GitHub Actions：
+
+- `.github/workflows/ci.yml`
+  - 触发：`push` / `pull_request`
+  - 执行：`cargo check`（backend）+ `npm run build`（frontend）
+- `.github/workflows/m5-acceptance.yml`
+  - 触发：`workflow_dispatch`（手动）
+  - 执行：启动依赖 + 后端进程 + M5 一键验收脚本，并上传报告 artifacts
+  - 默认 `ENABLE_WIREGUARD_SMOKE=false`（避免 hosted runner 的内核能力差异导致波动）

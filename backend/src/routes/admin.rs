@@ -1,4 +1,10 @@
-use std::{collections::HashSet, path::PathBuf, sync::Arc};
+use std::{
+    collections::HashSet,
+    path::PathBuf,
+    process::Stdio,
+    sync::Arc,
+    time::Instant,
+};
 
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
@@ -15,12 +21,16 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sqlx::FromRow;
 use tokio::fs;
+use tokio::io::AsyncWriteExt;
+use tokio::process::Command;
+use tokio::time::{timeout, Duration as TokioDuration};
 use tracing::warn;
 use uuid::Uuid;
 
 use crate::{
     auth::{self, AuthenticatedUser},
     error::{AppError, AppResult},
+    routes::instances,
     runtime_template::{
         build_single_image_compose_template, parse_runtime_metadata_options,
         validate_compose_template_schema, RuntimeMode,
@@ -59,6 +69,8 @@ const RUNTIME_ALERT_SCANNER_TYPES: &[&str] = &[
     RUNTIME_ALERT_TYPE_INSTANCE_EXPIRED_NOT_DESTROYED,
     RUNTIME_ALERT_TYPE_INSTANCE_HEARTBEAT_STALE,
 ];
+const CONTEST_POSTER_MAX_BYTES: usize = 8 * 1024 * 1024;
+const IMAGE_TEST_LOG_MAX_BYTES: usize = 256 * 1024;
 
 #[derive(Debug, Serialize, FromRow)]
 struct AdminChallengeItem {
@@ -74,6 +86,32 @@ struct AdminChallengeItem {
     is_visible: bool,
     tags: Vec<String>,
     writeup_visibility: String,
+    current_version: i32,
+    created_at: DateTime<Utc>,
+    updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+struct AdminChallengeDetailItem {
+    id: Uuid,
+    title: String,
+    slug: String,
+    category: String,
+    difficulty: String,
+    description: String,
+    static_score: i32,
+    min_score: i32,
+    max_score: i32,
+    challenge_type: String,
+    flag_mode: String,
+    status: String,
+    flag_hash: String,
+    compose_template: Option<String>,
+    metadata: Value,
+    is_visible: bool,
+    tags: Vec<String>,
+    writeup_visibility: String,
+    writeup_content: String,
     current_version: i32,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
@@ -204,6 +242,34 @@ struct AdminChallengeRuntimeLintQuery {
     only_errors: Option<bool>,
 }
 
+#[derive(Debug, Deserialize)]
+struct TestChallengeRuntimeImageRequest {
+    image: String,
+    force_pull: Option<bool>,
+    run_build_probe: Option<bool>,
+    timeout_seconds: Option<u64>,
+}
+
+#[derive(Debug, Serialize)]
+struct TestChallengeRuntimeImageStep {
+    step: String,
+    success: bool,
+    exit_code: Option<i32>,
+    duration_ms: i64,
+    output: String,
+    truncated: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct TestChallengeRuntimeImageResponse {
+    image: String,
+    force_pull: bool,
+    run_build_probe: bool,
+    succeeded: bool,
+    generated_at: DateTime<Utc>,
+    steps: Vec<TestChallengeRuntimeImageStep>,
+}
+
 #[derive(Debug, FromRow)]
 struct ChallengeRuntimeLintSourceRow {
     id: Uuid,
@@ -278,6 +344,7 @@ struct AdminContestItem {
     title: String,
     slug: String,
     description: String,
+    poster_url: Option<String>,
     visibility: String,
     status: String,
     scoring_mode: String,
@@ -321,6 +388,13 @@ struct UpdateContestRequest {
 #[derive(Debug, Deserialize)]
 struct UpdateContestStatusRequest {
     status: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct UploadContestPosterRequest {
+    filename: String,
+    content_base64: String,
+    content_type: Option<String>,
 }
 
 #[derive(Debug, Serialize, FromRow)]
@@ -457,6 +531,49 @@ struct AdminInstanceItem {
     updated_at: DateTime<Utc>,
 }
 
+#[derive(Debug, Serialize)]
+struct AdminInstanceRuntimeMetricsService {
+    container_id: String,
+    container_name: String,
+    service_name: Option<String>,
+    image: Option<String>,
+    state: Option<String>,
+    health_status: Option<String>,
+    restart_count: Option<i64>,
+    started_at: Option<String>,
+    finished_at: Option<String>,
+    ip_addresses: Vec<String>,
+    cpu_percent: Option<f64>,
+    memory_usage_bytes: Option<i64>,
+    memory_limit_bytes: Option<i64>,
+    memory_percent: Option<f64>,
+    net_rx_bytes: Option<i64>,
+    net_tx_bytes: Option<i64>,
+    block_read_bytes: Option<i64>,
+    block_write_bytes: Option<i64>,
+    pids: Option<i64>,
+}
+
+#[derive(Debug, Serialize)]
+struct AdminInstanceRuntimeMetricsSummary {
+    services_total: i64,
+    running_services: i64,
+    unhealthy_services: i64,
+    restarting_services: i64,
+    cpu_percent_total: f64,
+    memory_usage_bytes_total: i64,
+    memory_limit_bytes_total: i64,
+}
+
+#[derive(Debug, Serialize)]
+struct AdminInstanceRuntimeMetricsResponse {
+    generated_at: DateTime<Utc>,
+    instance: AdminInstanceItem,
+    summary: AdminInstanceRuntimeMetricsSummary,
+    services: Vec<AdminInstanceRuntimeMetricsService>,
+    warnings: Vec<String>,
+}
+
 #[derive(Debug, Serialize, FromRow)]
 struct AdminAuditLogItem {
     id: i64,
@@ -557,6 +674,15 @@ pub(crate) struct RuntimeAlertScanSummary {
     pub resolved_count: i64,
 }
 
+#[derive(Debug)]
+struct ProcessExecutionOutput {
+    success: bool,
+    exit_code: Option<i32>,
+    duration_ms: i64,
+    output: String,
+    truncated: bool,
+}
+
 #[derive(Debug, FromRow)]
 struct RuntimeAlertSignalInstanceRow {
     id: Uuid,
@@ -591,9 +717,57 @@ struct RuntimeAlertCountsRow {
     resolved_count: i64,
 }
 
+#[derive(Debug, Deserialize)]
+struct InstanceStatsLine {
+    #[serde(rename = "Container")]
+    container: Option<String>,
+    #[serde(rename = "Name")]
+    name: Option<String>,
+    #[serde(rename = "CPUPerc")]
+    cpu_perc: Option<String>,
+    #[serde(rename = "MemUsage")]
+    mem_usage: Option<String>,
+    #[serde(rename = "MemPerc")]
+    mem_perc: Option<String>,
+    #[serde(rename = "NetIO")]
+    net_io: Option<String>,
+    #[serde(rename = "BlockIO")]
+    block_io: Option<String>,
+    #[serde(rename = "PIDs")]
+    pids: Option<String>,
+}
+
+#[derive(Debug, Clone, Default)]
+struct ParsedInstanceStats {
+    cpu_percent: Option<f64>,
+    memory_usage_bytes: Option<i64>,
+    memory_limit_bytes: Option<i64>,
+    memory_percent: Option<f64>,
+    net_rx_bytes: Option<i64>,
+    net_tx_bytes: Option<i64>,
+    block_read_bytes: Option<i64>,
+    block_write_bytes: Option<i64>,
+    pids: Option<i64>,
+}
+
+#[derive(Debug, Serialize)]
+struct AdminInstanceReaperRunResponse {
+    generated_at: DateTime<Utc>,
+    mode: String,
+    heartbeat_stale_seconds: Option<i64>,
+    scanned: i64,
+    reaped: i64,
+    failed: i64,
+    skipped: i64,
+}
+
 pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/admin/users", get(list_users))
+        .route(
+            "/admin/users/{user_id}",
+            axum::routing::delete(delete_user_account),
+        )
         .route("/admin/users/{user_id}/status", patch(update_user_status))
         .route("/admin/users/{user_id}/role", patch(update_user_role))
         .route(
@@ -608,7 +782,16 @@ pub fn router() -> Router<Arc<AppState>> {
             "/admin/challenges/runtime-template/lint",
             get(lint_challenge_runtime_templates),
         )
-        .route("/admin/challenges/{challenge_id}", patch(update_challenge))
+        .route(
+            "/admin/challenges/runtime-template/test-image",
+            post(test_challenge_runtime_image),
+        )
+        .route(
+            "/admin/challenges/{challenge_id}",
+            get(get_challenge_detail)
+                .patch(update_challenge)
+                .delete(delete_challenge),
+        )
         .route(
             "/admin/challenges/{challenge_id}/versions",
             get(list_challenge_versions),
@@ -626,7 +809,14 @@ pub fn router() -> Router<Arc<AppState>> {
             axum::routing::delete(delete_challenge_attachment),
         )
         .route("/admin/contests", get(list_contests).post(create_contest))
-        .route("/admin/contests/{contest_id}", patch(update_contest))
+        .route(
+            "/admin/contests/{contest_id}",
+            patch(update_contest).delete(delete_contest),
+        )
+        .route(
+            "/admin/contests/{contest_id}/poster",
+            post(upload_contest_poster).delete(delete_contest_poster),
+        )
         .route(
             "/admin/contests/{contest_id}/status",
             patch(update_contest_status),
@@ -648,9 +838,21 @@ pub fn router() -> Router<Arc<AppState>> {
             patch(update_contest_announcement).delete(delete_contest_announcement),
         )
         .route("/admin/instances", get(list_instances))
+        .route(
+            "/admin/instances/{instance_id}/runtime-metrics",
+            get(get_instance_runtime_metrics),
+        )
         .route("/admin/audit-logs", get(list_audit_logs))
         .route("/admin/runtime/alerts", get(list_runtime_alerts))
         .route("/admin/runtime/alerts/scan", post(scan_runtime_alerts))
+        .route(
+            "/admin/runtime/reaper/expired",
+            post(run_expired_instance_reaper_now),
+        )
+        .route(
+            "/admin/runtime/reaper/stale",
+            post(run_stale_instance_reaper_now),
+        )
         .route(
             "/admin/runtime/alerts/{alert_id}/ack",
             post(acknowledge_runtime_alert),
@@ -706,6 +908,96 @@ async fn list_users(
     .map_err(AppError::internal)?;
 
     Ok(Json(rows))
+}
+
+async fn delete_user_account(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Path(user_id): Path<Uuid>,
+) -> AppResult<StatusCode> {
+    ensure_admin(&current_user)?;
+
+    if current_user.user_id == user_id {
+        return Err(AppError::BadRequest(
+            "cannot delete current admin user".to_string(),
+        ));
+    }
+
+    let target = sqlx::query_as::<_, AdminUserItem>(
+        "SELECT id,
+                username,
+                email,
+                role,
+                status,
+                created_at,
+                updated_at
+         FROM users
+         WHERE id = $1
+         LIMIT 1",
+    )
+    .bind(user_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest("user not found".to_string()))?;
+
+    if target.role == "admin" && target.status == "active" {
+        let remaining_active_admins = sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(1) FROM users WHERE role = 'admin' AND status = 'active' AND id <> $1",
+        )
+        .bind(user_id)
+        .fetch_one(&state.db)
+        .await
+        .map_err(AppError::internal)?;
+        if remaining_active_admins <= 0 {
+            return Err(AppError::Conflict(
+                "cannot delete the last active admin account".to_string(),
+            ));
+        }
+    }
+
+    let user_simple = user_id.as_simple().to_string();
+    let deleted_username = format!("deleted_{}", &user_simple[..12]);
+    let deleted_email = format!("deleted+{}@deleted.local", user_simple);
+    let deleted_password_hash = hash_password(Uuid::new_v4().to_string().as_str())?;
+
+    sqlx::query(
+        "UPDATE users
+         SET username = $2,
+             email = $3,
+             password_hash = $4,
+             role = 'player',
+             status = 'disabled',
+             updated_at = NOW()
+         WHERE id = $1",
+    )
+    .bind(user_id)
+    .bind(&deleted_username)
+    .bind(&deleted_email)
+    .bind(&deleted_password_hash)
+    .execute(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    auth::revoke_all_user_sessions(state.as_ref(), user_id).await?;
+
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.user.delete",
+        "user",
+        Some(user_id),
+        json!({
+            "target_user_id": user_id,
+            "target_username": target.username,
+            "target_email": target.email,
+            "target_role": target.role,
+            "target_status": target.status
+        }),
+    )
+    .await;
+
+    Ok(StatusCode::NO_CONTENT)
 }
 
 async fn update_user_status(
@@ -905,6 +1197,49 @@ async fn list_challenges(
     Ok(Json(rows))
 }
 
+async fn get_challenge_detail(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Path(challenge_id): Path<Uuid>,
+) -> AppResult<Json<AdminChallengeDetailItem>> {
+    ensure_admin_or_judge(&current_user)?;
+
+    let row = sqlx::query_as::<_, AdminChallengeDetailItem>(
+        "SELECT id,
+                title,
+                slug,
+                category,
+                difficulty,
+                description,
+                static_score,
+                min_score,
+                max_score,
+                challenge_type,
+                flag_mode,
+                status,
+                flag_hash,
+                compose_template,
+                metadata,
+                is_visible,
+                tags,
+                writeup_visibility,
+                writeup_content,
+                current_version,
+                created_at,
+                updated_at
+         FROM challenges
+         WHERE id = $1
+         LIMIT 1",
+    )
+    .bind(challenge_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest("challenge not found".to_string()))?;
+
+    Ok(Json(row))
+}
+
 async fn lint_challenge_runtime_templates(
     State(state): State<Arc<AppState>>,
     current_user: AuthenticatedUser,
@@ -1014,6 +1349,225 @@ async fn lint_challenge_runtime_templates(
         ok_count,
         error_count,
         items,
+    }))
+}
+
+async fn test_challenge_runtime_image(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Json(req): Json<TestChallengeRuntimeImageRequest>,
+) -> AppResult<Json<TestChallengeRuntimeImageResponse>> {
+    ensure_admin_or_judge(&current_user)?;
+
+    let image = validate_container_image_reference(req.image.as_str())?;
+    let force_pull = req.force_pull.unwrap_or(true);
+    let run_build_probe = req.run_build_probe.unwrap_or(true);
+    let timeout_seconds = req
+        .timeout_seconds
+        .unwrap_or(state.config.compose_command_timeout_seconds)
+        .clamp(10, 900);
+
+    let mut steps: Vec<TestChallengeRuntimeImageStep> = Vec::new();
+
+    let temp_runtime_context = std::env::temp_dir().join(format!(
+        "rust-ctf-image-test-runtime-{}",
+        Uuid::new_v4().as_simple()
+    ));
+    fs::create_dir_all(&temp_runtime_context)
+        .await
+        .map_err(AppError::internal)?;
+
+    let runtime_compose_file = temp_runtime_context.join("docker-compose.yml");
+    let runtime_compose_content =
+        format!("version: \"3.9\"\nservices:\n  runtime_image_probe:\n    image: {image}\n");
+    fs::write(&runtime_compose_file, runtime_compose_content)
+        .await
+        .map_err(AppError::internal)?;
+    let runtime_compose_path = runtime_compose_file.to_string_lossy().to_string();
+    let runtime_project = format!("imgtest{}", Uuid::new_v4().as_simple());
+
+    if force_pull {
+        let pull_args = vec![
+            "-f".to_string(),
+            runtime_compose_path.clone(),
+            "-p".to_string(),
+            runtime_project.clone(),
+            "pull".to_string(),
+            "runtime_image_probe".to_string(),
+        ];
+
+        let pull_output = run_compose_compatible_external_command(
+            &pull_args,
+            None,
+            Some(&temp_runtime_context),
+            timeout_seconds,
+        )
+        .await?;
+        steps.push(TestChallengeRuntimeImageStep {
+            step: "runtime_pull".to_string(),
+            success: pull_output.success,
+            exit_code: pull_output.exit_code,
+            duration_ms: pull_output.duration_ms,
+            output: pull_output.output,
+            truncated: pull_output.truncated,
+        });
+    }
+
+    let inspect_args = vec![
+        "-f".to_string(),
+        runtime_compose_path.clone(),
+        "-p".to_string(),
+        runtime_project,
+        "config".to_string(),
+    ];
+    let inspect_output = run_compose_compatible_external_command(
+        &inspect_args,
+        None,
+        Some(&temp_runtime_context),
+        timeout_seconds,
+    )
+    .await?;
+    steps.push(TestChallengeRuntimeImageStep {
+        step: "runtime_config_validate".to_string(),
+        success: inspect_output.success,
+        exit_code: inspect_output.exit_code,
+        duration_ms: inspect_output.duration_ms,
+        output: inspect_output.output,
+        truncated: inspect_output.truncated,
+    });
+
+    if let Err(err) = fs::remove_dir_all(&temp_runtime_context).await {
+        if err.kind() != std::io::ErrorKind::NotFound {
+            warn!(
+                path = %temp_runtime_context.to_string_lossy(),
+                error = %err,
+                "failed to cleanup image test runtime context"
+            );
+        }
+    }
+
+    if run_build_probe {
+        let probe_tag = format!("rust-ctf-image-probe:{}", Uuid::new_v4().as_simple());
+        let dockerfile_content = format!("FROM {image}\nLABEL rust_ctf_image_probe=\"1\"\n");
+
+        let temp_build_context = std::env::temp_dir().join(format!(
+            "rust-ctf-image-test-build-{}",
+            Uuid::new_v4().as_simple()
+        ));
+        fs::create_dir_all(&temp_build_context)
+            .await
+            .map_err(AppError::internal)?;
+
+        let build_compose_file = temp_build_context.join("docker-compose.yml");
+        let build_compose_content = format!(
+            "version: \"3.9\"\nservices:\n  runtime_build_probe:\n    image: {probe_tag}\n    build:\n      context: .\n      dockerfile: Dockerfile\n"
+        );
+
+        fs::write(temp_build_context.join("Dockerfile"), dockerfile_content)
+            .await
+            .map_err(AppError::internal)?;
+        fs::write(&build_compose_file, build_compose_content)
+            .await
+            .map_err(AppError::internal)?;
+
+        let build_compose_path = build_compose_file.to_string_lossy().to_string();
+        let build_project = format!("imgprobe{}", Uuid::new_v4().as_simple());
+
+        let mut build_args = vec![
+            "-f".to_string(),
+            build_compose_path.clone(),
+            "-p".to_string(),
+            build_project.clone(),
+            "build".to_string(),
+        ];
+        if force_pull {
+            build_args.push("--pull".to_string());
+        }
+        build_args.push("runtime_build_probe".to_string());
+
+        let build_output = run_compose_compatible_external_command(
+            &build_args,
+            None,
+            Some(&temp_build_context),
+            timeout_seconds,
+        )
+        .await?;
+        steps.push(TestChallengeRuntimeImageStep {
+            step: "runtime_build_probe".to_string(),
+            success: build_output.success,
+            exit_code: build_output.exit_code,
+            duration_ms: build_output.duration_ms,
+            output: build_output.output,
+            truncated: build_output.truncated,
+        });
+
+        let cleanup_args = vec![
+            "-f".to_string(),
+            build_compose_path,
+            "-p".to_string(),
+            build_project,
+            "down".to_string(),
+            "--rmi".to_string(),
+            "local".to_string(),
+            "--volumes".to_string(),
+            "--remove-orphans".to_string(),
+        ];
+        let cleanup_output = run_compose_compatible_external_command(
+            &cleanup_args,
+            None,
+            Some(&temp_build_context),
+            timeout_seconds,
+        )
+        .await?;
+        steps.push(TestChallengeRuntimeImageStep {
+            step: "runtime_cleanup_probe".to_string(),
+            success: cleanup_output.success,
+            exit_code: cleanup_output.exit_code,
+            duration_ms: cleanup_output.duration_ms,
+            output: cleanup_output.output,
+            truncated: cleanup_output.truncated,
+        });
+
+        if let Err(err) = fs::remove_dir_all(&temp_build_context).await {
+            if err.kind() != std::io::ErrorKind::NotFound {
+                warn!(
+                    path = %temp_build_context.to_string_lossy(),
+                    error = %err,
+                    "failed to cleanup image test build context"
+                );
+            }
+        }
+    }
+
+    let succeeded = steps
+        .iter()
+        .filter(|item| item.step != "runtime_cleanup_probe")
+        .all(|item| item.success);
+
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.challenge.runtime.image_test",
+        "challenge_runtime",
+        None,
+        json!({
+            "image": &image,
+            "force_pull": force_pull,
+            "run_build_probe": run_build_probe,
+            "timeout_seconds": timeout_seconds,
+            "succeeded": succeeded,
+            "step_count": steps.len()
+        }),
+    )
+    .await;
+
+    Ok(Json(TestChallengeRuntimeImageResponse {
+        image,
+        force_pull,
+        run_build_probe,
+        succeeded,
+        generated_at: Utc::now(),
+        steps,
     }))
 }
 
@@ -1484,6 +2038,82 @@ async fn update_challenge(
     Ok(Json(item))
 }
 
+async fn delete_challenge(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Path(challenge_id): Path<Uuid>,
+) -> AppResult<StatusCode> {
+    ensure_admin_or_judge(&current_user)?;
+    ensure_challenge_exists(state.as_ref(), challenge_id).await?;
+
+    let instance_cleanup =
+        instances::destroy_instances_for_challenge(state.as_ref(), challenge_id).await?;
+    if instance_cleanup.failed > 0 {
+        return Err(AppError::Conflict(format!(
+            "failed to destroy {} runtime instances, resolve runtime errors and retry",
+            instance_cleanup.failed
+        )));
+    }
+
+    let attachment_paths = sqlx::query_scalar::<_, String>(
+        "SELECT storage_path
+         FROM challenge_attachments
+         WHERE challenge_id = $1",
+    )
+    .bind(challenge_id)
+    .fetch_all(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    let deleted = sqlx::query_as::<_, (Uuid, String)>(
+        "DELETE FROM challenges
+         WHERE id = $1
+         RETURNING id, title",
+    )
+    .bind(challenge_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest("challenge not found".to_string()))?;
+
+    for storage_path in &attachment_paths {
+        let path = PathBuf::from(storage_path);
+        if let Err(err) = fs::remove_file(&path).await {
+            if err.kind() != std::io::ErrorKind::NotFound {
+                return Err(AppError::internal(err));
+            }
+        }
+    }
+
+    let attachment_dir = challenge_attachments_dir(state.as_ref(), challenge_id);
+    if let Err(err) = fs::remove_dir_all(&attachment_dir).await {
+        if err.kind() != std::io::ErrorKind::NotFound {
+            return Err(AppError::internal(err));
+        }
+    }
+
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.challenge.delete",
+        "challenge",
+        Some(deleted.0),
+        json!({
+            "title": deleted.1,
+            "attachment_count": attachment_paths.len(),
+            "instance_cleanup": {
+                "scanned": instance_cleanup.scanned,
+                "destroyed": instance_cleanup.reaped,
+                "failed": instance_cleanup.failed,
+                "skipped": instance_cleanup.skipped
+            }
+        }),
+    )
+    .await;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
 async fn list_challenge_versions(
     State(state): State<Arc<AppState>>,
     current_user: AuthenticatedUser,
@@ -1869,6 +2499,10 @@ async fn list_contests(
                 title,
                 slug,
                 description,
+                CASE
+                    WHEN poster_storage_path IS NULL OR poster_storage_path = '' THEN NULL
+                    ELSE '/api/v1/contests/' || id::text || '/poster'
+                END AS poster_url,
                 visibility,
                 status,
                 scoring_mode,
@@ -1941,6 +2575,10 @@ async fn create_contest(
                    title,
                    slug,
                    description,
+                   CASE
+                       WHEN poster_storage_path IS NULL OR poster_storage_path = '' THEN NULL
+                       ELSE '/api/v1/contests/' || id::text || '/poster'
+                   END AS poster_url,
                    visibility,
                    status,
                    scoring_mode,
@@ -2008,6 +2646,10 @@ async fn update_contest(
                 title,
                 slug,
                 description,
+                CASE
+                    WHEN poster_storage_path IS NULL OR poster_storage_path = '' THEN NULL
+                    ELSE '/api/v1/contests/' || id::text || '/poster'
+                END AS poster_url,
                 visibility,
                 status,
                 scoring_mode,
@@ -2085,6 +2727,10 @@ async fn update_contest(
                    title,
                    slug,
                    description,
+                   CASE
+                       WHEN poster_storage_path IS NULL OR poster_storage_path = '' THEN NULL
+                       ELSE '/api/v1/contests/' || id::text || '/poster'
+                   END AS poster_url,
                    visibility,
                    status,
                    scoring_mode,
@@ -2158,6 +2804,10 @@ async fn update_contest_status(
                    title,
                    slug,
                    description,
+                   CASE
+                       WHEN poster_storage_path IS NULL OR poster_storage_path = '' THEN NULL
+                       ELSE '/api/v1/contests/' || id::text || '/poster'
+                   END AS poster_url,
                    visibility,
                    status,
                    scoring_mode,
@@ -2188,6 +2838,264 @@ async fn update_contest_status(
     .await;
 
     Ok(Json(row))
+}
+
+async fn delete_contest(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Path(contest_id): Path<Uuid>,
+) -> AppResult<StatusCode> {
+    ensure_admin_or_judge(&current_user)?;
+    ensure_contest_exists(state.as_ref(), contest_id).await?;
+
+    let instance_cleanup =
+        instances::destroy_instances_for_contest(state.as_ref(), contest_id).await?;
+    if instance_cleanup.failed > 0 {
+        return Err(AppError::Conflict(format!(
+            "failed to destroy {} runtime instances, resolve runtime errors and retry",
+            instance_cleanup.failed
+        )));
+    }
+
+    let deleted = sqlx::query_as::<_, (Uuid, String, Option<String>)>(
+        "DELETE FROM contests
+         WHERE id = $1
+         RETURNING id, title, poster_storage_path",
+    )
+    .bind(contest_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest("contest not found".to_string()))?;
+
+    if let Some(path) = deleted.2.as_deref() {
+        let poster_path = PathBuf::from(path);
+        if let Err(err) = fs::remove_file(&poster_path).await {
+            if err.kind() != std::io::ErrorKind::NotFound {
+                return Err(AppError::internal(err));
+            }
+        }
+    }
+
+    let poster_dir = contest_posters_dir(state.as_ref(), contest_id);
+    if let Err(err) = fs::remove_dir_all(&poster_dir).await {
+        if err.kind() != std::io::ErrorKind::NotFound {
+            return Err(AppError::internal(err));
+        }
+    }
+
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.contest.delete",
+        "contest",
+        Some(deleted.0),
+        json!({
+            "title": deleted.1,
+            "instance_cleanup": {
+                "scanned": instance_cleanup.scanned,
+                "destroyed": instance_cleanup.reaped,
+                "failed": instance_cleanup.failed,
+                "skipped": instance_cleanup.skipped
+            }
+        }),
+    )
+    .await;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn upload_contest_poster(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Path(contest_id): Path<Uuid>,
+    Json(req): Json<UploadContestPosterRequest>,
+) -> AppResult<Json<AdminContestItem>> {
+    ensure_admin_or_judge(&current_user)?;
+    ensure_contest_exists(state.as_ref(), contest_id).await?;
+
+    let filename = trim_required(&req.filename, "filename")?;
+    if filename.chars().count() > 255 {
+        return Err(AppError::BadRequest(
+            "filename must be at most 255 characters".to_string(),
+        ));
+    }
+
+    let decoded = {
+        use base64::{engine::general_purpose::STANDARD, Engine as _};
+        STANDARD
+            .decode(req.content_base64.trim())
+            .map_err(|_| AppError::BadRequest("content_base64 is invalid".to_string()))?
+    };
+
+    if decoded.is_empty() {
+        return Err(AppError::BadRequest("poster content is empty".to_string()));
+    }
+    if decoded.len() > CONTEST_POSTER_MAX_BYTES {
+        return Err(AppError::BadRequest(format!(
+            "poster size must be <= {}MB",
+            CONTEST_POSTER_MAX_BYTES / (1024 * 1024)
+        )));
+    }
+
+    let content_type = req
+        .content_type
+        .as_deref()
+        .and_then(normalize_optional_text)
+        .map(str::to_lowercase)
+        .or_else(|| infer_image_content_type_from_filename(&filename).map(str::to_string))
+        .unwrap_or_else(|| "image/png".to_string());
+    if !content_type.starts_with("image/") {
+        return Err(AppError::BadRequest(
+            "content_type must be image/*".to_string(),
+        ));
+    }
+
+    let old_poster_path = sqlx::query_as::<_, (Option<String>,)>(
+        "SELECT poster_storage_path
+         FROM contests
+         WHERE id = $1
+         LIMIT 1",
+    )
+    .bind(contest_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest("contest not found".to_string()))?
+    .0;
+
+    let safe_filename = sanitize_filename(&filename);
+    let poster_dir = contest_posters_dir(state.as_ref(), contest_id);
+    fs::create_dir_all(&poster_dir)
+        .await
+        .map_err(AppError::internal)?;
+
+    let stored_name = format!("{}-{}", Uuid::new_v4(), safe_filename);
+    let stored_path = poster_dir.join(stored_name);
+    fs::write(&stored_path, &decoded)
+        .await
+        .map_err(AppError::internal)?;
+
+    let updated = sqlx::query_as::<_, AdminContestItem>(
+        "UPDATE contests
+         SET poster_storage_path = $2,
+             poster_content_type = $3,
+             updated_at = NOW()
+         WHERE id = $1
+         RETURNING id,
+                   title,
+                   slug,
+                   description,
+                   CASE
+                       WHEN poster_storage_path IS NULL OR poster_storage_path = '' THEN NULL
+                       ELSE '/api/v1/contests/' || id::text || '/poster'
+                   END AS poster_url,
+                   visibility,
+                   status,
+                   scoring_mode,
+                   dynamic_decay,
+                   start_at,
+                   end_at,
+                   freeze_at,
+                   created_at,
+                   updated_at",
+    )
+    .bind(contest_id)
+    .bind(stored_path.to_string_lossy().to_string())
+    .bind(&content_type)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest("contest not found".to_string()))?;
+
+    if let Some(old_path) = old_poster_path {
+        let old_path = PathBuf::from(old_path);
+        if old_path != stored_path {
+            if let Err(err) = fs::remove_file(&old_path).await {
+                if err.kind() != std::io::ErrorKind::NotFound {
+                    return Err(AppError::internal(err));
+                }
+            }
+        }
+    }
+
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.contest.poster.upload",
+        "contest",
+        Some(updated.id),
+        json!({
+            "filename": filename,
+            "content_type": content_type,
+            "size_bytes": decoded.len()
+        }),
+    )
+    .await;
+
+    Ok(Json(updated))
+}
+
+async fn delete_contest_poster(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Path(contest_id): Path<Uuid>,
+) -> AppResult<StatusCode> {
+    ensure_admin_or_judge(&current_user)?;
+
+    let existing = sqlx::query_as::<_, (Uuid, String, Option<String>)>(
+        "SELECT id, title, poster_storage_path
+         FROM contests
+         WHERE id = $1
+         LIMIT 1",
+    )
+    .bind(contest_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest("contest not found".to_string()))?;
+
+    sqlx::query(
+        "UPDATE contests
+         SET poster_storage_path = NULL,
+             poster_content_type = NULL,
+             updated_at = NOW()
+         WHERE id = $1",
+    )
+    .bind(contest_id)
+    .execute(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    if let Some(path) = existing.2.as_deref() {
+        let poster_path = PathBuf::from(path);
+        if let Err(err) = fs::remove_file(&poster_path).await {
+            if err.kind() != std::io::ErrorKind::NotFound {
+                return Err(AppError::internal(err));
+            }
+        }
+    }
+
+    let poster_dir = contest_posters_dir(state.as_ref(), contest_id);
+    if let Err(err) = fs::remove_dir_all(&poster_dir).await {
+        if err.kind() != std::io::ErrorKind::NotFound {
+            return Err(AppError::internal(err));
+        }
+    }
+
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.contest.poster.delete",
+        "contest",
+        Some(existing.0),
+        json!({
+            "title": existing.1
+        }),
+    )
+    .await;
+
+    Ok(StatusCode::NO_CONTENT)
 }
 
 async fn list_contest_challenges(
@@ -2701,6 +3609,545 @@ async fn list_instances(
     .map_err(AppError::internal)?;
 
     Ok(Json(rows))
+}
+
+async fn get_instance_runtime_metrics(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Path(instance_id): Path<Uuid>,
+) -> AppResult<Json<AdminInstanceRuntimeMetricsResponse>> {
+    ensure_admin_or_judge(&current_user)?;
+
+    let instance = load_admin_instance_item(state.as_ref(), instance_id).await?;
+    let timeout_seconds = state.config.compose_command_timeout_seconds.clamp(5, 120);
+    let (services, warnings) =
+        collect_instance_runtime_metrics(instance.compose_project_name.as_str(), timeout_seconds)
+            .await?;
+    let summary = summarize_instance_runtime_metrics(&services);
+
+    Ok(Json(AdminInstanceRuntimeMetricsResponse {
+        generated_at: Utc::now(),
+        instance,
+        summary,
+        services,
+        warnings,
+    }))
+}
+
+async fn run_expired_instance_reaper_now(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+) -> AppResult<Json<AdminInstanceReaperRunResponse>> {
+    ensure_admin_or_judge(&current_user)?;
+    let batch_size = state.config.instance_reaper_batch_size.clamp(1, 500);
+    let summary = instances::run_expired_instance_reaper(state.as_ref(), batch_size).await?;
+
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.runtime.reaper.expired.run",
+        "instance",
+        None,
+        json!({
+            "batch_size": batch_size,
+            "scanned": summary.scanned,
+            "reaped": summary.reaped,
+            "failed": summary.failed,
+            "skipped": summary.skipped
+        }),
+    )
+    .await;
+
+    Ok(Json(AdminInstanceReaperRunResponse {
+        generated_at: Utc::now(),
+        mode: "expired".to_string(),
+        heartbeat_stale_seconds: None,
+        scanned: summary.scanned,
+        reaped: summary.reaped,
+        failed: summary.failed,
+        skipped: summary.skipped,
+    }))
+}
+
+async fn run_stale_instance_reaper_now(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+) -> AppResult<Json<AdminInstanceReaperRunResponse>> {
+    ensure_admin_or_judge(&current_user)?;
+    let batch_size = state.config.instance_stale_reaper_batch_size.clamp(1, 500);
+    let heartbeat_stale_seconds =
+        state.config.instance_heartbeat_stale_seconds.clamp(60, 86_400) as i64;
+    let summary = instances::run_stale_instance_reaper(
+        state.as_ref(),
+        heartbeat_stale_seconds,
+        batch_size,
+    )
+    .await?;
+
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.runtime.reaper.stale.run",
+        "instance",
+        None,
+        json!({
+            "batch_size": batch_size,
+            "heartbeat_stale_seconds": heartbeat_stale_seconds,
+            "scanned": summary.scanned,
+            "reaped": summary.reaped,
+            "failed": summary.failed,
+            "skipped": summary.skipped
+        }),
+    )
+    .await;
+
+    Ok(Json(AdminInstanceReaperRunResponse {
+        generated_at: Utc::now(),
+        mode: "stale".to_string(),
+        heartbeat_stale_seconds: Some(heartbeat_stale_seconds),
+        scanned: summary.scanned,
+        reaped: summary.reaped,
+        failed: summary.failed,
+        skipped: summary.skipped,
+    }))
+}
+
+async fn load_admin_instance_item(state: &AppState, instance_id: Uuid) -> AppResult<AdminInstanceItem> {
+    let row = sqlx::query_as::<_, AdminInstanceItem>(
+        "SELECT i.id,
+                i.contest_id,
+                ct.title AS contest_title,
+                i.challenge_id,
+                c.title AS challenge_title,
+                i.team_id,
+                t.name AS team_name,
+                i.status,
+                i.subnet::text AS subnet,
+                i.compose_project_name,
+                i.entrypoint_url,
+                i.started_at,
+                i.expires_at,
+                i.destroyed_at,
+                i.last_heartbeat_at,
+                i.created_at,
+                i.updated_at
+         FROM instances i
+         JOIN contests ct ON ct.id = i.contest_id
+         JOIN challenges c ON c.id = i.challenge_id
+         JOIN teams t ON t.id = i.team_id
+         WHERE i.id = $1
+         LIMIT 1",
+    )
+    .bind(instance_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest("instance not found".to_string()))?;
+
+    Ok(row)
+}
+
+async fn collect_instance_runtime_metrics(
+    compose_project_name: &str,
+    timeout_seconds: u64,
+) -> AppResult<(Vec<AdminInstanceRuntimeMetricsService>, Vec<String>)> {
+    let project_name = compose_project_name.trim();
+    if project_name.is_empty() {
+        return Err(AppError::BadRequest(
+            "instance compose project name is empty".to_string(),
+        ));
+    }
+
+    let list_args = vec![
+        "ps".to_string(),
+        "-a".to_string(),
+        "--filter".to_string(),
+        format!("label=com.docker.compose.project={project_name}"),
+        "--format".to_string(),
+        "{{.ID}}".to_string(),
+    ];
+    let list_output =
+        run_docker_command_or_error(&list_args, timeout_seconds, "docker ps for runtime metrics")
+            .await?;
+    let container_ids = list_output
+        .output
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(str::to_string)
+        .collect::<Vec<_>>();
+
+    if container_ids.is_empty() {
+        return Ok((
+            Vec::new(),
+            vec![format!(
+                "no docker containers found for compose project '{project_name}'"
+            )],
+        ));
+    }
+
+    let mut inspect_args = vec!["inspect".to_string()];
+    inspect_args.extend(container_ids.iter().cloned());
+    let inspect_output =
+        run_docker_command_or_error(&inspect_args, timeout_seconds, "docker inspect").await?;
+    let inspect_rows = serde_json::from_str::<Vec<Value>>(&inspect_output.output).map_err(|err| {
+        AppError::BadRequest(format!("failed to parse docker inspect output: {err}"))
+    })?;
+
+    let mut stats_args = vec![
+        "stats".to_string(),
+        "--no-stream".to_string(),
+        "--format".to_string(),
+        "{{json .}}".to_string(),
+    ];
+    stats_args.extend(container_ids.iter().cloned());
+
+    let stats_output =
+        run_docker_command_or_error(&stats_args, timeout_seconds, "docker stats").await?;
+    let (stats_rows, mut warnings) = parse_instance_stats_output(&stats_output.output);
+
+    let mut services = Vec::new();
+    for row in inspect_rows {
+        let container_id = row
+            .get("Id")
+            .and_then(Value::as_str)
+            .map(str::to_string)
+            .unwrap_or_default();
+        if container_id.is_empty() {
+            warnings.push("skip one container entry: missing container id in docker inspect".to_string());
+            continue;
+        }
+
+        let container_name = row
+            .get("Name")
+            .and_then(Value::as_str)
+            .map(normalize_container_name)
+            .filter(|value| !value.is_empty())
+            .unwrap_or_else(|| container_id.chars().take(12).collect());
+
+        let labels = row
+            .get("Config")
+            .and_then(|value| value.get("Labels"))
+            .and_then(Value::as_object);
+        let service_name = labels
+            .and_then(|map| map.get("com.docker.compose.service"))
+            .and_then(Value::as_str)
+            .map(str::to_string);
+        let image = row
+            .get("Config")
+            .and_then(|value| value.get("Image"))
+            .and_then(Value::as_str)
+            .map(str::to_string);
+
+        let state = row
+            .get("State")
+            .and_then(|value| value.get("Status"))
+            .and_then(Value::as_str)
+            .map(str::to_string);
+        let health_status = row
+            .get("State")
+            .and_then(|value| value.get("Health"))
+            .and_then(|value| value.get("Status"))
+            .and_then(Value::as_str)
+            .map(str::to_string);
+        let restart_count = row
+            .get("RestartCount")
+            .and_then(Value::as_i64)
+            .or_else(|| {
+                row.get("State")
+                    .and_then(|value| value.get("RestartCount"))
+                    .and_then(Value::as_i64)
+            });
+        let started_at = row
+            .get("State")
+            .and_then(|value| value.get("StartedAt"))
+            .and_then(Value::as_str)
+            .and_then(normalize_container_time);
+        let finished_at = row
+            .get("State")
+            .and_then(|value| value.get("FinishedAt"))
+            .and_then(Value::as_str)
+            .and_then(normalize_container_time);
+        let ip_addresses = row
+            .get("NetworkSettings")
+            .and_then(|value| value.get("Networks"))
+            .and_then(Value::as_object)
+            .map(|networks| {
+                let mut ips = Vec::new();
+                for network in networks.values() {
+                    if let Some(ip) = network.get("IPAddress").and_then(Value::as_str) {
+                        let normalized = ip.trim();
+                        if !normalized.is_empty() {
+                            ips.push(normalized.to_string());
+                        }
+                    }
+                }
+                ips
+            })
+            .unwrap_or_default();
+
+        let stats = find_instance_stats(&stats_rows, &container_id, &container_name)
+            .unwrap_or_default();
+
+        services.push(AdminInstanceRuntimeMetricsService {
+            container_id,
+            container_name,
+            service_name,
+            image,
+            state,
+            health_status,
+            restart_count,
+            started_at,
+            finished_at,
+            ip_addresses,
+            cpu_percent: stats.cpu_percent,
+            memory_usage_bytes: stats.memory_usage_bytes,
+            memory_limit_bytes: stats.memory_limit_bytes,
+            memory_percent: stats.memory_percent,
+            net_rx_bytes: stats.net_rx_bytes,
+            net_tx_bytes: stats.net_tx_bytes,
+            block_read_bytes: stats.block_read_bytes,
+            block_write_bytes: stats.block_write_bytes,
+            pids: stats.pids,
+        });
+    }
+
+    services.sort_by(|left, right| left.container_name.cmp(&right.container_name));
+    Ok((services, warnings))
+}
+
+async fn run_docker_command_or_error(
+    args: &[String],
+    timeout_seconds: u64,
+    action_name: &str,
+) -> AppResult<ProcessExecutionOutput> {
+    let args_ref = args.iter().map(String::as_str).collect::<Vec<_>>();
+    let output = run_external_command("docker", &args_ref, None, None, timeout_seconds).await?;
+    if output.success {
+        return Ok(output);
+    }
+
+    Err(AppError::BadRequest(format!(
+        "{action_name} failed: {}",
+        compact_runtime_monitor_message(&output.output)
+    )))
+}
+
+fn parse_instance_stats_output(raw: &str) -> (Vec<(Option<String>, Option<String>, ParsedInstanceStats)>, Vec<String>) {
+    let mut rows = Vec::new();
+    let mut warnings = Vec::new();
+
+    for (index, line) in raw.lines().enumerate() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+
+        let parsed = match serde_json::from_str::<InstanceStatsLine>(trimmed) {
+            Ok(value) => value,
+            Err(err) => {
+                warnings.push(format!("skip stats line {}: {}", index + 1, err));
+                continue;
+            }
+        };
+
+        let (memory_usage_bytes, memory_limit_bytes) =
+            parse_usage_limit_pair(parsed.mem_usage.as_deref());
+        let (net_rx_bytes, net_tx_bytes) = parse_io_pair(parsed.net_io.as_deref());
+        let (block_read_bytes, block_write_bytes) = parse_io_pair(parsed.block_io.as_deref());
+        let stats = ParsedInstanceStats {
+            cpu_percent: parse_percent_value(parsed.cpu_perc.as_deref()),
+            memory_usage_bytes,
+            memory_limit_bytes,
+            memory_percent: parse_percent_value(parsed.mem_perc.as_deref()),
+            net_rx_bytes,
+            net_tx_bytes,
+            block_read_bytes,
+            block_write_bytes,
+            pids: parse_i64_value(parsed.pids.as_deref()),
+        };
+
+        rows.push((
+            parsed.container.map(|value| value.trim().to_string()),
+            parsed.name
+                .as_deref()
+                .map(normalize_container_name)
+                .filter(|value| !value.is_empty()),
+            stats,
+        ));
+    }
+
+    (rows, warnings)
+}
+
+fn find_instance_stats(
+    rows: &[(Option<String>, Option<String>, ParsedInstanceStats)],
+    container_id: &str,
+    container_name: &str,
+) -> Option<ParsedInstanceStats> {
+    if container_id.is_empty() && container_name.is_empty() {
+        return None;
+    }
+
+    for (stats_container_id, stats_name, stats) in rows {
+        if let Some(stats_id) = stats_container_id {
+            if !stats_id.is_empty()
+                && (container_id.starts_with(stats_id) || stats_id.starts_with(container_id))
+            {
+                return Some(stats.clone());
+            }
+        }
+        if let Some(name) = stats_name {
+            if name.eq_ignore_ascii_case(container_name) {
+                return Some(stats.clone());
+            }
+        }
+    }
+
+    None
+}
+
+fn summarize_instance_runtime_metrics(
+    services: &[AdminInstanceRuntimeMetricsService],
+) -> AdminInstanceRuntimeMetricsSummary {
+    let mut running_services = 0_i64;
+    let mut unhealthy_services = 0_i64;
+    let mut restarting_services = 0_i64;
+    let mut cpu_percent_total = 0_f64;
+    let mut memory_usage_bytes_total = 0_i64;
+    let mut memory_limit_bytes_total = 0_i64;
+
+    for service in services {
+        if service.state.as_deref() == Some("running") {
+            running_services += 1;
+        }
+        if service.health_status.as_deref() == Some("unhealthy") {
+            unhealthy_services += 1;
+        }
+        if service.state.as_deref() == Some("restarting") {
+            restarting_services += 1;
+        }
+        if let Some(cpu_percent) = service.cpu_percent {
+            cpu_percent_total += cpu_percent;
+        }
+        if let Some(memory_usage_bytes) = service.memory_usage_bytes {
+            memory_usage_bytes_total += memory_usage_bytes;
+        }
+        if let Some(memory_limit_bytes) = service.memory_limit_bytes {
+            memory_limit_bytes_total += memory_limit_bytes;
+        }
+    }
+
+    AdminInstanceRuntimeMetricsSummary {
+        services_total: services.len() as i64,
+        running_services,
+        unhealthy_services,
+        restarting_services,
+        cpu_percent_total: (cpu_percent_total * 100.0).round() / 100.0,
+        memory_usage_bytes_total,
+        memory_limit_bytes_total,
+    }
+}
+
+fn parse_percent_value(raw: Option<&str>) -> Option<f64> {
+    let value = raw?.trim();
+    if value.is_empty() || value.eq_ignore_ascii_case("n/a") {
+        return None;
+    }
+    let normalized = value.trim_end_matches('%').trim();
+    normalized.parse::<f64>().ok()
+}
+
+fn parse_i64_value(raw: Option<&str>) -> Option<i64> {
+    let value = raw?.trim();
+    if value.is_empty() || value.eq_ignore_ascii_case("n/a") {
+        return None;
+    }
+    value.parse::<i64>().ok()
+}
+
+fn parse_usage_limit_pair(raw: Option<&str>) -> (Option<i64>, Option<i64>) {
+    let Some(value) = raw else {
+        return (None, None);
+    };
+    let Some((left, right)) = value.split_once('/') else {
+        return (parse_size_to_bytes(value), None);
+    };
+    (parse_size_to_bytes(left), parse_size_to_bytes(right))
+}
+
+fn parse_io_pair(raw: Option<&str>) -> (Option<i64>, Option<i64>) {
+    let Some(value) = raw else {
+        return (None, None);
+    };
+    let Some((left, right)) = value.split_once('/') else {
+        return (parse_size_to_bytes(value), None);
+    };
+    (parse_size_to_bytes(left), parse_size_to_bytes(right))
+}
+
+fn parse_size_to_bytes(raw: &str) -> Option<i64> {
+    let value = raw.trim();
+    if value.is_empty() || value.eq_ignore_ascii_case("n/a") {
+        return None;
+    }
+
+    let mut number_part = String::new();
+    let mut unit_part = String::new();
+    for ch in value.chars() {
+        if ch.is_ascii_digit() || ch == '.' {
+            if unit_part.is_empty() {
+                number_part.push(ch);
+            }
+        } else if !ch.is_ascii_whitespace() {
+            unit_part.push(ch);
+        }
+    }
+
+    if number_part.is_empty() {
+        return None;
+    }
+
+    let number = number_part.parse::<f64>().ok()?;
+    let factor = match unit_part.to_ascii_lowercase().as_str() {
+        "" | "b" => 1_f64,
+        "k" | "kb" => 1_000_f64,
+        "kib" => 1_024_f64,
+        "m" | "mb" => 1_000_000_f64,
+        "mib" => 1_048_576_f64,
+        "g" | "gb" => 1_000_000_000_f64,
+        "gib" => 1_073_741_824_f64,
+        "t" | "tb" => 1_000_000_000_000_f64,
+        "tib" => 1_099_511_627_776_f64,
+        _ => return None,
+    };
+
+    Some((number * factor).round() as i64)
+}
+
+fn normalize_container_name(raw: &str) -> String {
+    raw.trim().trim_start_matches('/').to_string()
+}
+
+fn normalize_container_time(raw: &str) -> Option<String> {
+    let value = raw.trim();
+    if value.is_empty() || value.starts_with("0001-01-01") {
+        return None;
+    }
+    Some(value.to_string())
+}
+
+fn compact_runtime_monitor_message(raw: &str) -> String {
+    let source = raw.trim();
+    if source.is_empty() {
+        return "no diagnostic output".to_string();
+    }
+
+    let mut compact = source.replace(['\n', '\r'], " ");
+    if compact.chars().count() > 240 {
+        compact = compact.chars().take(240).collect::<String>() + "...";
+    }
+    compact
 }
 
 async fn list_audit_logs(
@@ -3712,6 +5159,12 @@ fn challenge_attachments_dir(state: &AppState, challenge_id: Uuid) -> PathBuf {
         .join(challenge_id.to_string())
 }
 
+fn contest_posters_dir(state: &AppState, contest_id: Uuid) -> PathBuf {
+    PathBuf::from(&state.config.instance_runtime_root)
+        .join("_contest_posters")
+        .join(contest_id.to_string())
+}
+
 fn sanitize_filename(filename: &str) -> String {
     let mut out = String::with_capacity(filename.len());
     for ch in filename.chars() {
@@ -3728,6 +5181,220 @@ fn sanitize_filename(filename: &str) -> String {
     } else {
         trimmed.to_string()
     }
+}
+
+fn infer_image_content_type_from_filename(filename: &str) -> Option<&'static str> {
+    let lower = filename.trim().to_lowercase();
+    if lower.ends_with(".png") {
+        return Some("image/png");
+    }
+    if lower.ends_with(".jpg") || lower.ends_with(".jpeg") {
+        return Some("image/jpeg");
+    }
+    if lower.ends_with(".webp") {
+        return Some("image/webp");
+    }
+    if lower.ends_with(".gif") {
+        return Some("image/gif");
+    }
+    if lower.ends_with(".svg") {
+        return Some("image/svg+xml");
+    }
+
+    None
+}
+
+fn validate_container_image_reference(raw: &str) -> AppResult<String> {
+    let image = raw.trim();
+    if image.is_empty() {
+        return Err(AppError::BadRequest("image is required".to_string()));
+    }
+    if image.chars().count() > 255 {
+        return Err(AppError::BadRequest(
+            "image must be at most 255 characters".to_string(),
+        ));
+    }
+    if image.chars().any(char::is_whitespace) {
+        return Err(AppError::BadRequest(
+            "image must not contain whitespace".to_string(),
+        ));
+    }
+    if image.contains('\"') || image.contains('\'') {
+        return Err(AppError::BadRequest(
+            "image contains unsupported quote characters".to_string(),
+        ));
+    }
+
+    Ok(image.to_string())
+}
+
+async fn run_compose_compatible_external_command(
+    args: &[String],
+    stdin_input: Option<&str>,
+    workdir: Option<&std::path::Path>,
+    timeout_seconds: u64,
+) -> AppResult<ProcessExecutionOutput> {
+    let mut docker_args: Vec<String> = Vec::with_capacity(args.len() + 1);
+    docker_args.push("compose".to_string());
+    docker_args.extend(args.iter().cloned());
+    let docker_args_ref = docker_args.iter().map(String::as_str).collect::<Vec<_>>();
+
+    let mut primary_output: Option<ProcessExecutionOutput> = None;
+    match run_external_command(
+        "docker",
+        &docker_args_ref,
+        stdin_input,
+        workdir,
+        timeout_seconds,
+    )
+    .await
+    {
+        Ok(output) => {
+            if output.success || !should_fallback_to_legacy_compose_output(&output.output) {
+                return Ok(output);
+            }
+            primary_output = Some(output);
+        }
+        Err(AppError::BadRequest(message)) if message == "docker command not found" => {}
+        Err(err) => return Err(err),
+    }
+
+    let legacy_args_ref = args.iter().map(String::as_str).collect::<Vec<_>>();
+    match run_external_command(
+        "docker-compose",
+        &legacy_args_ref,
+        stdin_input,
+        workdir,
+        timeout_seconds,
+    )
+    .await
+    {
+        Ok(mut legacy_output) => {
+            let prefix = "[executor=docker-compose]\n";
+            legacy_output.output = if legacy_output.output.is_empty() {
+                prefix.trim_end().to_string()
+            } else {
+                format!("{prefix}{}", legacy_output.output)
+            };
+            Ok(legacy_output)
+        }
+        Err(AppError::BadRequest(message)) if message == "docker-compose command not found" => {
+            if let Some(output) = primary_output {
+                Ok(output)
+            } else {
+                Err(AppError::BadRequest(
+                    "docker compose command is unavailable (tried 'docker compose' and 'docker-compose')".to_string(),
+                ))
+            }
+        }
+        Err(err) => Err(err),
+    }
+}
+
+fn should_fallback_to_legacy_compose_output(raw: &str) -> bool {
+    let lowered = raw.to_ascii_lowercase();
+    lowered.contains("is not a docker command")
+        || lowered.contains("unknown command \"compose\"")
+        || lowered.contains("docker: 'compose' is not")
+        || (lowered.contains("unknown shorthand flag")
+            && (lowered.contains("in -f")
+                || lowered.contains("in -p")
+                || lowered.contains("see 'docker --help'")))
+        || (lowered.contains("client version") && lowered.contains("minimum supported api version"))
+}
+
+async fn run_external_command(
+    program: &str,
+    args: &[&str],
+    stdin_input: Option<&str>,
+    workdir: Option<&std::path::Path>,
+    timeout_seconds: u64,
+) -> AppResult<ProcessExecutionOutput> {
+    let mut command = Command::new(program);
+    command.args(args);
+    command.kill_on_drop(true);
+    command.env_remove("DOCKER_API_VERSION");
+    if let Some(dir) = workdir {
+        command.current_dir(dir);
+    }
+
+    if stdin_input.is_some() {
+        command.stdin(Stdio::piped());
+    } else {
+        command.stdin(Stdio::null());
+    }
+    command.stdout(Stdio::piped());
+    command.stderr(Stdio::piped());
+
+    let start = Instant::now();
+    let mut child = command.spawn().map_err(|err| {
+        if err.kind() == std::io::ErrorKind::NotFound {
+            AppError::BadRequest(format!("{program} command not found"))
+        } else {
+            AppError::internal(err)
+        }
+    })?;
+
+    if let Some(input) = stdin_input {
+        if let Some(mut stdin) = child.stdin.take() {
+            stdin
+                .write_all(input.as_bytes())
+                .await
+                .map_err(AppError::internal)?;
+            stdin.shutdown().await.map_err(AppError::internal)?;
+        }
+    }
+
+    let output = match timeout(
+        TokioDuration::from_secs(timeout_seconds),
+        child.wait_with_output(),
+    )
+    .await
+    {
+        Ok(output) => output.map_err(AppError::internal)?,
+        Err(_) => {
+            return Ok(ProcessExecutionOutput {
+                success: false,
+                exit_code: None,
+                duration_ms: start.elapsed().as_millis() as i64,
+                output: format!("command timed out after {timeout_seconds} seconds"),
+                truncated: false,
+            })
+        }
+    };
+
+    let mut merged = output.stdout;
+    if !output.stderr.is_empty() {
+        if !merged.is_empty() {
+            merged.extend_from_slice(b"\n");
+        }
+        merged.extend_from_slice(&output.stderr);
+    }
+
+    let (text, truncated) = truncate_log_bytes(merged);
+
+    Ok(ProcessExecutionOutput {
+        success: output.status.success(),
+        exit_code: output.status.code(),
+        duration_ms: start.elapsed().as_millis() as i64,
+        output: text,
+        truncated,
+    })
+}
+
+fn truncate_log_bytes(bytes: Vec<u8>) -> (String, bool) {
+    if bytes.len() <= IMAGE_TEST_LOG_MAX_BYTES {
+        return (String::from_utf8_lossy(&bytes).to_string(), false);
+    }
+
+    let mut clipped = bytes[..IMAGE_TEST_LOG_MAX_BYTES].to_vec();
+    while std::str::from_utf8(&clipped).is_err() && !clipped.is_empty() {
+        clipped.pop();
+    }
+    let mut text = String::from_utf8_lossy(&clipped).to_string();
+    text.push_str("\n... [log truncated]");
+
+    (text, true)
 }
 
 async fn load_challenge_attachment_item(

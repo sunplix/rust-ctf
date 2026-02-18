@@ -7,7 +7,7 @@ use argon2::{
 use axum::{
     extract::{Query, State},
     http::{HeaderMap, StatusCode},
-    routing::{get, patch, post},
+    routing::{delete, get, patch, post},
     Json, Router,
 };
 use chrono::{DateTime, Utc};
@@ -104,6 +104,7 @@ pub fn router() -> Router<Arc<AppState>> {
         .route("/auth/me", get(me))
         .route("/auth/profile", patch(update_profile))
         .route("/auth/change-password", post(change_password))
+        .route("/auth/account", delete(delete_account))
         .route("/auth/login-history", get(login_history))
 }
 
@@ -446,6 +447,96 @@ async fn login_history(
     .map_err(AppError::internal)?;
 
     Ok(Json(rows))
+}
+
+async fn delete_account(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+    current_user: AuthenticatedUser,
+) -> AppResult<StatusCode> {
+    let user = fetch_active_user_with_secret(state.as_ref(), current_user.user_id).await?;
+
+    if user.role == "admin" {
+        let remaining_active_admins = sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(1)
+             FROM users
+             WHERE role = 'admin'
+               AND status = 'active'
+               AND id <> $1",
+        )
+        .bind(user.id)
+        .fetch_one(&state.db)
+        .await
+        .map_err(AppError::internal)?;
+        if remaining_active_admins <= 0 {
+            return Err(AppError::Conflict(
+                "cannot delete the last active admin account".to_string(),
+            ));
+        }
+    }
+
+    let is_team_captain = sqlx::query_scalar::<_, bool>(
+        "SELECT EXISTS(
+            SELECT 1
+            FROM teams
+            WHERE captain_user_id = $1
+         )",
+    )
+    .bind(user.id)
+    .fetch_one(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+    if is_team_captain {
+        return Err(AppError::Conflict(
+            "captain account cannot be deleted, transfer captain or disband team first".to_string(),
+        ));
+    }
+
+    sqlx::query("DELETE FROM team_members WHERE user_id = $1")
+        .bind(user.id)
+        .execute(&state.db)
+        .await
+        .map_err(AppError::internal)?;
+
+    let user_simple = user.id.as_simple().to_string();
+    let deleted_username = format!("deleted_{}", &user_simple[..12]);
+    let deleted_email = format!("deleted+{}@deleted.local", user_simple);
+    let deleted_password_hash = hash_password(Uuid::new_v4().to_string().as_str())?;
+
+    sqlx::query(
+        "UPDATE users
+         SET username = $2,
+             email = $3,
+             password_hash = $4,
+             role = 'player',
+             status = 'disabled',
+             updated_at = NOW()
+         WHERE id = $1",
+    )
+    .bind(user.id)
+    .bind(&deleted_username)
+    .bind(&deleted_email)
+    .bind(&deleted_password_hash)
+    .execute(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    auth::revoke_all_user_sessions(state.as_ref(), user.id).await?;
+
+    record_auth_audit_log(
+        state.as_ref(),
+        user.id,
+        &user.role,
+        "auth.account.delete",
+        json!({
+            "username": user.username,
+            "email": user.email,
+            "request": request_meta(&headers)
+        }),
+    )
+    .await;
+
+    Ok(StatusCode::NO_CONTENT)
 }
 
 fn build_auth_response(tokens: TokenBundle, user: AuthUser) -> AuthResponse {

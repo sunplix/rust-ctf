@@ -55,6 +55,10 @@ function authHeaders(accessToken?: string): AxiosRequestConfig {
   };
 }
 
+export function buildApiAssetUrl(path: string): string {
+  return new URL(path, API_BASE_URL).toString();
+}
+
 export type AuthUser = {
   id: string;
   username: string;
@@ -83,9 +87,14 @@ export type ContestListItem = {
   id: string;
   title: string;
   slug: string;
+  description: string;
+  poster_url: string | null;
   status: string;
   scoring_mode: string;
   dynamic_decay: number;
+  latest_announcement_title: string | null;
+  latest_announcement_content: string | null;
+  latest_announcement_published_at: string | null;
   start_at: string;
   end_at: string;
 };
@@ -236,6 +245,31 @@ export type AdminChallengeItem = {
   updated_at: string;
 };
 
+export type AdminChallengeDetailItem = {
+  id: string;
+  title: string;
+  slug: string;
+  category: string;
+  difficulty: string;
+  description: string;
+  static_score: number;
+  min_score: number;
+  max_score: number;
+  challenge_type: string;
+  flag_mode: string;
+  status: string;
+  flag_hash: string;
+  compose_template: string | null;
+  metadata: Record<string, unknown>;
+  is_visible: boolean;
+  tags: string[];
+  writeup_visibility: string;
+  writeup_content: string;
+  current_version: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type AdminChallengeVersionItem = {
   id: string;
   challenge_id: string;
@@ -263,6 +297,7 @@ export type AdminContestItem = {
   title: string;
   slug: string;
   description: string;
+  poster_url: string | null;
   visibility: string;
   status: string;
   scoring_mode: string;
@@ -328,6 +363,56 @@ export type AdminInstanceItem = {
   last_heartbeat_at: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type AdminInstanceRuntimeMetricsService = {
+  container_id: string;
+  container_name: string;
+  service_name: string | null;
+  image: string | null;
+  state: string | null;
+  health_status: string | null;
+  restart_count: number | null;
+  started_at: string | null;
+  finished_at: string | null;
+  ip_addresses: string[];
+  cpu_percent: number | null;
+  memory_usage_bytes: number | null;
+  memory_limit_bytes: number | null;
+  memory_percent: number | null;
+  net_rx_bytes: number | null;
+  net_tx_bytes: number | null;
+  block_read_bytes: number | null;
+  block_write_bytes: number | null;
+  pids: number | null;
+};
+
+export type AdminInstanceRuntimeMetricsSummary = {
+  services_total: number;
+  running_services: number;
+  unhealthy_services: number;
+  restarting_services: number;
+  cpu_percent_total: number;
+  memory_usage_bytes_total: number;
+  memory_limit_bytes_total: number;
+};
+
+export type AdminInstanceRuntimeMetricsResponse = {
+  generated_at: string;
+  instance: AdminInstanceItem;
+  summary: AdminInstanceRuntimeMetricsSummary;
+  services: AdminInstanceRuntimeMetricsService[];
+  warnings: string[];
+};
+
+export type AdminInstanceReaperRunResponse = {
+  generated_at: string;
+  mode: string;
+  heartbeat_stale_seconds: number | null;
+  scanned: number;
+  reaped: number;
+  failed: number;
+  skipped: number;
 };
 
 export type AdminAuditLogItem = {
@@ -427,6 +512,24 @@ export type AdminChallengeRuntimeLintResponse = {
   items: AdminChallengeRuntimeLintItem[];
 };
 
+export type AdminChallengeRuntimeImageTestStep = {
+  step: string;
+  success: boolean;
+  exit_code: number | null;
+  duration_ms: number;
+  output: string;
+  truncated: boolean;
+};
+
+export type AdminChallengeRuntimeImageTestResponse = {
+  image: string;
+  force_pull: boolean;
+  run_build_probe: boolean;
+  succeeded: boolean;
+  generated_at: string;
+  steps: AdminChallengeRuntimeImageTestStep[];
+};
+
 export type WireguardConfigResponse = {
   contest_id: string;
   challenge_id: string;
@@ -519,6 +622,14 @@ export async function getLoginHistory(
       params: query
     });
     return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function deleteAccount(accessToken: string): Promise<void> {
+  try {
+    await api.delete("/auth/account", authHeaders(accessToken));
   } catch (error) {
     throw toApiClientError(error);
   }
@@ -881,6 +992,21 @@ export async function listAdminChallenges(accessToken: string): Promise<AdminCha
   }
 }
 
+export async function getAdminChallengeDetail(
+  challengeId: string,
+  accessToken: string
+): Promise<AdminChallengeDetailItem> {
+  try {
+    const { data } = await api.get<AdminChallengeDetailItem>(
+      `/admin/challenges/${challengeId}`,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
 export async function createAdminChallenge(
   payload: {
     title: string;
@@ -941,6 +1067,17 @@ export async function updateAdminChallenge(
       authHeaders(accessToken)
     );
     return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function deleteAdminChallenge(
+  challengeId: string,
+  accessToken: string
+): Promise<void> {
+  try {
+    await api.delete(`/admin/challenges/${challengeId}`, authHeaders(accessToken));
   } catch (error) {
     throw toApiClientError(error);
   }
@@ -1113,6 +1250,17 @@ export async function resetAdminUserPassword(
   }
 }
 
+export async function deleteAdminUser(
+  userId: string,
+  accessToken: string
+): Promise<void> {
+  try {
+    await api.delete(`/admin/users/${userId}`, authHeaders(accessToken));
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
 export async function createAdminContest(
   payload: {
     title: string;
@@ -1177,6 +1325,45 @@ export async function updateAdminContestStatus(
       authHeaders(accessToken)
     );
     return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function deleteAdminContest(
+  contestId: string,
+  accessToken: string
+): Promise<void> {
+  try {
+    await api.delete(`/admin/contests/${contestId}`, authHeaders(accessToken));
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function uploadAdminContestPoster(
+  contestId: string,
+  payload: { filename: string; content_base64: string; content_type?: string },
+  accessToken: string
+): Promise<AdminContestItem> {
+  try {
+    const { data } = await api.post<AdminContestItem>(
+      `/admin/contests/${contestId}/poster`,
+      payload,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function deleteAdminContestPoster(
+  contestId: string,
+  accessToken: string
+): Promise<void> {
+  try {
+    await api.delete(`/admin/contests/${contestId}/poster`, authHeaders(accessToken));
   } catch (error) {
     throw toApiClientError(error);
   }
@@ -1276,6 +1463,21 @@ export async function listAdminInstances(
   }
 }
 
+export async function getAdminInstanceRuntimeMetrics(
+  instanceId: string,
+  accessToken: string
+): Promise<AdminInstanceRuntimeMetricsResponse> {
+  try {
+    const { data } = await api.get<AdminInstanceRuntimeMetricsResponse>(
+      `/admin/instances/${instanceId}/runtime-metrics`,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
 export async function listAdminAuditLogs(
   accessToken: string,
   query?: {
@@ -1340,6 +1542,36 @@ export async function scanAdminRuntimeAlerts(
   }
 }
 
+export async function runAdminExpiredInstanceReaper(
+  accessToken: string
+): Promise<AdminInstanceReaperRunResponse> {
+  try {
+    const { data } = await api.post<AdminInstanceReaperRunResponse>(
+      "/admin/runtime/reaper/expired",
+      {},
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function runAdminStaleInstanceReaper(
+  accessToken: string
+): Promise<AdminInstanceReaperRunResponse> {
+  try {
+    const { data } = await api.post<AdminInstanceReaperRunResponse>(
+      "/admin/runtime/reaper/stale",
+      {},
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
 export async function acknowledgeAdminRuntimeAlert(
   alertId: string,
   accessToken: string,
@@ -1391,6 +1623,27 @@ export async function listAdminChallengeRuntimeTemplateLint(
         ...authHeaders(accessToken),
         params: query
       }
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function testAdminChallengeRuntimeImage(
+  payload: {
+    image: string;
+    force_pull?: boolean;
+    run_build_probe?: boolean;
+    timeout_seconds?: number;
+  },
+  accessToken: string
+): Promise<AdminChallengeRuntimeImageTestResponse> {
+  try {
+    const { data } = await api.post<AdminChallengeRuntimeImageTestResponse>(
+      "/admin/challenges/runtime-template/test-image",
+      payload,
+      authHeaders(accessToken)
     );
     return data;
   } catch (error) {
