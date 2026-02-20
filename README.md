@@ -189,6 +189,7 @@ rust-ctf/
 - `docs/`：心跳超时处置手册 `docs/STALE_HEARTBEAT_REMEDIATION_RUNBOOK.md`
 - `backend/scripts/m5/`：M5 压测与验收脚本（并发压测、安全回归、一键验收报告）
 - `docs/`：M5 验收指南 `docs/M5_ACCEPTANCE.md`
+- `docs/`：部署指南（单机 Docker 生产基线）`docs/DEPLOYMENT_GUIDE.md`
 
 当前 M3（多容器编排）与 M4（实时化与可观测性）已完成，M5（压测与验收）已启动并具备可执行脚本基线。
 
