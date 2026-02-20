@@ -10,6 +10,13 @@ export type ToastItem = {
   message: string;
 };
 
+export type AlertItem = {
+  id: number;
+  type: ToastType;
+  title: string;
+  message: string;
+};
+
 type PushToastPayload = {
   type: ToastType;
   title: string;
@@ -17,13 +24,25 @@ type PushToastPayload = {
   durationMs?: number;
 };
 
+type PushAlertPayload = {
+  type: ToastType;
+  title: string;
+  message: string;
+};
+
 let nextToastId = 1;
+let nextAlertId = 1;
 
 export const useUiStore = defineStore("ui", () => {
   const toasts = ref<ToastItem[]>([]);
+  const alerts = ref<AlertItem[]>([]);
 
   function removeToast(id: number) {
     toasts.value = toasts.value.filter((item) => item.id !== id);
+  }
+
+  function removeAlert(id: number) {
+    alerts.value = alerts.value.filter((item) => item.id !== id);
   }
 
   function pushToast(payload: PushToastPayload) {
@@ -47,6 +66,19 @@ export const useUiStore = defineStore("ui", () => {
     }
   }
 
+  function pushAlert(payload: PushAlertPayload) {
+    const id = nextAlertId++;
+    alerts.value = [
+      ...alerts.value,
+      {
+        id,
+        type: payload.type,
+        title: payload.title,
+        message: payload.message
+      }
+    ];
+  }
+
   function success(title: string, message: string, durationMs?: number) {
     pushToast({ type: "success", title, message, durationMs });
   }
@@ -63,13 +95,36 @@ export const useUiStore = defineStore("ui", () => {
     pushToast({ type: "warning", title, message, durationMs });
   }
 
+  function alertInfo(title: string, message: string) {
+    pushAlert({ type: "info", title, message });
+  }
+
+  function alertError(title: string, message: string) {
+    pushAlert({ type: "error", title, message });
+  }
+
+  function alertWarning(title: string, message: string) {
+    pushAlert({ type: "warning", title, message });
+  }
+
+  function clearAlerts() {
+    alerts.value = [];
+  }
+
   return {
     toasts,
+    alerts,
     removeToast,
+    removeAlert,
     pushToast,
+    pushAlert,
     success,
     error,
     info,
-    warning
+    warning,
+    alertInfo,
+    alertError,
+    alertWarning,
+    clearAlerts
   };
 });

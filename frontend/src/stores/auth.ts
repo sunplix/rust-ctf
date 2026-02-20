@@ -4,6 +4,7 @@ import { defineStore } from "pinia";
 import {
   type AuthResponse,
   type AuthUser,
+  type RegisterResponse,
   ApiClientError,
   login,
   me,
@@ -55,6 +56,12 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       const parsed = JSON.parse(raw) as PersistedAuth;
       if (parsed.accessToken && parsed.refreshToken && parsed.user) {
+        if (typeof parsed.user.email_verified !== "boolean") {
+          parsed.user.email_verified = true;
+        }
+        if (typeof parsed.user.email_verified_at === "undefined") {
+          parsed.user.email_verified_at = null;
+        }
         accessToken.value = parsed.accessToken;
         refreshToken.value = parsed.refreshToken;
         user.value = parsed.user;
@@ -86,13 +93,23 @@ export const useAuthStore = defineStore("auth", () => {
     username: string;
     email: string;
     password: string;
-  }) {
+    password_confirm: string;
+    captcha_token?: string;
+  }): Promise<RegisterResponse> {
     const response = await register(payload);
-    applySession(response);
-    return response.user;
+    if (response.auth) {
+      applySession(response.auth);
+    } else {
+      clearSession();
+    }
+    return response;
   }
 
-  async function loginWithPassword(payload: { identifier: string; password: string }) {
+  async function loginWithPassword(payload: {
+    identifier: string;
+    password: string;
+    captcha_token?: string;
+  }) {
     const response = await login(payload);
     applySession(response);
     return response.user;

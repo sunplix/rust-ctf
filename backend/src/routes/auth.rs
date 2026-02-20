@@ -10,9 +10,11 @@ use axum::{
     routing::{delete, get, patch, post},
     Json, Router,
 };
-use chrono::{DateTime, Utc};
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
+use sha2::{Digest, Sha256};
 use sqlx::FromRow;
 use tracing::warn;
 use uuid::Uuid;
@@ -20,6 +22,8 @@ use uuid::Uuid;
 use crate::{
     auth::{self, AuthenticatedUser, RefreshSession, TokenBundle},
     error::{AppError, AppResult},
+    mailer::{send_outbound_email, OutboundEmail},
+    password_policy::{enforce_password_policy, PasswordContext, PasswordPolicySnapshot},
     state::AppState,
 };
 
@@ -28,12 +32,15 @@ struct RegisterRequest {
     username: String,
     email: String,
     password: String,
+    password_confirm: String,
+    captcha_token: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 struct LoginRequest {
     identifier: String,
     password: String,
+    captcha_token: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -51,11 +58,29 @@ struct UpdateProfileRequest {
 struct ChangePasswordRequest {
     current_password: String,
     new_password: String,
+    new_password_confirm: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 struct LoginHistoryQuery {
     limit: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+struct EmailActionRequest {
+    email: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct TokenConfirmRequest {
+    token: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct PasswordResetConfirmRequest {
+    token: String,
+    new_password: String,
+    new_password_confirm: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -68,12 +93,31 @@ struct AuthResponse {
     user: AuthUser,
 }
 
+#[derive(Debug, Serialize)]
+struct RegisterResponse {
+    requires_email_verification: bool,
+    message: String,
+    auth: Option<AuthResponse>,
+}
+
+#[derive(Debug, Serialize)]
+struct ActionMessageResponse {
+    message: String,
+}
+
+#[derive(Debug, Serialize)]
+struct PasswordPolicyResponse {
+    policy: PasswordPolicySnapshot,
+}
+
 #[derive(Debug, Serialize, FromRow)]
 struct AuthUser {
     id: Uuid,
     username: String,
     email: String,
     role: String,
+    email_verified: bool,
+    email_verified_at: Option<DateTime<Utc>>,
     created_at: DateTime<Utc>,
 }
 
@@ -93,26 +137,56 @@ struct UserAuthRow {
     password_hash: String,
     role: String,
     status: String,
+    email_verified: bool,
+    email_verified_at: Option<DateTime<Utc>>,
     created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+struct TurnstileVerifyResponse {
+    success: bool,
+    #[serde(default, rename = "error-codes")]
+    error_codes: Vec<String>,
+    #[serde(default)]
+    hostname: Option<String>,
 }
 
 pub fn router() -> Router<Arc<AppState>> {
     Router::new()
+        .route("/auth/password-policy", get(get_password_policy))
         .route("/auth/register", post(register))
         .route("/auth/login", post(login))
         .route("/auth/refresh", post(refresh))
         .route("/auth/me", get(me))
         .route("/auth/profile", patch(update_profile))
         .route("/auth/change-password", post(change_password))
+        .route(
+            "/auth/email-verification/request",
+            post(request_email_verification),
+        )
+        .route(
+            "/auth/email-verification/confirm",
+            post(confirm_email_verification),
+        )
+        .route("/auth/password-reset/request", post(request_password_reset))
+        .route("/auth/password-reset/confirm", post(confirm_password_reset))
         .route("/auth/account", delete(delete_account))
         .route("/auth/login-history", get(login_history))
+}
+
+async fn get_password_policy(State(state): State<Arc<AppState>>) -> Json<PasswordPolicyResponse> {
+    Json(PasswordPolicyResponse {
+        policy: PasswordPolicySnapshot::from_config(&state.config),
+    })
 }
 
 async fn register(
     State(state): State<Arc<AppState>>,
     headers: HeaderMap,
     Json(req): Json<RegisterRequest>,
-) -> AppResult<(StatusCode, Json<AuthResponse>)> {
+) -> AppResult<(StatusCode, Json<RegisterResponse>)> {
+    verify_human_verification(state.as_ref(), &headers, req.captcha_token.as_deref()).await?;
+
     let username = req.username.trim().to_string();
     let email = req.email.trim().to_lowercase();
 
@@ -126,22 +200,37 @@ async fn register(
         return Err(AppError::BadRequest("invalid email format".to_string()));
     }
 
-    if req.password.len() < 8 {
+    if req.password != req.password_confirm {
         return Err(AppError::BadRequest(
-            "password must be at least 8 characters".to_string(),
+            "password and password_confirm do not match".to_string(),
         ));
     }
+
+    enforce_password_policy(
+        &state.config,
+        &req.password,
+        PasswordContext {
+            username: Some(&username),
+            email: Some(&email),
+        },
+    )
+    .map_err(AppError::BadRequest)?;
+
+    let email_verification_enabled = state.config.auth_email_verification_enabled;
+    let email_verification_required = is_email_verification_required(state.as_ref());
+    let initial_email_verified = !email_verification_enabled;
 
     let password_hash = hash_password(&req.password)?;
 
     let user = sqlx::query_as::<_, UserAuthRow>(
-        "INSERT INTO users (username, email, password_hash, role, status)
-         VALUES ($1, $2, $3, 'player', 'active')
-         RETURNING id, username, email, password_hash, role, status, created_at",
+        "INSERT INTO users (username, email, password_hash, role, status, email_verified, email_verified_at)
+         VALUES ($1, $2, $3, 'player', 'active', $4, CASE WHEN $4 THEN NOW() ELSE NULL END)
+         RETURNING id, username, email, password_hash, role, status, email_verified, email_verified_at, created_at",
     )
     .bind(&username)
     .bind(&email)
     .bind(password_hash)
+    .bind(initial_email_verified)
     .fetch_one(&state.db)
     .await
     .map_err(|err| {
@@ -152,7 +241,9 @@ async fn register(
         }
     })?;
 
-    let tokens = auth::issue_new_session_tokens(state.as_ref(), user.id, &user.role).await?;
+    if email_verification_enabled && !user.email_verified {
+        send_email_verification_flow(state.as_ref(), &user, &headers, "auth.register").await;
+    }
 
     record_auth_audit_log(
         state.as_ref(),
@@ -162,14 +253,38 @@ async fn register(
         json!({
             "username": username,
             "email": email,
+            "email_verification_enabled": email_verification_enabled,
+            "email_verification_required": email_verification_required,
             "request": request_meta(&headers)
         }),
     )
     .await;
 
+    if email_verification_required {
+        return Ok((
+            StatusCode::ACCEPTED,
+            Json(RegisterResponse {
+                requires_email_verification: true,
+                message: "registration succeeded, please verify your email before signing in"
+                    .to_string(),
+                auth: None,
+            }),
+        ));
+    }
+
+    let tokens = auth::issue_new_session_tokens(state.as_ref(), user.id, &user.role).await?;
+
     Ok((
         StatusCode::CREATED,
-        Json(build_auth_response(tokens, to_auth_user(&user))),
+        Json(RegisterResponse {
+            requires_email_verification: false,
+            message: if email_verification_enabled {
+                "registration succeeded, verification email has been sent".to_string()
+            } else {
+                "registration succeeded".to_string()
+            },
+            auth: Some(build_auth_response(tokens, to_auth_user(&user))),
+        }),
     ))
 }
 
@@ -178,6 +293,8 @@ async fn login(
     headers: HeaderMap,
     Json(req): Json<LoginRequest>,
 ) -> AppResult<Json<AuthResponse>> {
+    verify_human_verification(state.as_ref(), &headers, req.captcha_token.as_deref()).await?;
+
     let identifier = req.identifier.trim();
     if identifier.is_empty() || req.password.is_empty() {
         return Err(AppError::BadRequest(
@@ -186,7 +303,7 @@ async fn login(
     }
 
     let user = sqlx::query_as::<_, UserAuthRow>(
-        "SELECT id, username, email, password_hash, role, status, created_at
+        "SELECT id, username, email, password_hash, role, status, email_verified, email_verified_at, created_at
          FROM users
          WHERE LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($1)
          LIMIT 1",
@@ -202,6 +319,12 @@ async fn login(
     }
 
     verify_password(&req.password, &user.password_hash)?;
+
+    if is_email_verification_required(state.as_ref()) && !user.email_verified {
+        return Err(AppError::BadRequest(
+            "email is not verified, please complete email verification first".to_string(),
+        ));
+    }
 
     let tokens = auth::issue_new_session_tokens(state.as_ref(), user.id, &user.role).await?;
 
@@ -239,6 +362,12 @@ async fn refresh(
     } = auth::decode_refresh_session(raw_refresh_token, &state.config.jwt_secret)?;
 
     let user = fetch_active_user_with_secret(&state, user_id).await?;
+    if is_email_verification_required(state.as_ref()) && !user.email_verified {
+        return Err(AppError::BadRequest(
+            "email is not verified, please complete email verification first".to_string(),
+        ));
+    }
+
     let tokens =
         auth::rotate_session_tokens(state.as_ref(), user.id, &user.role, session_id, refresh_jti)
             .await?;
@@ -265,7 +394,7 @@ async fn me(
     let _ = (&current_user.role, current_user.session_id);
 
     let user = sqlx::query_as::<_, AuthUser>(
-        "SELECT id, username, email, role, created_at
+        "SELECT id, username, email, role, email_verified, email_verified_at, created_at
          FROM users
          WHERE id = $1 AND status = 'active'
          LIMIT 1",
@@ -285,6 +414,8 @@ async fn update_profile(
     current_user: AuthenticatedUser,
     Json(req): Json<UpdateProfileRequest>,
 ) -> AppResult<Json<AuthUser>> {
+    let original_user = fetch_active_user_with_secret(state.as_ref(), current_user.user_id).await?;
+
     let username = req
         .username
         .as_deref()
@@ -325,17 +456,32 @@ async fn update_profile(
         ));
     }
 
+    let email_verification_enabled = state.config.auth_email_verification_enabled;
+
     let updated = sqlx::query_as::<_, AuthUser>(
         "UPDATE users
          SET username = COALESCE($2, username),
              email = COALESCE($3, email),
+             email_verified = CASE
+                 WHEN $3::text IS NULL THEN email_verified
+                 WHEN LOWER($3) = LOWER(email) THEN email_verified
+                 WHEN $4 THEN FALSE
+                 ELSE email_verified
+             END,
+             email_verified_at = CASE
+                 WHEN $3::text IS NULL THEN email_verified_at
+                 WHEN LOWER($3) = LOWER(email) THEN email_verified_at
+                 WHEN $4 THEN NULL
+                 ELSE email_verified_at
+             END,
              updated_at = NOW()
          WHERE id = $1 AND status = 'active'
-         RETURNING id, username, email, role, created_at",
+         RETURNING id, username, email, role, email_verified, email_verified_at, created_at",
     )
     .bind(current_user.user_id)
     .bind(&username)
     .bind(&email)
+    .bind(email_verification_enabled)
     .fetch_optional(&state.db)
     .await
     .map_err(|err| {
@@ -347,6 +493,18 @@ async fn update_profile(
     })?
     .ok_or(AppError::Unauthorized)?;
 
+    let email_changed = updated.email.to_ascii_lowercase() != original_user.email.to_ascii_lowercase();
+    if email_verification_enabled && email_changed {
+        let refreshed_user = fetch_active_user_with_secret(state.as_ref(), current_user.user_id).await?;
+        send_email_verification_flow(
+            state.as_ref(),
+            &refreshed_user,
+            &headers,
+            "auth.profile.update",
+        )
+        .await;
+    }
+
     record_auth_audit_log(
         state.as_ref(),
         current_user.user_id,
@@ -357,6 +515,7 @@ async fn update_profile(
                 "username": username,
                 "email": email
             },
+            "email_verification_reset": email_verification_enabled && email_changed,
             "request": request_meta(&headers)
         }),
     )
@@ -377,10 +536,12 @@ async fn change_password(
         ));
     }
 
-    if req.new_password.len() < 8 {
-        return Err(AppError::BadRequest(
-            "new_password must be at least 8 characters".to_string(),
-        ));
+    if let Some(new_password_confirm) = req.new_password_confirm.as_deref() {
+        if req.new_password != new_password_confirm {
+            return Err(AppError::BadRequest(
+                "new_password and new_password_confirm do not match".to_string(),
+            ));
+        }
     }
 
     if req.current_password == req.new_password {
@@ -391,6 +552,16 @@ async fn change_password(
 
     let user = fetch_active_user_with_secret(state.as_ref(), current_user.user_id).await?;
     verify_password(&req.current_password, &user.password_hash)?;
+
+    enforce_password_policy(
+        &state.config,
+        &req.new_password,
+        PasswordContext {
+            username: Some(&user.username),
+            email: Some(&user.email),
+        },
+    )
+    .map_err(AppError::BadRequest)?;
 
     let new_password_hash = hash_password(&req.new_password)?;
 
@@ -425,6 +596,254 @@ async fn change_password(
     Ok(Json(build_auth_response(tokens, to_auth_user(&user))))
 }
 
+async fn request_email_verification(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+    Json(req): Json<EmailActionRequest>,
+) -> AppResult<Json<ActionMessageResponse>> {
+    if !state.config.auth_email_verification_enabled {
+        return Err(AppError::BadRequest(
+            "email verification is disabled".to_string(),
+        ));
+    }
+
+    let email = req.email.trim().to_lowercase();
+    if !is_valid_email(&email) {
+        return Err(AppError::BadRequest("invalid email format".to_string()));
+    }
+
+    let user = sqlx::query_as::<_, UserAuthRow>(
+        "SELECT id, username, email, password_hash, role, status, email_verified, email_verified_at, created_at
+         FROM users
+         WHERE LOWER(email) = LOWER($1)
+           AND status = 'active'
+         LIMIT 1",
+    )
+    .bind(&email)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    if let Some(user) = user {
+        if !user.email_verified {
+            send_email_verification_flow(
+                state.as_ref(),
+                &user,
+                &headers,
+                "auth.email.verification.request",
+            )
+            .await;
+        }
+    }
+
+    Ok(Json(ActionMessageResponse {
+        message: "if the account exists and verification is pending, a verification email has been sent"
+            .to_string(),
+    }))
+}
+
+async fn confirm_email_verification(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+    Json(req): Json<TokenConfirmRequest>,
+) -> AppResult<Json<ActionMessageResponse>> {
+    if !state.config.auth_email_verification_enabled {
+        return Err(AppError::BadRequest(
+            "email verification is disabled".to_string(),
+        ));
+    }
+
+    let token = req.token.trim();
+    if token.is_empty() {
+        return Err(AppError::BadRequest("token is required".to_string()));
+    }
+
+    let token_hash = hash_security_token(token);
+    let user = sqlx::query_as::<_, UserAuthRow>(
+        "SELECT u.id, u.username, u.email, u.password_hash, u.role, u.status, u.email_verified, u.email_verified_at, u.created_at
+         FROM auth_email_verification_tokens t
+         JOIN users u ON u.id = t.user_id
+         WHERE t.token_hash = $1
+           AND t.used_at IS NULL
+           AND t.expires_at > NOW()
+           AND u.status = 'active'
+         LIMIT 1",
+    )
+    .bind(&token_hash)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or_else(|| AppError::BadRequest("invalid or expired verification token".to_string()))?;
+
+    sqlx::query(
+        "UPDATE auth_email_verification_tokens
+         SET used_at = NOW()
+         WHERE token_hash = $1
+           AND used_at IS NULL",
+    )
+    .bind(&token_hash)
+    .execute(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    sqlx::query(
+        "UPDATE users
+         SET email_verified = TRUE,
+             email_verified_at = COALESCE(email_verified_at, NOW()),
+             updated_at = NOW()
+         WHERE id = $1",
+    )
+    .bind(user.id)
+    .execute(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    record_auth_audit_log(
+        state.as_ref(),
+        user.id,
+        &user.role,
+        "auth.email.verify.confirm",
+        json!({
+            "email": user.email,
+            "request": request_meta(&headers)
+        }),
+    )
+    .await;
+
+    Ok(Json(ActionMessageResponse {
+        message: "email verification completed".to_string(),
+    }))
+}
+
+async fn request_password_reset(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+    Json(req): Json<EmailActionRequest>,
+) -> AppResult<Json<ActionMessageResponse>> {
+    if !state.config.auth_password_reset_enabled {
+        return Err(AppError::BadRequest(
+            "password reset is disabled".to_string(),
+        ));
+    }
+
+    let email = req.email.trim().to_lowercase();
+    if !is_valid_email(&email) {
+        return Err(AppError::BadRequest("invalid email format".to_string()));
+    }
+
+    let user = sqlx::query_as::<_, UserAuthRow>(
+        "SELECT id, username, email, password_hash, role, status, email_verified, email_verified_at, created_at
+         FROM users
+         WHERE LOWER(email) = LOWER($1)
+           AND status = 'active'
+         LIMIT 1",
+    )
+    .bind(&email)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    if let Some(user) = user {
+        send_password_reset_flow(state.as_ref(), &user, &headers, "auth.password.reset.request").await;
+    }
+
+    Ok(Json(ActionMessageResponse {
+        message: "if the account exists, a password reset email has been sent".to_string(),
+    }))
+}
+
+async fn confirm_password_reset(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+    Json(req): Json<PasswordResetConfirmRequest>,
+) -> AppResult<Json<ActionMessageResponse>> {
+    if !state.config.auth_password_reset_enabled {
+        return Err(AppError::BadRequest(
+            "password reset is disabled".to_string(),
+        ));
+    }
+
+    let token = req.token.trim();
+    if token.is_empty() {
+        return Err(AppError::BadRequest("token is required".to_string()));
+    }
+
+    if req.new_password != req.new_password_confirm {
+        return Err(AppError::BadRequest(
+            "new_password and new_password_confirm do not match".to_string(),
+        ));
+    }
+
+    let token_hash = hash_security_token(token);
+    let user = sqlx::query_as::<_, UserAuthRow>(
+        "SELECT u.id, u.username, u.email, u.password_hash, u.role, u.status, u.email_verified, u.email_verified_at, u.created_at
+         FROM auth_password_reset_tokens t
+         JOIN users u ON u.id = t.user_id
+         WHERE t.token_hash = $1
+           AND t.used_at IS NULL
+           AND t.expires_at > NOW()
+           AND u.status = 'active'
+         LIMIT 1",
+    )
+    .bind(&token_hash)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or_else(|| AppError::BadRequest("invalid or expired password reset token".to_string()))?;
+
+    enforce_password_policy(
+        &state.config,
+        &req.new_password,
+        PasswordContext {
+            username: Some(&user.username),
+            email: Some(&user.email),
+        },
+    )
+    .map_err(AppError::BadRequest)?;
+
+    let new_password_hash = hash_password(&req.new_password)?;
+
+    sqlx::query(
+        "UPDATE users
+         SET password_hash = $2,
+             updated_at = NOW()
+         WHERE id = $1",
+    )
+    .bind(user.id)
+    .bind(new_password_hash)
+    .execute(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    sqlx::query(
+        "UPDATE auth_password_reset_tokens
+         SET used_at = NOW()
+         WHERE token_hash = $1
+           AND used_at IS NULL",
+    )
+    .bind(&token_hash)
+    .execute(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    auth::revoke_all_user_sessions(state.as_ref(), user.id).await?;
+
+    record_auth_audit_log(
+        state.as_ref(),
+        user.id,
+        &user.role,
+        "auth.password.reset.confirm",
+        json!({
+            "request": request_meta(&headers)
+        }),
+    )
+    .await;
+
+    Ok(Json(ActionMessageResponse {
+        message: "password reset succeeded, please sign in with your new password".to_string(),
+    }))
+}
+
 async fn login_history(
     State(state): State<Arc<AppState>>,
     current_user: AuthenticatedUser,
@@ -436,7 +855,14 @@ async fn login_history(
         "SELECT id, action, detail, created_at
          FROM audit_logs
          WHERE actor_user_id = $1
-           AND action IN ('auth.register', 'auth.login', 'auth.refresh', 'auth.password.change')
+           AND action IN (
+             'auth.register',
+             'auth.login',
+             'auth.refresh',
+             'auth.password.change',
+             'auth.email.verify.confirm',
+             'auth.password.reset.confirm'
+           )
          ORDER BY created_at DESC
          LIMIT $2",
     )
@@ -510,6 +936,8 @@ async fn delete_account(
              password_hash = $4,
              role = 'player',
              status = 'disabled',
+             email_verified = FALSE,
+             email_verified_at = NULL,
              updated_at = NOW()
          WHERE id = $1",
     )
@@ -556,13 +984,15 @@ fn to_auth_user(user: &UserAuthRow) -> AuthUser {
         username: user.username.clone(),
         email: user.email.clone(),
         role: user.role.clone(),
+        email_verified: user.email_verified,
+        email_verified_at: user.email_verified_at,
         created_at: user.created_at,
     }
 }
 
 async fn fetch_active_user_with_secret(state: &AppState, user_id: Uuid) -> AppResult<UserAuthRow> {
     let user = sqlx::query_as::<_, UserAuthRow>(
-        "SELECT id, username, email, password_hash, role, status, created_at
+        "SELECT id, username, email, password_hash, role, status, email_verified, email_verified_at, created_at
          FROM users
          WHERE id = $1 AND status = 'active'
          LIMIT 1",
@@ -615,6 +1045,10 @@ fn request_meta(headers: &HeaderMap) -> Value {
         map.insert("x_real_ip".to_string(), Value::String(value));
     }
 
+    if let Some(value) = header_to_string(headers, "cf-connecting-ip") {
+        map.insert("cf_connecting_ip".to_string(), Value::String(value));
+    }
+
     if let Some(value) = header_to_string(headers, "user-agent") {
         map.insert("user_agent".to_string(), Value::String(value));
     }
@@ -626,6 +1060,104 @@ fn header_to_string(headers: &HeaderMap, name: &str) -> Option<String> {
     headers
         .get(name)
         .and_then(|value| value.to_str().ok())
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+}
+
+async fn verify_human_verification(
+    state: &AppState,
+    headers: &HeaderMap,
+    captcha_token: Option<&str>,
+) -> AppResult<()> {
+    if !state.config.auth_human_verification_enabled {
+        return Ok(());
+    }
+
+    let secret = state.config.auth_turnstile_secret_key.trim();
+    if secret.is_empty() {
+        return Err(AppError::Internal(anyhow::anyhow!(
+            "AUTH_TURNSTILE_SECRET_KEY is empty while human verification is enabled"
+        )));
+    }
+
+    let token = captcha_token
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| AppError::BadRequest("captcha_token is required".to_string()))?;
+
+    let timeout_seconds = state
+        .config
+        .auth_human_verification_timeout_seconds
+        .clamp(2, 20);
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(timeout_seconds))
+        .build()
+        .map_err(AppError::internal)?;
+
+    let mut form: Vec<(&str, String)> = vec![
+        ("secret", secret.to_string()),
+        ("response", token.to_string()),
+    ];
+
+    if let Some(remote_ip) = client_ip_from_headers(headers) {
+        form.push(("remoteip", remote_ip));
+    }
+
+    let response = client
+        .post(state.config.auth_turnstile_siteverify_url.trim())
+        .form(&form)
+        .send()
+        .await
+        .map_err(|err| AppError::BadRequest(format!("human verification request failed: {}", err)))?;
+
+    let payload = response
+        .json::<TurnstileVerifyResponse>()
+        .await
+        .map_err(|err| {
+            AppError::BadRequest(format!(
+                "human verification response parse failed: {}",
+                err
+            ))
+        })?;
+
+    if !payload.success {
+        let detail = if payload.error_codes.is_empty() {
+            "verification failed".to_string()
+        } else {
+            payload.error_codes.join(",")
+        };
+        return Err(AppError::BadRequest(format!(
+            "human verification failed: {}",
+            detail
+        )));
+    }
+
+    let expected_hostname = state.config.auth_turnstile_expected_hostname.trim();
+    if !expected_hostname.is_empty() {
+        let actual_hostname = payload.hostname.as_deref().unwrap_or("");
+        if !actual_hostname.eq_ignore_ascii_case(expected_hostname) {
+            return Err(AppError::BadRequest(
+                "human verification hostname mismatch".to_string(),
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+fn client_ip_from_headers(headers: &HeaderMap) -> Option<String> {
+    if let Some(value) = header_to_string(headers, "cf-connecting-ip") {
+        return Some(value);
+    }
+
+    if let Some(value) = header_to_string(headers, "x-real-ip") {
+        return Some(value);
+    }
+
+    let xff = header_to_string(headers, "x-forwarded-for")?;
+    xff.split(',')
+        .next()
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .map(str::to_string)
@@ -676,4 +1208,225 @@ fn is_valid_email(email: &str) -> bool {
         && domain.contains('.')
         && !domain.starts_with('.')
         && !domain.ends_with('.')
+}
+
+fn is_email_verification_required(state: &AppState) -> bool {
+    state.config.auth_email_verification_enabled && state.config.auth_email_verification_required
+}
+
+fn generate_security_token() -> String {
+    let mut raw = [0_u8; 32];
+    use argon2::password_hash::rand_core::RngCore;
+    OsRng.fill_bytes(&mut raw);
+    URL_SAFE_NO_PAD.encode(raw)
+}
+
+fn hash_security_token(raw_token: &str) -> String {
+    let digest = Sha256::digest(raw_token.as_bytes());
+    URL_SAFE_NO_PAD.encode(digest)
+}
+
+async fn issue_email_verification_token(
+    state: &AppState,
+    user_id: Uuid,
+    headers: &HeaderMap,
+) -> AppResult<String> {
+    let ttl_minutes = state
+        .config
+        .auth_email_verification_token_ttl_minutes
+        .clamp(5, 60 * 24 * 7);
+
+    let token = generate_security_token();
+    let token_hash = hash_security_token(&token);
+    let expires_at = Utc::now() + Duration::minutes(ttl_minutes);
+    let request_ip = client_ip_from_headers(headers);
+    let user_agent = header_to_string(headers, "user-agent");
+
+    sqlx::query(
+        "UPDATE auth_email_verification_tokens
+         SET used_at = NOW()
+         WHERE user_id = $1
+           AND used_at IS NULL",
+    )
+    .bind(user_id)
+    .execute(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    sqlx::query(
+        "INSERT INTO auth_email_verification_tokens (user_id, token_hash, expires_at, request_ip, user_agent)
+         VALUES ($1, $2, $3, $4, $5)",
+    )
+    .bind(user_id)
+    .bind(token_hash)
+    .bind(expires_at)
+    .bind(request_ip)
+    .bind(user_agent)
+    .execute(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    Ok(token)
+}
+
+async fn issue_password_reset_token(
+    state: &AppState,
+    user_id: Uuid,
+    headers: &HeaderMap,
+) -> AppResult<String> {
+    let ttl_minutes = state
+        .config
+        .auth_password_reset_token_ttl_minutes
+        .clamp(5, 60 * 24 * 7);
+
+    let token = generate_security_token();
+    let token_hash = hash_security_token(&token);
+    let expires_at = Utc::now() + Duration::minutes(ttl_minutes);
+    let request_ip = client_ip_from_headers(headers);
+    let user_agent = header_to_string(headers, "user-agent");
+
+    sqlx::query(
+        "UPDATE auth_password_reset_tokens
+         SET used_at = NOW()
+         WHERE user_id = $1
+           AND used_at IS NULL",
+    )
+    .bind(user_id)
+    .execute(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    sqlx::query(
+        "INSERT INTO auth_password_reset_tokens (user_id, token_hash, expires_at, request_ip, user_agent)
+         VALUES ($1, $2, $3, $4, $5)",
+    )
+    .bind(user_id)
+    .bind(token_hash)
+    .bind(expires_at)
+    .bind(request_ip)
+    .bind(user_agent)
+    .execute(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    Ok(token)
+}
+
+async fn send_email_verification_flow(
+    state: &AppState,
+    user: &UserAuthRow,
+    headers: &HeaderMap,
+    source: &str,
+) {
+    match issue_email_verification_token(state, user.id, headers).await {
+        Ok(raw_token) => {
+            if let Err(err) = send_email_verification_message(state, user, &raw_token).await {
+                warn!(
+                    user_id = %user.id,
+                    email = %user.email,
+                    source,
+                    error = %err,
+                    "failed to send email verification message"
+                );
+            }
+        }
+        Err(err) => {
+            warn!(
+                user_id = %user.id,
+                email = %user.email,
+                source,
+                error = %err,
+                "failed to issue email verification token"
+            );
+        }
+    }
+}
+
+async fn send_password_reset_flow(
+    state: &AppState,
+    user: &UserAuthRow,
+    headers: &HeaderMap,
+    source: &str,
+) {
+    match issue_password_reset_token(state, user.id, headers).await {
+        Ok(raw_token) => {
+            if let Err(err) = send_password_reset_message(state, user, &raw_token).await {
+                warn!(
+                    user_id = %user.id,
+                    email = %user.email,
+                    source,
+                    error = %err,
+                    "failed to send password reset message"
+                );
+            }
+        }
+        Err(err) => {
+            warn!(
+                user_id = %user.id,
+                email = %user.email,
+                source,
+                error = %err,
+                "failed to issue password reset token"
+            );
+        }
+    }
+}
+
+async fn send_email_verification_message(
+    state: &AppState,
+    user: &UserAuthRow,
+    raw_token: &str,
+) -> anyhow::Result<()> {
+    let verify_url = build_frontend_login_url(
+        &state.config.auth_email_base_url,
+        &format!("verify_token={raw_token}"),
+    );
+
+    let body = format!(
+        "Hello {username},\n\nTo verify your Rust-CTF account email, open the link below:\n{verify_url}\n\nIf you did not request this action, you can ignore this message.",
+        username = user.username
+    );
+
+    send_outbound_email(
+        &state.config,
+        OutboundEmail {
+            to: user.email.clone(),
+            subject: "[Rust-CTF] Verify your email".to_string(),
+            text_body: body,
+        },
+    )
+    .await
+}
+
+async fn send_password_reset_message(
+    state: &AppState,
+    user: &UserAuthRow,
+    raw_token: &str,
+) -> anyhow::Result<()> {
+    let reset_url = build_frontend_login_url(
+        &state.config.auth_email_base_url,
+        &format!("reset_token={raw_token}"),
+    );
+
+    let body = format!(
+        "Hello {username},\n\nTo reset your Rust-CTF account password, open the link below:\n{reset_url}\n\nIf you did not request this action, you can ignore this message.",
+        username = user.username
+    );
+
+    send_outbound_email(
+        &state.config,
+        OutboundEmail {
+            to: user.email.clone(),
+            subject: "[Rust-CTF] Password reset".to_string(),
+            text_body: body,
+        },
+    )
+    .await
+}
+
+fn build_frontend_login_url(base_url: &str, query: &str) -> String {
+    let base = base_url.trim().trim_end_matches('/');
+    let fallback = "http://127.0.0.1:5173";
+    let root = if base.is_empty() { fallback } else { base };
+    format!("{root}/login?{query}")
 }

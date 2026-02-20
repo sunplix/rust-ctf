@@ -2,120 +2,158 @@
   <section class="page-block">
     <div class="row-between">
       <div>
-        <h1>管理控制台（v2）</h1>
-        <p class="muted">题目管理、比赛创建与状态控制、比赛题目挂载、实例监控。</p>
+        <h1>{{ tr("管理控制台", "Admin Console") }}</h1>
+        <p class="muted">{{ tr("题目管理、比赛控制、实例监控、用户管理与审计日志。", "Challenge management, contests, instance monitoring, users, and audit logs.") }}</p>
       </div>
-      <button class="ghost" type="button" @click="refreshAll" :disabled="refreshing">
-        {{ refreshing ? "刷新中..." : "刷新全部" }}
-      </button>
+      <div class="actions-row">
+        <RouterLink v-if="authStore.user?.role === 'admin'" class="ghost" to="/admin/site-settings">
+          {{ tr("站点设置", "Site Settings") }}
+        </RouterLink>
+        <button class="ghost" type="button" @click="refreshAll" :disabled="refreshing">
+          {{ refreshing ? tr("刷新中...", "Refreshing...") : tr("刷新全部", "Refresh all") }}
+        </button>
+      </div>
     </div>
 
     <p v-if="pageError" class="error">{{ pageError }}</p>
 
-    <div class="actions-row module-tabs">
-      <button class="ghost" type="button" :class="{ active: adminModule === 'challenges' }" @click="adminModule = 'challenges'">
-        题目模块
-      </button>
-      <button class="ghost" type="button" :class="{ active: adminModule === 'contests' }" @click="adminModule = 'contests'">
-        比赛模块
-      </button>
-      <button class="ghost" type="button" :class="{ active: adminModule === 'operations' }" @click="adminModule = 'operations'">
-        运行监控
-      </button>
-      <button class="ghost" type="button" :class="{ active: adminModule === 'users' }" @click="adminModule = 'users'">
-        用户管理
-      </button>
-      <button class="ghost" type="button" :class="{ active: adminModule === 'audit' }" @click="adminModule = 'audit'">
-        审计日志
-      </button>
-    </div>
+    <div class="admin-layout">
+      <aside class="panel admin-side-nav">
+        <div class="admin-side-group">
+          <p class="nav-group-label">{{ tr("核心模块", "Core Modules") }}</p>
+          <button
+            class="side-nav-btn"
+            type="button"
+            :class="{ active: adminModule === 'challenges' }"
+            @click="adminModule = 'challenges'"
+          >
+            {{ tr("题目模块", "Challenges") }}
+          </button>
+          <button
+            class="side-nav-btn"
+            type="button"
+            :class="{ active: adminModule === 'contests' }"
+            @click="adminModule = 'contests'"
+          >
+            {{ tr("比赛模块", "Contests") }}
+          </button>
+          <button
+            class="side-nav-btn"
+            type="button"
+            :class="{ active: adminModule === 'operations' }"
+            @click="adminModule = 'operations'"
+          >
+            {{ tr("运行监控", "Operations") }}
+          </button>
+          <button
+            class="side-nav-btn"
+            type="button"
+            :class="{ active: adminModule === 'users' }"
+            @click="adminModule = 'users'"
+          >
+            {{ tr("用户管理", "Users") }}
+          </button>
+          <button
+            class="side-nav-btn"
+            type="button"
+            :class="{ active: adminModule === 'audit' }"
+            @click="adminModule = 'audit'"
+          >
+            {{ tr("审计日志", "Audit Logs") }}
+          </button>
+        </div>
 
-    <div v-if="adminModule === 'challenges'" class="actions-row module-tabs">
-      <button
-        class="ghost"
-        type="button"
-        :class="{ active: challengeSubTab === 'library' }"
-        @click="challengeSubTab = 'library'"
-      >
-        题库配置
-      </button>
-      <button
-        class="ghost"
-        type="button"
-        :class="{ active: challengeSubTab === 'versions' }"
-        @click="challengeSubTab = 'versions'"
-      >
-        版本与附件
-      </button>
-      <button
-        class="ghost"
-        type="button"
-        :class="{ active: challengeSubTab === 'lint' }"
-        @click="challengeSubTab = 'lint'"
-      >
-        模板校验
-      </button>
-    </div>
+        <div v-if="adminModule === 'challenges'" class="admin-side-group">
+          <p class="nav-group-label">{{ tr("题目子导航", "Challenge Tabs") }}</p>
+          <button
+            class="side-nav-btn side-sub-btn"
+            type="button"
+            :class="{ active: challengeSubTab === 'library' }"
+            @click="challengeSubTab = 'library'"
+          >
+            {{ tr("题库配置", "Library") }}
+          </button>
+          <button
+            class="side-nav-btn side-sub-btn"
+            type="button"
+            :class="{ active: challengeSubTab === 'versions' }"
+            @click="challengeSubTab = 'versions'"
+          >
+            {{ tr("版本与附件", "Versions & Files") }}
+          </button>
+          <button
+            class="side-nav-btn side-sub-btn"
+            type="button"
+            :class="{ active: challengeSubTab === 'lint' }"
+            @click="challengeSubTab = 'lint'"
+          >
+            {{ tr("模板校验", "Template Lint") }}
+          </button>
+        </div>
 
-    <div v-if="adminModule === 'contests'" class="actions-row module-tabs">
-      <button
-        class="ghost"
-        type="button"
-        :class="{ active: contestSubTab === 'contests' }"
-        @click="contestSubTab = 'contests'"
-      >
-        赛事配置
-      </button>
-      <button
-        class="ghost"
-        type="button"
-        :class="{ active: contestSubTab === 'bindings' }"
-        @click="contestSubTab = 'bindings'"
-      >
-        题目挂载
-      </button>
-      <button
-        class="ghost"
-        type="button"
-        :class="{ active: contestSubTab === 'announcements' }"
-        @click="contestSubTab = 'announcements'"
-      >
-        公告管理
-      </button>
-    </div>
+        <div v-if="adminModule === 'contests'" class="admin-side-group">
+          <p class="nav-group-label">{{ tr("比赛子导航", "Contest Tabs") }}</p>
+          <button
+            class="side-nav-btn side-sub-btn"
+            type="button"
+            :class="{ active: contestSubTab === 'contests' }"
+            @click="contestSubTab = 'contests'"
+          >
+            {{ tr("赛事配置", "Config") }}
+          </button>
+          <button
+            class="side-nav-btn side-sub-btn"
+            type="button"
+            :class="{ active: contestSubTab === 'bindings' }"
+            @click="contestSubTab = 'bindings'"
+          >
+            {{ tr("题目挂载", "Bindings") }}
+          </button>
+          <button
+            class="side-nav-btn side-sub-btn"
+            type="button"
+            :class="{ active: contestSubTab === 'announcements' }"
+            @click="contestSubTab = 'announcements'"
+          >
+            {{ tr("公告管理", "Announcements") }}
+          </button>
+        </div>
 
-    <div v-if="adminModule === 'operations'" class="actions-row module-tabs">
-      <button
-        class="ghost"
-        type="button"
-        :class="{ active: operationsSubTab === 'runtime' }"
-        @click="operationsSubTab = 'runtime'"
-      >
-        运行概览
-      </button>
-      <button
-        class="ghost"
-        type="button"
-        :class="{ active: operationsSubTab === 'alerts' }"
-        @click="operationsSubTab = 'alerts'"
-      >
-        运行告警
-      </button>
-      <button
-        class="ghost"
-        type="button"
-        :class="{ active: operationsSubTab === 'instances' }"
-        @click="operationsSubTab = 'instances'"
-      >
-        实例监控
-      </button>
-    </div>
+        <div v-if="adminModule === 'operations'" class="admin-side-group">
+          <p class="nav-group-label">{{ tr("监控子导航", "Operations Tabs") }}</p>
+          <button
+            class="side-nav-btn side-sub-btn"
+            type="button"
+            :class="{ active: operationsSubTab === 'runtime' }"
+            @click="operationsSubTab = 'runtime'"
+          >
+            {{ tr("运行概览", "Overview") }}
+          </button>
+          <button
+            class="side-nav-btn side-sub-btn"
+            type="button"
+            :class="{ active: operationsSubTab === 'alerts' }"
+            @click="operationsSubTab = 'alerts'"
+          >
+            {{ tr("运行告警", "Alerts") }}
+          </button>
+          <button
+            class="side-nav-btn side-sub-btn"
+            type="button"
+            :class="{ active: operationsSubTab === 'instances' }"
+            @click="operationsSubTab = 'instances'"
+          >
+            {{ tr("实例监控", "Instances") }}
+          </button>
+        </div>
+      </aside>
 
-    <div v-if="adminModule === 'challenges' || adminModule === 'contests'" class="admin-grid">
+      <div class="admin-main">
+        <div v-if="adminModule === 'challenges' || adminModule === 'contests'" class="admin-grid">
       <section v-if="adminModule === 'challenges'" class="panel">
         <div class="row-between">
-          <h2>题目管理</h2>
-          <span class="badge">{{ challenges.length }} 条</span>
+          <h2>{{ tr("题目管理", "Challenge Management") }}</h2>
+          <span class="badge">{{ challenges.length }} {{ tr("条", "items") }}</span>
         </div>
 
         <template v-if="challengeSubTab === 'library'">
@@ -128,13 +166,81 @@
                   class="ghost"
                   type="button"
                   @click="handleCancelChallengeEdit"
-                >
-                  取消编辑
-                </button>
+                >{{ tl('取消编辑') }}</button>
               </div>
+              <details class="action-sheet">
+                <summary>{{ tr("管理题目类别", "Manage challenge categories") }}</summary>
+                <div class="action-sheet-body stack">
+                  <form class="form-grid compact-grid" @submit.prevent="handleSaveChallengeCategory">
+                    <label>
+                      <span>slug</span>
+                      <input v-model.trim="challengeCategoryDraft.slug" required maxlength="32" />
+                    </label>
+                    <label>
+                      <span>{{ tr("显示名（可选）", "Display name (optional)") }}</span>
+                      <input v-model.trim="challengeCategoryDraft.display_name" maxlength="64" />
+                    </label>
+                    <label>
+                      <span>{{ tr("排序", "Sort") }}</span>
+                      <input
+                        v-model.number="challengeCategoryDraft.sort_order"
+                        type="number"
+                        min="-100000"
+                        max="100000"
+                      />
+                    </label>
+                    <div class="actions-row compact-actions category-actions">
+                      <button class="ghost" type="submit" :disabled="savingChallengeCategory">
+                        {{
+                          savingChallengeCategory
+                            ? tr("保存中...", "Saving...")
+                            : editingChallengeCategoryId
+                              ? tr("保存类别", "Save category")
+                              : tr("创建类别", "Create category")
+                        }}
+                      </button>
+                      <button
+                        v-if="editingChallengeCategoryId"
+                        class="ghost"
+                        type="button"
+                        @click="resetChallengeCategoryDraft"
+                      >
+                        {{ tr("取消编辑", "Cancel edit") }}
+                      </button>
+                    </div>
+                  </form>
+                  <p v-if="challengeCategoryError" class="error">{{ challengeCategoryError }}</p>
+                  <div class="challenge-category-grid">
+                    <article v-for="item in sortedChallengeCategories" :key="item.id" class="category-item">
+                      <div class="row-between">
+                        <strong>{{ item.display_name }}</strong>
+                        <span class="badge">{{ item.sort_order }}</span>
+                      </div>
+                      <p class="mono muted">{{ item.slug }}</p>
+                      <div class="actions-row compact-actions">
+                        <button class="ghost" type="button" @click="loadChallengeCategoryIntoDraft(item)">
+                          {{ tr("编辑", "Edit") }}
+                        </button>
+                        <button
+                          class="danger"
+                          type="button"
+                          :disabled="item.is_builtin || deletingChallengeCategoryId === item.id"
+                          @click="handleDeleteChallengeCategory(item)"
+                        >
+                          {{
+                            deletingChallengeCategoryId === item.id
+                              ? tr("删除中...", "Deleting...")
+                              : tr("删除", "Delete")
+                          }}
+                        </button>
+                      </div>
+                    </article>
+                  </div>
+                </div>
+              </details>
               <form class="form-grid compact-grid" @submit.prevent="handleCreateChallenge">
                 <label>
-                  <span>标题</span>
+                  <span>{{ tl('标题') }}</span>
                   <input v-model.trim="newChallenge.title" required />
                 </label>
                 <label>
@@ -142,11 +248,20 @@
                   <input v-model.trim="newChallenge.slug" required />
                 </label>
                 <label>
-                  <span>分类</span>
-                  <input v-model.trim="newChallenge.category" required />
+                  <span>{{ tl('分类') }}</span>
+                  <select v-model="newChallenge.category" required>
+                    <option value="" disabled>{{ tr("请选择类别", "Select category") }}</option>
+                    <option
+                      v-for="item in challengeCategoryOptions"
+                      :key="item.id"
+                      :value="item.slug"
+                    >
+                      {{ item.display_name }} ({{ item.slug }})
+                    </option>
+                  </select>
                 </label>
                 <label>
-                  <span>难度</span>
+                  <span>{{ tl('难度') }}</span>
                   <select v-model="newChallenge.difficulty">
                     <option value="easy">easy</option>
                     <option value="normal">normal</option>
@@ -155,11 +270,11 @@
                   </select>
                 </label>
                 <label>
-                  <span>分值</span>
+                  <span>{{ tl('分值') }}</span>
                   <input v-model.number="newChallenge.static_score" type="number" min="1" />
                 </label>
                 <label>
-                  <span>状态</span>
+                  <span>{{ tl('状态') }}</span>
                   <select v-model="newChallenge.status">
                     <option value="draft">draft</option>
                     <option value="published">published</option>
@@ -167,7 +282,7 @@
                   </select>
                 </label>
                 <label>
-                  <span>题型</span>
+                  <span>{{ tl('题型') }}</span>
                   <select v-model="newChallenge.challenge_type">
                     <option value="static">static</option>
                     <option value="dynamic">dynamic</option>
@@ -175,7 +290,7 @@
                   </select>
                 </label>
                 <label>
-                  <span>flag 模式</span>
+                  <span>{{ tl('flag 模式') }}</span>
                   <select v-model="newChallenge.flag_mode">
                     <option value="static">static</option>
                     <option value="dynamic">dynamic</option>
@@ -183,34 +298,34 @@
                   </select>
                 </label>
                 <label>
-                  <span>flag/哈希</span>
+                  <span>{{ tl('flag/哈希') }}</span>
                   <input v-model="newChallenge.flag_hash" />
                 </label>
                 <label>
-                  <span>运行模式</span>
+                  <span>{{ tl('运行模式') }}</span>
                   <select v-model="newChallenge.runtime_mode">
-                    <option value="compose">compose（多容器）</option>
-                    <option value="single_image">single_image（单镜像）</option>
+                    <option value="compose">{{ tl('compose（多容器）') }}</option>
+                    <option value="single_image">{{ tl('single_image（单镜像）') }}</option>
                   </select>
                 </label>
                 <label v-if="newChallenge.runtime_mode === 'compose'">
-                  <span>访问模式</span>
+                  <span>{{ tl('访问模式') }}</span>
                   <select v-model="newChallenge.runtime_access_mode">
-                    <option value="ssh_bastion">ssh_bastion（默认）</option>
+                    <option value="ssh_bastion">{{ tl('ssh_bastion（默认）') }}</option>
                     <option value="wireguard">wireguard（VPN）</option>
-                    <option value="direct">direct（直连入口）</option>
+                    <option value="direct">{{ tl('direct（直连入口）') }}</option>
                   </select>
                 </label>
                 <label v-if="newChallenge.runtime_mode === 'single_image'">
-                  <span>镜像仓库地址</span>
-                  <input v-model.trim="newChallenge.runtime_image" placeholder="nginx:alpine" />
+                  <span>{{ tl('镜像仓库地址') }}</span>
+                  <input v-model.trim="newChallenge.runtime_image" />
                 </label>
                 <label v-if="newChallenge.runtime_mode === 'single_image'">
-                  <span>内部端口</span>
+                  <span>{{ tl('内部端口') }}</span>
                   <input v-model.number="newChallenge.runtime_internal_port" type="number" min="1" max="65535" />
                 </label>
                 <label v-if="newChallenge.runtime_mode === 'single_image'">
-                  <span>入口协议</span>
+                  <span>{{ tl('入口协议') }}</span>
                   <select v-model="newChallenge.runtime_protocol">
                     <option value="http">http</option>
                     <option value="https">https</option>
@@ -225,7 +340,7 @@
                       @click="handleTestChallengeRuntimeImage"
                       :disabled="testingChallengeRuntimeImage || !newChallenge.runtime_image.trim()"
                     >
-                      {{ testingChallengeRuntimeImage ? "测试中..." : "测试镜像（拉取+构建探测）" }}
+                      {{ testingChallengeRuntimeImage ? tl('测试中...') : tl('测试镜像（拉取+构建探测）') }}
                     </button>
                   </div>
                   <p v-if="challengeImageTestError" class="error">{{ challengeImageTestError }}</p>
@@ -235,9 +350,9 @@
                     :class="{ failed: !challengeRuntimeImageTestResult.succeeded }"
                   >
                     <p class="mono">
-                      image={{ challengeRuntimeImageTestResult.image }} ·
-                      result={{ challengeRuntimeImageTestResult.succeeded ? "success" : "failed" }} ·
-                      generated_at={{ formatTime(challengeRuntimeImageTestResult.generated_at) }}
+                      {{ tl('镜像') }} {{ challengeRuntimeImageTestResult.image }} ·
+                      {{ tl('结果') }} {{ challengeRuntimeImageTestResult.succeeded ? "success" : "failed" }} ·
+                      {{ tl('时间') }} {{ formatTime(challengeRuntimeImageTestResult.generated_at) }}
                     </p>
                     <details v-for="step in challengeRuntimeImageTestResult.steps" :key="step.step" class="image-test-step">
                       <summary>
@@ -248,15 +363,15 @@
                   </div>
                 </div>
                 <label v-if="newChallenge.runtime_mode === 'compose'">
-                  <span>compose 模板（可选）</span>
+                  <span>{{ tl('compose 模板（可选）') }}</span>
                   <textarea v-model="newChallenge.compose_template" rows="4" />
                 </label>
                 <label>
-                  <span>标签（逗号分隔）</span>
-                  <input v-model="newChallenge.tags_input" placeholder="web, sqli, internal" />
+                  <span>{{ tl('标签（逗号分隔）') }}</span>
+                  <input v-model="newChallenge.tags_input" />
                 </label>
                 <label>
-                  <span>题解可见策略</span>
+                  <span>{{ tl('题解可见策略') }}</span>
                   <select v-model="newChallenge.writeup_visibility">
                     <option value="hidden">hidden</option>
                     <option value="after_solve">after_solve</option>
@@ -265,15 +380,15 @@
                   </select>
                 </label>
                 <label>
-                  <span>描述（可选）</span>
+                  <span>{{ tl('描述（可选）') }}</span>
                   <textarea v-model="newChallenge.description" rows="3" />
                 </label>
                 <label>
-                  <span>题解内容（可选）</span>
+                  <span>{{ tl('题解内容（可选）') }}</span>
                   <textarea v-model="newChallenge.writeup_content" rows="4" />
                 </label>
                 <label>
-                  <span>版本备注（可选）</span>
+                  <span>{{ tl('版本备注（可选）') }}</span>
                   <input v-model="newChallenge.change_note" />
                 </label>
 
@@ -287,12 +402,12 @@
 
             <div class="module-column">
               <div class="row-between">
-                <h3>题库概览</h3>
+                <h3>{{ tl('题库概览') }}</h3>
                 <span class="badge">{{ filteredChallenges.length }} / {{ challenges.length }}</span>
               </div>
               <label class="search-field">
-                <span>快速筛选</span>
-                <input v-model.trim="challengeKeyword" placeholder="按标题、slug、分类筛选" />
+                <span>{{ tl('快速筛选') }}</span>
+                <input v-model.trim="challengeKeyword" :placeholder="tl('按标题、slug、分类筛选')" />
               </label>
 
               <div class="challenge-card-grid stagger-list">
@@ -301,6 +416,7 @@
                   :key="item.id"
                   class="admin-list-item challenge-card"
                   :class="{ active: selectedChallengeId === item.id }"
+                  @click="selectChallenge(item.id)"
                 >
                   <div class="row-between">
                     <strong>{{ item.title }}</strong>
@@ -308,80 +424,85 @@
                   </div>
                   <p class="muted mono">{{ item.slug }}</p>
                   <p class="muted">{{ item.category }} · {{ item.difficulty }} · {{ item.flag_mode }}</p>
-                  <p class="muted">score={{ item.static_score }} · status={{ item.status }} · v{{ item.current_version }}</p>
+                  <p class="muted">{{ tl('分值') }} {{ item.static_score }} {{ tl('· 状态') }} {{ item.status }} {{ tl('· 版本 v') }}{{ item.current_version }}</p>
                   <div class="actions-row compact-actions">
                     <button
                       class="ghost"
                       type="button"
-                      @click="selectChallenge(item.id)"
+                      @click.stop="selectChallenge(item.id)"
                       :disabled="selectedChallengeId === item.id"
                     >
-                      {{ selectedChallengeId === item.id ? "当前管理中" : "版本/附件" }}
-                    </button>
-                    <button
-                      class="ghost"
-                      type="button"
-                      @click="handleLoadChallengeForEdit(item.id)"
-                      :disabled="destroyingChallengeId === item.id"
-                    >
-                      编辑
-                    </button>
-                    <button
-                      class="ghost"
-                      type="button"
-                      @click="updateChallengeStatus(item.id, 'published')"
-                      :disabled="updatingChallengeId === item.id || destroyingChallengeId === item.id || item.status === 'published'"
-                    >
-                      发布
-                    </button>
-                    <button
-                      class="ghost"
-                      type="button"
-                      @click="updateChallengeStatus(item.id, 'draft')"
-                      :disabled="updatingChallengeId === item.id || destroyingChallengeId === item.id || item.status === 'draft'"
-                    >
-                      草稿
-                    </button>
-                    <button
-                      class="ghost"
-                      type="button"
-                      @click="updateChallengeStatus(item.id, 'offline')"
-                      :disabled="updatingChallengeId === item.id || destroyingChallengeId === item.id || item.status === 'offline'"
-                    >
-                      下线
-                    </button>
-                    <button
-                      class="danger"
-                      type="button"
-                      @click="handleDestroyChallenge(item)"
-                      :disabled="updatingChallengeId === item.id || destroyingChallengeId === item.id"
-                    >
-                      {{ destroyingChallengeId === item.id ? "销毁中..." : "销毁" }}
+                      {{ selectedChallengeId === item.id ? tl('已选中') : tl('选择并管理') }}
                     </button>
                   </div>
+                  <details v-if="selectedChallengeId === item.id" class="action-sheet action-sheet-inverse">
+                    <summary>{{ tl('显示题目操作菜单') }}</summary>
+                    <div class="actions-row compact-actions action-sheet-body">
+                      <button
+                        class="ghost"
+                        type="button"
+                        @click.stop="handleLoadChallengeForEdit(item.id)"
+                        :disabled="destroyingChallengeId === item.id"
+                      >{{ tl('编辑') }}</button>
+                      <button
+                        class="ghost"
+                        type="button"
+                        @click.stop="
+                          selectChallenge(item.id);
+                          challengeSubTab = 'versions';
+                        "
+                      >{{ tl('版本/附件') }}</button>
+                      <button
+                        class="ghost"
+                        type="button"
+                        @click.stop="updateChallengeStatus(item.id, 'published')"
+                        :disabled="updatingChallengeId === item.id || destroyingChallengeId === item.id || item.status === 'published'"
+                      >{{ tl('发布') }}</button>
+                      <button
+                        class="ghost"
+                        type="button"
+                        @click.stop="updateChallengeStatus(item.id, 'draft')"
+                        :disabled="updatingChallengeId === item.id || destroyingChallengeId === item.id || item.status === 'draft'"
+                      >{{ tl('草稿') }}</button>
+                      <button
+                        class="ghost"
+                        type="button"
+                        @click.stop="updateChallengeStatus(item.id, 'offline')"
+                        :disabled="updatingChallengeId === item.id || destroyingChallengeId === item.id || item.status === 'offline'"
+                      >{{ tl('下线') }}</button>
+                      <button
+                        class="danger"
+                        type="button"
+                        @click.stop="handleDestroyChallenge(item)"
+                        :disabled="updatingChallengeId === item.id || destroyingChallengeId === item.id"
+                      >
+                        {{ destroyingChallengeId === item.id ? tl('销毁中...') : tl('销毁') }}
+                      </button>
+                    </div>
+                  </details>
                 </article>
               </div>
-              <p v-if="filteredChallenges.length === 0" class="muted">没有匹配的题目。</p>
+              <p v-if="filteredChallenges.length === 0" class="muted">{{ tl('没有匹配的题目。') }}</p>
             </div>
           </div>
         </template>
 
         <template v-if="challengeSubTab === 'versions' && selectedChallenge">
-          <h3>版本与附件：{{ selectedChallenge.title }}</h3>
+          <h3>{{ tl('版本与附件：') }}{{ selectedChallenge.title }}</h3>
           <p v-if="challengeVersionError" class="error">{{ challengeVersionError }}</p>
           <p v-if="challengeAttachmentError" class="error">{{ challengeAttachmentError }}</p>
 
           <form class="form-grid" @submit.prevent="handleRollbackChallengeVersion">
             <label>
-              <span>回滚版本号</span>
+              <span>{{ tl('回滚版本号') }}</span>
               <input v-model.number="rollbackForm.version_no" type="number" min="1" required />
             </label>
             <label>
-              <span>回滚备注（可选）</span>
+              <span>{{ tl('回滚备注（可选）') }}</span>
               <input v-model="rollbackForm.change_note" />
             </label>
             <button class="ghost" type="submit" :disabled="rollingBack">
-              {{ rollingBack ? "回滚中..." : "执行回滚" }}
+              {{ rollingBack ? tl('回滚中...') : tl('执行回滚') }}
             </button>
           </form>
 
@@ -401,20 +522,20 @@
                   @click="rollbackToVersion(version.version_no)"
                   :disabled="rollingBack"
                 >
-                  回滚到该版本
+                  {{ tl('回滚到该版本') }}
                 </button>
               </div>
             </article>
-            <p v-if="challengeVersions.length === 0" class="muted">暂无版本记录。</p>
+            <p v-if="challengeVersions.length === 0" class="muted">{{ tl('暂无版本记录。') }}</p>
           </div>
 
           <form class="form-grid" @submit.prevent="handleUploadChallengeAttachment">
             <label>
-              <span>上传附件</span>
+              <span>{{ tl('上传附件') }}</span>
               <input :key="attachmentInputKey" type="file" @change="onAttachmentFileChange" required />
             </label>
             <button class="ghost" type="submit" :disabled="uploadingAttachment || !selectedAttachmentFile">
-              {{ uploadingAttachment ? "上传中..." : "上传附件" }}
+              {{ uploadingAttachment ? tl('上传中...') : tl('上传附件') }}
             </button>
           </form>
 
@@ -435,88 +556,91 @@
                   @click="deleteChallengeAttachment(attachment.id)"
                   :disabled="deletingAttachmentId === attachment.id"
                 >
-                  {{ deletingAttachmentId === attachment.id ? "删除中..." : "删除附件" }}
+                  {{ deletingAttachmentId === attachment.id ? tl('删除中...') : tl('删除附件') }}
                 </button>
               </div>
             </article>
-            <p v-if="challengeAttachments.length === 0" class="muted">暂无附件。</p>
+            <p v-if="challengeAttachments.length === 0" class="muted">{{ tl('暂无附件。') }}</p>
           </div>
         </template>
         <p v-if="challengeSubTab === 'versions' && !selectedChallenge" class="muted">
-          请先在“题库配置”中选择一个题目，再切换到版本管理。
+          {{ tl('请先在“题库配置”中选择一个题目，再切换到版本管理。') }}
         </p>
 
         <template v-if="challengeSubTab === 'lint'">
           <div class="row-between">
-            <h3>运行模板校验</h3>
+            <h3>{{ tl('运行模板校验') }}</h3>
             <button
               class="ghost"
               type="button"
               @click="loadChallengeRuntimeLint()"
               :disabled="loadingChallengeRuntimeLint"
             >
-              {{ loadingChallengeRuntimeLint ? "扫描中..." : "刷新校验" }}
+              {{ loadingChallengeRuntimeLint ? tl('扫描中...') : tl('刷新校验') }}
             </button>
           </div>
 
-          <div class="actions-row">
-            <label>
-              <span>题型</span>
-              <select v-model="challengeLintTypeFilter">
-                <option value="">all</option>
-                <option value="static">static</option>
-                <option value="dynamic">dynamic</option>
-                <option value="internal">internal</option>
-              </select>
-            </label>
-            <label>
-              <span>状态</span>
-              <select v-model="challengeLintStatusFilter">
-                <option value="">all</option>
-                <option value="draft">draft</option>
-                <option value="published">published</option>
-                <option value="offline">offline</option>
-              </select>
-            </label>
-            <label>
-              <span>关键词</span>
-              <input v-model.trim="challengeLintKeywordFilter" placeholder="标题或 slug" />
-            </label>
-            <label>
-              <span>条数</span>
-              <input v-model.number="challengeLintLimit" type="number" min="1" max="5000" />
-            </label>
-            <label class="inline-check">
-              <span>仅错误</span>
-              <input v-model="challengeLintOnlyErrors" type="checkbox" />
-            </label>
-            <button
-              class="ghost"
-              type="button"
-              @click="loadChallengeRuntimeLint()"
-              :disabled="loadingChallengeRuntimeLint"
-            >
-              应用筛选
-            </button>
-          </div>
+          <details class="filter-sheet">
+            <summary>{{ tl('展开筛选条件') }}</summary>
+            <div class="actions-row filter-sheet-body">
+              <label>
+                <span>{{ tl('题型') }}</span>
+                <select v-model="challengeLintTypeFilter">
+                  <option value="">all</option>
+                  <option value="static">static</option>
+                  <option value="dynamic">dynamic</option>
+                  <option value="internal">internal</option>
+                </select>
+              </label>
+              <label>
+                <span>{{ tl('状态') }}</span>
+                <select v-model="challengeLintStatusFilter">
+                  <option value="">all</option>
+                  <option value="draft">draft</option>
+                  <option value="published">published</option>
+                  <option value="offline">offline</option>
+                </select>
+              </label>
+              <label>
+                <span>{{ tl('关键词') }}</span>
+                <input v-model.trim="challengeLintKeywordFilter" :placeholder="tl('标题或 slug')" />
+              </label>
+              <label>
+                <span>{{ tl('条数') }}</span>
+                <input v-model.number="challengeLintLimit" type="number" min="1" max="5000" />
+              </label>
+              <label class="inline-check">
+                <span>{{ tl('仅错误') }}</span>
+                <input v-model="challengeLintOnlyErrors" type="checkbox" />
+              </label>
+              <button
+                class="ghost"
+                type="button"
+                @click="loadChallengeRuntimeLint()"
+                :disabled="loadingChallengeRuntimeLint"
+              >
+                {{ tl('应用筛选') }}
+              </button>
+            </div>
+          </details>
 
           <p v-if="challengeLintError" class="error">{{ challengeLintError }}</p>
 
           <div v-if="challengeRuntimeLint" class="challenge-lint-metrics">
             <article class="metric-card">
-              <h4>扫描总数</h4>
+              <h4>{{ tl('扫描总数') }}</h4>
               <p>{{ challengeRuntimeLint.scanned_total }}</p>
             </article>
             <article class="metric-card">
-              <h4>通过</h4>
+              <h4>{{ tl('通过') }}</h4>
               <p>{{ challengeRuntimeLint.ok_count }}</p>
             </article>
             <article class="metric-card">
-              <h4>错误</h4>
+              <h4>{{ tl('错误') }}</h4>
               <p>{{ challengeRuntimeLint.error_count }}</p>
             </article>
             <article class="metric-card">
-              <h4>更新时间</h4>
+              <h4>{{ tl('更新时间') }}</h4>
               <p>{{ formatTime(challengeRuntimeLint.generated_at) }}</p>
             </article>
           </div>
@@ -527,13 +651,13 @@
           >
             <thead>
               <tr>
-                <th>题目</th>
-                <th>题型</th>
-                <th>状态</th>
-                <th>模板</th>
-                <th>校验</th>
-                <th>更新时间</th>
-                <th>信息</th>
+                <th>{{ tl('题目') }}</th>
+                <th>{{ tl('题型') }}</th>
+                <th>{{ tl('状态') }}</th>
+                <th>{{ tl('模板') }}</th>
+                <th>{{ tl('校验') }}</th>
+                <th>{{ tl('更新时间') }}</th>
+                <th>{{ tl('信息') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -558,14 +682,14 @@
               </tr>
             </tbody>
           </table>
-          <p v-else class="muted">暂无匹配的模板校验记录。</p>
+          <p v-else class="muted">{{ tl('暂无匹配的模板校验记录。') }}</p>
         </template>
       </section>
 
       <section v-if="adminModule === 'contests' && contestSubTab === 'contests'" class="panel">
         <div class="row-between">
-          <h2>比赛管理</h2>
-          <span class="badge">{{ contests.length }} 场</span>
+          <h2>{{ tl('比赛管理') }}</h2>
+          <span class="badge">{{ contests.length }} {{ tl('场') }}</span>
         </div>
 
         <div class="module-split contest-split">
@@ -578,12 +702,12 @@
                 type="button"
                 @click="handleCancelContestEdit"
               >
-                取消编辑
+                {{ tl('取消编辑') }}
               </button>
             </div>
             <form class="form-grid compact-grid" @submit.prevent="handleCreateContest">
               <label>
-                <span>标题</span>
+                <span>{{ tl('标题') }}</span>
                 <input v-model.trim="newContest.title" required />
               </label>
               <label>
@@ -591,18 +715,18 @@
                 <input v-model.trim="newContest.slug" required />
               </label>
               <label>
-                <span>描述</span>
+                <span>{{ tl('描述') }}</span>
                 <input v-model="newContest.description" />
               </label>
               <label>
-                <span>可见性</span>
+                <span>{{ tl('可见性') }}</span>
                 <select v-model="newContest.visibility">
                   <option value="public">public</option>
                   <option value="private">private</option>
                 </select>
               </label>
               <label>
-                <span>初始状态</span>
+                <span>{{ tl('初始状态') }}</span>
                 <select v-model="newContest.status">
                   <option value="draft">draft</option>
                   <option value="scheduled">scheduled</option>
@@ -612,26 +736,53 @@
                 </select>
               </label>
               <label>
-                <span>积分模式</span>
+                <span>{{ tl('积分模式') }}</span>
                 <select v-model="newContest.scoring_mode">
                   <option value="static">static</option>
                   <option value="dynamic">dynamic</option>
                 </select>
               </label>
               <label>
-                <span>动态衰减参数</span>
+                <span>{{ tl('动态衰减参数') }}</span>
                 <input v-model.number="newContest.dynamic_decay" type="number" min="1" max="100000" />
               </label>
               <label>
-                <span>开始时间</span>
+                <span>{{ tr("一血加成(%)", "First blood bonus (%)") }}</span>
+                <input
+                  v-model.number="newContest.first_blood_bonus_percent"
+                  type="number"
+                  min="0"
+                  max="500"
+                />
+              </label>
+              <label>
+                <span>{{ tr("二血加成(%)", "Second blood bonus (%)") }}</span>
+                <input
+                  v-model.number="newContest.second_blood_bonus_percent"
+                  type="number"
+                  min="0"
+                  max="500"
+                />
+              </label>
+              <label>
+                <span>{{ tr("三血加成(%)", "Third blood bonus (%)") }}</span>
+                <input
+                  v-model.number="newContest.third_blood_bonus_percent"
+                  type="number"
+                  min="0"
+                  max="500"
+                />
+              </label>
+              <label>
+                <span>{{ tl('开始时间') }}</span>
                 <input v-model="newContest.start_at" type="datetime-local" required />
               </label>
               <label>
-                <span>结束时间</span>
+                <span>{{ tl('结束时间') }}</span>
                 <input v-model="newContest.end_at" type="datetime-local" required />
               </label>
               <label>
-                <span>封榜时间（可选）</span>
+                <span>{{ tl('封榜时间（可选）') }}</span>
                 <input v-model="newContest.freeze_at" type="datetime-local" />
               </label>
 
@@ -645,12 +796,12 @@
 
           <div class="module-column">
             <div class="row-between">
-              <h3>赛事列表</h3>
+              <h3>{{ tl('赛事列表') }}</h3>
               <span class="badge">{{ filteredContests.length }} / {{ contests.length }}</span>
             </div>
             <label class="search-field">
-              <span>快速筛选</span>
-              <input v-model.trim="contestKeyword" placeholder="按标题、slug、状态筛选" />
+              <span>{{ tl('快速筛选') }}</span>
+              <input v-model.trim="contestKeyword" :placeholder="tl('按标题、slug、状态筛选')" />
             </label>
 
             <div class="contest-browser">
@@ -667,7 +818,7 @@
                   <span class="muted mono">{{ contest.slug }}</span>
                   <span class="muted">{{ contest.status }} · {{ contest.visibility }}</span>
                 </button>
-                <p v-if="filteredContests.length === 0" class="muted">没有匹配的比赛。</p>
+                <p v-if="filteredContests.length === 0" class="muted">{{ tl('没有匹配的比赛。') }}</p>
               </aside>
 
               <section v-if="selectedContest" class="contest-detail-pane">
@@ -678,6 +829,11 @@
                 <p class="muted mono">{{ selectedContest.slug }} · {{ selectedContest.visibility }}</p>
                 <p class="muted">
                   scoring={{ selectedContest.scoring_mode }} · dynamic_decay={{ selectedContest.dynamic_decay }}
+                </p>
+                <p class="muted">
+                  bonus={{ selectedContest.first_blood_bonus_percent }}% /
+                  {{ selectedContest.second_blood_bonus_percent }}% /
+                  {{ selectedContest.third_blood_bonus_percent }}%
                 </p>
                 <p class="muted">
                   {{ formatTime(selectedContest.start_at) }} ~ {{ formatTime(selectedContest.end_at) }}
@@ -691,12 +847,12 @@
                   alt="contest poster preview"
                 />
                 <p v-else class="muted">
-                  {{ selectedContest.poster_url ? "该海报当前在比赛中心不可预览（仅 public 且 scheduled/running/ended 可见）。" : "当前未设置海报。" }}
+                  {{ selectedContest.poster_url ? tl('该海报当前在比赛中心不可预览（仅 public 且 scheduled/running/ended 可见）。') : tl('当前未设置海报。') }}
                 </p>
 
                 <form class="form-grid" @submit.prevent="handleUploadContestPoster">
                   <label>
-                    <span>上传比赛海报</span>
+                    <span>{{ tl('上传比赛海报') }}</span>
                     <input
                       :key="contestPosterInputKey"
                       type="file"
@@ -711,7 +867,7 @@
                       type="submit"
                       :disabled="uploadingContestPoster || !selectedContestPosterFile"
                     >
-                      {{ uploadingContestPoster ? "上传中..." : "上传海报" }}
+                      {{ uploadingContestPoster ? tl('上传中...') : tl('上传海报') }}
                     </button>
                     <button
                       class="danger"
@@ -719,50 +875,55 @@
                       @click="handleDeleteContestPoster(selectedContest)"
                       :disabled="deletingContestPosterId === selectedContest.id || !selectedContest.poster_url"
                     >
-                      {{ deletingContestPosterId === selectedContest.id ? "删除中..." : "删除海报" }}
+                      {{ deletingContestPosterId === selectedContest.id ? tl('删除中...') : tl('删除海报') }}
                     </button>
                   </div>
                 </form>
 
-                <div class="actions-row compact-actions">
-                  <button
-                    v-for="status in statusActions"
-                    :key="status"
-                    class="ghost"
-                    type="button"
-                    :disabled="updatingContestId === selectedContest.id || destroyingContestId === selectedContest.id || selectedContest.status === status"
-                    @click="updateContestStatus(selectedContest.id, status)"
-                  >
-                    {{ status }}
-                  </button>
-                </div>
-                <div class="actions-row compact-actions">
-                  <button
-                    class="ghost"
-                    type="button"
-                    @click="handleLoadContestForEdit(selectedContest)"
-                  >
-                    编辑比赛配置
-                  </button>
-                  <button class="ghost" type="button" @click="contestSubTab = 'bindings'">
-                    管理题目挂载
-                  </button>
-                  <button class="ghost" type="button" @click="contestSubTab = 'announcements'">
-                    管理公告
-                  </button>
-                  <button
-                    class="danger"
-                    type="button"
-                    @click="handleDestroyContest(selectedContest)"
-                    :disabled="destroyingContestId === selectedContest.id || updatingContestId === selectedContest.id"
-                  >
-                    {{ destroyingContestId === selectedContest.id ? "销毁中..." : "销毁比赛" }}
-                  </button>
-                </div>
+                <details class="action-sheet">
+                  <summary>{{ tl('显示比赛操作菜单') }}</summary>
+                  <div class="action-sheet-body">
+                    <div class="actions-row compact-actions">
+                      <button
+                        v-for="status in statusActions"
+                        :key="status"
+                        class="ghost"
+                        type="button"
+                        :disabled="updatingContestId === selectedContest.id || destroyingContestId === selectedContest.id || selectedContest.status === status"
+                        @click="updateContestStatus(selectedContest.id, status)"
+                      >
+                        {{ status }}
+                      </button>
+                    </div>
+                    <div class="actions-row compact-actions">
+                      <button
+                        class="ghost"
+                        type="button"
+                        @click="handleLoadContestForEdit(selectedContest)"
+                      >
+                        {{ tl('编辑比赛配置') }}
+                      </button>
+                      <button class="ghost" type="button" @click="contestSubTab = 'bindings'">
+                        {{ tl('管理题目挂载') }}
+                      </button>
+                      <button class="ghost" type="button" @click="contestSubTab = 'announcements'">
+                        {{ tl('管理公告') }}
+                      </button>
+                      <button
+                        class="danger"
+                        type="button"
+                        @click="handleDestroyContest(selectedContest)"
+                        :disabled="destroyingContestId === selectedContest.id || updatingContestId === selectedContest.id"
+                      >
+                        {{ destroyingContestId === selectedContest.id ? tl('销毁中...') : tl('销毁比赛') }}
+                      </button>
+                    </div>
+                  </div>
+                </details>
               </section>
 
               <section v-else class="contest-detail-pane">
-                <p class="muted">从左侧选择一个比赛查看详情与状态操作。</p>
+                <p class="muted">{{ tl('从左侧选择一个比赛查看详情与状态操作。') }}</p>
               </section>
             </div>
           </div>
@@ -771,42 +932,42 @@
 
       <section v-if="adminModule === 'contests' && contestSubTab === 'bindings'" class="panel">
         <div class="row-between">
-          <h2>比赛题目挂载</h2>
+          <h2>{{ tl('比赛题目挂载') }}</h2>
           <span class="badge" v-if="selectedContest">{{ selectedContest.title }}</span>
         </div>
 
-        <p class="muted" v-if="!selectedContest">请先在中间列选择一个比赛。</p>
+        <p class="muted" v-if="!selectedContest">{{ tl('请先在中间列选择一个比赛。') }}</p>
 
         <template v-else>
           <p v-if="bindingError" class="error">{{ bindingError }}</p>
 
           <div class="contest-browser">
             <aside class="contest-list-pane">
-              <h3>挂载/更新题目</h3>
+              <h3>{{ tl('挂载/更新题目') }}</h3>
               <form class="form-grid compact-grid" @submit.prevent="handleUpsertBinding">
                 <label>
-                  <span>选择题目</span>
+                  <span>{{ tl('选择题目') }}</span>
                   <select v-model="bindingForm.challenge_id" required>
-                    <option value="" disabled>请选择题目</option>
+                    <option value="" disabled>{{ tl('请选择题目') }}</option>
                     <option v-for="item in challenges" :key="item.id" :value="item.id">
                       {{ item.title }} ({{ item.category }})
                     </option>
                   </select>
                 </label>
                 <label>
-                  <span>排序</span>
+                  <span>{{ tl('排序') }}</span>
                   <input v-model.number="bindingForm.sort_order" type="number" />
                 </label>
                 <label>
-                  <span>发布时间（可选）</span>
+                  <span>{{ tl('发布时间（可选）') }}</span>
                   <input v-model="bindingForm.release_at" type="datetime-local" />
                 </label>
                 <button class="primary" type="submit" :disabled="bindingBusy">
-                  {{ bindingBusy ? "处理中..." : "挂载或更新" }}
+                  {{ bindingBusy ? tl('处理中...') : tl('挂载或更新') }}
                 </button>
               </form>
 
-              <h3>已挂载题目</h3>
+              <h3>{{ tl('已挂载题目') }}</h3>
               <button
                 v-for="item in contestBindings"
                 :key="item.challenge_id"
@@ -819,7 +980,7 @@
                 <span class="muted mono">sort={{ item.sort_order }}</span>
                 <span class="muted">{{ item.challenge_category }} · {{ item.challenge_difficulty }}</span>
               </button>
-              <p v-if="contestBindings.length === 0" class="muted">当前比赛未挂载题目。</p>
+              <p v-if="contestBindings.length === 0" class="muted">{{ tl('当前比赛未挂载题目。') }}</p>
             </aside>
 
             <section class="contest-detail-pane">
@@ -834,50 +995,53 @@
                 <p class="muted">
                   release_at={{ selectedBinding.release_at ? formatTime(selectedBinding.release_at) : "-" }}
                 </p>
-                <div class="actions-row compact-actions">
-                  <button
-                    class="ghost"
-                    type="button"
-                    @click="loadBindingIntoForm(selectedBinding)"
-                    :disabled="bindingBusy"
-                  >
-                    加载到左侧表单
-                  </button>
-                  <button
-                    class="ghost"
-                    type="button"
-                    @click="quickAdjustSort(selectedBinding.challenge_id, selectedBinding.sort_order - 1)"
-                    :disabled="bindingBusy"
-                  >
-                    上移
-                  </button>
-                  <button
-                    class="ghost"
-                    type="button"
-                    @click="quickAdjustSort(selectedBinding.challenge_id, selectedBinding.sort_order + 1)"
-                    :disabled="bindingBusy"
-                  >
-                    下移
-                  </button>
-                  <button
-                    class="ghost"
-                    type="button"
-                    @click="clearBindingReleaseAt(selectedBinding.challenge_id)"
-                    :disabled="bindingBusy"
-                  >
-                    清除发布时间
-                  </button>
-                  <button
-                    class="danger"
-                    type="button"
-                    @click="removeBinding(selectedBinding.challenge_id)"
-                    :disabled="bindingBusy"
-                  >
-                    移除挂载
-                  </button>
-                </div>
+                <details class="action-sheet">
+                  <summary>{{ tl('显示挂载操作菜单') }}</summary>
+                  <div class="actions-row compact-actions action-sheet-body">
+                    <button
+                      class="ghost"
+                      type="button"
+                      @click="loadBindingIntoForm(selectedBinding)"
+                      :disabled="bindingBusy"
+                    >
+                      {{ tl('加载到左侧表单') }}
+                    </button>
+                    <button
+                      class="ghost"
+                      type="button"
+                      @click="quickAdjustSort(selectedBinding.challenge_id, selectedBinding.sort_order - 1)"
+                      :disabled="bindingBusy"
+                    >
+                      {{ tl('上移') }}
+                    </button>
+                    <button
+                      class="ghost"
+                      type="button"
+                      @click="quickAdjustSort(selectedBinding.challenge_id, selectedBinding.sort_order + 1)"
+                      :disabled="bindingBusy"
+                    >
+                      {{ tl('下移') }}
+                    </button>
+                    <button
+                      class="ghost"
+                      type="button"
+                      @click="clearBindingReleaseAt(selectedBinding.challenge_id)"
+                      :disabled="bindingBusy"
+                    >
+                      {{ tl('清除发布时间') }}
+                    </button>
+                    <button
+                      class="danger"
+                      type="button"
+                      @click="removeBinding(selectedBinding.challenge_id)"
+                      :disabled="bindingBusy"
+                    >
+                      {{ tl('移除挂载') }}
+                    </button>
+                  </div>
+                </details>
               </template>
-              <p v-else class="muted">从左侧选择一个挂载题目查看详情。</p>
+              <p v-else class="muted">{{ tl('从左侧选择一个挂载题目查看详情。') }}</p>
             </section>
           </div>
         </template>
@@ -885,136 +1049,265 @@
 
       <section v-if="adminModule === 'contests' && contestSubTab === 'announcements'" class="panel">
         <div class="row-between">
-          <h2>比赛公告管理</h2>
+          <h2>{{ tl('比赛公告管理') }}</h2>
           <span class="badge" v-if="selectedContest">{{ selectedContest.title }}</span>
         </div>
 
-        <p class="muted" v-if="!selectedContest">请先在“赛事配置”中选择一个比赛。</p>
+        <p class="muted" v-if="!selectedContest">{{ tl('请先在“赛事配置”中选择一个比赛。') }}</p>
 
         <template v-else>
           <p v-if="announcementError" class="error">{{ announcementError }}</p>
 
-          <div class="contest-browser">
-            <aside class="contest-list-pane">
-              <h3>创建公告</h3>
-              <form class="form-grid compact-grid" @submit.prevent="handleCreateAnnouncement">
-                <label>
-                  <span>公告标题</span>
-                  <input v-model.trim="announcementForm.title" required />
-                </label>
-                <label>
-                  <span>公告内容</span>
-                  <textarea v-model.trim="announcementForm.content" rows="4" required />
-                </label>
-                <label class="inline-check">
-                  <input v-model="announcementForm.is_published" type="checkbox" />
-                  <span>立即发布</span>
-                </label>
-                <label class="inline-check">
-                  <input v-model="announcementForm.is_pinned" type="checkbox" />
-                  <span>置顶公告</span>
-                </label>
-                <button class="primary" type="submit" :disabled="creatingAnnouncement">
-                  {{ creatingAnnouncement ? "创建中..." : "创建公告" }}
-                </button>
-              </form>
+          <div class="contest-browser announcement-browser">
+            <aside class="contest-list-pane announcement-pane">
+              <section class="announcement-block announcement-create-block">
+                <div class="row-between">
+                  <h3>{{ tl('创建公告') }}</h3>
+                  <div
+                    class="context-menu announcement-mode-switch"
+                    role="tablist"
+                    :aria-label="tr('创建公告编辑模式', 'Create announcement editor mode')"
+                  >
+                    <button
+                      class="ghost"
+                      type="button"
+                      :class="{ active: announcementCreateMode === 'edit' }"
+                      :aria-pressed="announcementCreateMode === 'edit'"
+                      @click="announcementCreateMode = 'edit'"
+                    >
+                      {{ tr("编辑", "Edit") }}
+                    </button>
+                    <button
+                      class="ghost"
+                      type="button"
+                      :class="{ active: announcementCreateMode === 'preview' }"
+                      :aria-pressed="announcementCreateMode === 'preview'"
+                      @click="announcementCreateMode = 'preview'"
+                    >
+                      {{ tr("预览", "Preview") }}
+                    </button>
+                  </div>
+                </div>
 
-              <h3>公告列表</h3>
-              <button
-                v-for="item in contestAnnouncements"
-                :key="item.id"
-                class="contest-list-item"
-                :class="{ active: selectedAnnouncementId === item.id }"
-                type="button"
-                @click="selectAnnouncement(item.id)"
-              >
-                <strong>{{ item.title }}</strong>
-                <span class="muted mono">{{ item.is_published ? "published" : "draft" }}</span>
-                <span class="muted">
-                  {{ item.published_at ? formatTime(item.published_at) : "未发布" }}
-                </span>
-              </button>
-              <p v-if="contestAnnouncements.length === 0" class="muted">暂无公告。</p>
+                <form class="form-grid announcement-create-form" @submit.prevent="handleCreateAnnouncement">
+                  <label>
+                    <span>{{ tl('公告标题') }}</span>
+                    <input
+                      v-model.trim="announcementForm.title"
+                      maxlength="180"
+                      required
+                      :placeholder="tr('例如：比赛赛程更新', 'Example: Schedule update')"
+                    />
+                  </label>
+
+                  <label class="announcement-editor-label">
+                    <span>{{ tr("公告内容（Markdown）", "Announcement Content (Markdown)") }}</span>
+                  </label>
+
+                  <div class="announcement-toolbar">
+                    <button class="ghost" type="button" @click="insertMarkdownSnippet('create', 'heading')">{{ tr("标题", "H2") }}</button>
+                    <button class="ghost" type="button" @click="insertMarkdownSnippet('create', 'bold')">{{ tr("加粗", "Bold") }}</button>
+                    <button class="ghost" type="button" @click="insertMarkdownSnippet('create', 'italic')">{{ tr("斜体", "Italic") }}</button>
+                    <button class="ghost" type="button" @click="insertMarkdownSnippet('create', 'link')">{{ tr("链接", "Link") }}</button>
+                    <button class="ghost" type="button" @click="insertMarkdownSnippet('create', 'code')">{{ tr("代码", "Code") }}</button>
+                    <button class="ghost" type="button" @click="insertMarkdownSnippet('create', 'list')">{{ tr("列表", "List") }}</button>
+                    <button class="ghost" type="button" @click="insertMarkdownSnippet('create', 'quote')">{{ tr("引用", "Quote") }}</button>
+                  </div>
+
+                  <div class="announcement-editor-shell">
+                    <textarea
+                      v-if="announcementCreateMode === 'edit'"
+                      ref="announcementCreateTextareaRef"
+                      v-model.trim="announcementForm.content"
+                      rows="8"
+                      class="announcement-editor-textarea"
+                      :placeholder="tr('支持 Markdown，建议分段编写公告。', 'Markdown supported. Write the announcement in structured sections.')"
+                    />
+                    <article
+                      v-else-if="announcementForm.content.trim()"
+                      class="announcement-markdown-preview markdown-body"
+                      v-html="renderAnnouncementMarkdown(announcementForm.content)"
+                    ></article>
+                    <p v-else class="muted">{{ tr("暂无预览内容。", "No preview content yet.") }}</p>
+                  </div>
+
+                  <p class="soft announcement-markdown-hint">
+                    {{ tr("支持标题、列表、代码块、引用与链接。", "Supports headings, lists, code blocks, quotes and links.") }}
+                  </p>
+
+                  <div class="actions-row compact-actions">
+                    <label class="inline-check">
+                      <input v-model="announcementForm.is_published" type="checkbox" />
+                      <span>{{ tl('立即发布') }}</span>
+                    </label>
+                    <label class="inline-check">
+                      <input v-model="announcementForm.is_pinned" type="checkbox" />
+                      <span>{{ tl('置顶公告') }}</span>
+                    </label>
+                  </div>
+
+                  <button class="primary" type="submit" :disabled="creatingAnnouncement">
+                    {{ creatingAnnouncement ? tl('创建中...') : tl('创建公告') }}
+                  </button>
+                </form>
+              </section>
+
+              <section class="announcement-block announcement-list-block">
+                <div class="row-between">
+                  <h3>{{ tl('公告列表') }}</h3>
+                  <span class="badge">{{ contestAnnouncements.length }}</span>
+                </div>
+                <button
+                  v-for="item in contestAnnouncements"
+                  :key="item.id"
+                  class="contest-list-item"
+                  :class="{ active: selectedAnnouncementId === item.id }"
+                  type="button"
+                  @click="selectAnnouncement(item.id)"
+                >
+                  <strong>{{ item.title }}</strong>
+                  <span class="muted mono">{{ item.is_published ? "published" : "draft" }}</span>
+                  <span class="muted">
+                    {{ item.published_at ? formatTime(item.published_at) : tl('未发布') }}
+                  </span>
+                </button>
+                <p v-if="contestAnnouncements.length === 0" class="muted">{{ tl('暂无公告。') }}</p>
+              </section>
             </aside>
 
-            <section class="contest-detail-pane">
+            <section class="contest-detail-pane announcement-detail-pane">
               <template v-if="selectedAnnouncement">
-                <div class="row-between">
+                <header class="row-between">
                   <h4>{{ selectedAnnouncement.title }}</h4>
-                  <span class="badge" v-if="selectedAnnouncement.is_pinned">置顶</span>
-                </div>
+                  <span class="badge" v-if="selectedAnnouncement.is_pinned">{{ tl('置顶') }}</span>
+                </header>
                 <p class="muted mono">
                   {{ selectedAnnouncement.is_published ? "published" : "draft" }} ·
-                  {{ selectedAnnouncement.published_at ? formatTime(selectedAnnouncement.published_at) : "未发布" }}
+                  {{ selectedAnnouncement.published_at ? formatTime(selectedAnnouncement.published_at) : tl('未发布') }}
                 </p>
+
                 <form
                   v-if="announcementDrafts[selectedAnnouncement.id]"
-                  class="form-grid"
+                  class="form-grid announcement-edit-form"
                   @submit.prevent="saveAnnouncementEdit(selectedAnnouncement)"
                 >
                   <label>
-                    <span>标题</span>
+                    <span>{{ tl('标题') }}</span>
                     <input
                       v-model.trim="announcementDrafts[selectedAnnouncement.id].title"
                       required
+                      maxlength="180"
                       :disabled="savingAnnouncementId === selectedAnnouncement.id"
                     />
                   </label>
-                  <label>
-                    <span>内容</span>
+
+                  <div class="row-between">
+                    <span class="announcement-editor-title">{{ tr("内容（Markdown）", "Content (Markdown)") }}</span>
+                    <div
+                      class="context-menu announcement-mode-switch"
+                      role="tablist"
+                      :aria-label="tr('编辑公告内容模式', 'Edit announcement content mode')"
+                    >
+                      <button
+                        class="ghost"
+                        type="button"
+                        :class="{ active: announcementEditMode === 'edit' }"
+                        :aria-pressed="announcementEditMode === 'edit'"
+                        @click="announcementEditMode = 'edit'"
+                      >
+                        {{ tr("编辑", "Edit") }}
+                      </button>
+                      <button
+                        class="ghost"
+                        type="button"
+                        :class="{ active: announcementEditMode === 'preview' }"
+                        :aria-pressed="announcementEditMode === 'preview'"
+                        @click="announcementEditMode = 'preview'"
+                      >
+                        {{ tr("预览", "Preview") }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="announcement-toolbar">
+                    <button class="ghost" type="button" @click="insertMarkdownSnippet('edit', 'heading')">{{ tr("标题", "H2") }}</button>
+                    <button class="ghost" type="button" @click="insertMarkdownSnippet('edit', 'bold')">{{ tr("加粗", "Bold") }}</button>
+                    <button class="ghost" type="button" @click="insertMarkdownSnippet('edit', 'italic')">{{ tr("斜体", "Italic") }}</button>
+                    <button class="ghost" type="button" @click="insertMarkdownSnippet('edit', 'link')">{{ tr("链接", "Link") }}</button>
+                    <button class="ghost" type="button" @click="insertMarkdownSnippet('edit', 'code')">{{ tr("代码", "Code") }}</button>
+                    <button class="ghost" type="button" @click="insertMarkdownSnippet('edit', 'list')">{{ tr("列表", "List") }}</button>
+                    <button class="ghost" type="button" @click="insertMarkdownSnippet('edit', 'quote')">{{ tr("引用", "Quote") }}</button>
+                  </div>
+
+                  <div class="announcement-editor-shell announcement-editor-shell-large">
                     <textarea
+                      v-if="announcementEditMode === 'edit'"
+                      ref="announcementEditTextareaRef"
                       v-model.trim="announcementDrafts[selectedAnnouncement.id].content"
-                      rows="6"
+                      rows="12"
+                      class="announcement-editor-textarea announcement-editor-textarea-lg"
                       required
                       :disabled="savingAnnouncementId === selectedAnnouncement.id"
                     />
-                  </label>
-                  <button class="ghost" type="submit" :disabled="savingAnnouncementId === selectedAnnouncement.id">
-                    {{ savingAnnouncementId === selectedAnnouncement.id ? "保存中..." : "保存修改" }}
-                  </button>
-                </form>
-                <p v-else class="muted">正在准备编辑器...</p>
+                    <article
+                      v-else-if="currentAnnouncementDraftContent.trim()"
+                      class="announcement-markdown-preview markdown-body"
+                      v-html="renderAnnouncementMarkdown(currentAnnouncementDraftContent)"
+                    ></article>
+                    <p v-else class="muted">{{ tr("暂无预览内容。", "No preview content yet.") }}</p>
+                  </div>
 
-                <div class="actions-row compact-actions">
-                  <button
-                    class="ghost"
-                    type="button"
-                    @click="toggleAnnouncementPublish(selectedAnnouncement)"
-                    :disabled="
-                      updatingAnnouncementId === selectedAnnouncement.id ||
-                      deletingAnnouncementId === selectedAnnouncement.id ||
-                      savingAnnouncementId === selectedAnnouncement.id
-                    "
-                  >
-                    {{ selectedAnnouncement.is_published ? "撤回发布" : "发布" }}
-                  </button>
-                  <button
-                    class="ghost"
-                    type="button"
-                    @click="toggleAnnouncementPin(selectedAnnouncement)"
-                    :disabled="
-                      updatingAnnouncementId === selectedAnnouncement.id ||
-                      deletingAnnouncementId === selectedAnnouncement.id ||
-                      savingAnnouncementId === selectedAnnouncement.id
-                    "
-                  >
-                    {{ selectedAnnouncement.is_pinned ? "取消置顶" : "置顶" }}
-                  </button>
-                  <button
-                    class="danger"
-                    type="button"
-                    @click="removeAnnouncement(selectedAnnouncement)"
-                    :disabled="
-                      deletingAnnouncementId === selectedAnnouncement.id ||
-                      updatingAnnouncementId === selectedAnnouncement.id ||
-                      savingAnnouncementId === selectedAnnouncement.id
-                    "
-                  >
-                    {{ deletingAnnouncementId === selectedAnnouncement.id ? "删除中..." : "删除公告" }}
-                  </button>
-                </div>
+                  <div class="actions-row compact-actions">
+                    <button class="ghost" type="submit" :disabled="savingAnnouncementId === selectedAnnouncement.id">
+                      {{ savingAnnouncementId === selectedAnnouncement.id ? tl('保存中...') : tl('保存修改') }}
+                    </button>
+                  </div>
+                </form>
+                <p v-else class="muted">{{ tl('正在准备编辑器...') }}</p>
+
+                <details class="action-sheet">
+                  <summary>{{ tl('显示公告操作菜单') }}</summary>
+                  <div class="actions-row compact-actions action-sheet-body">
+                    <button
+                      class="ghost"
+                      type="button"
+                      @click="toggleAnnouncementPublish(selectedAnnouncement)"
+                      :disabled="
+                        updatingAnnouncementId === selectedAnnouncement.id ||
+                        deletingAnnouncementId === selectedAnnouncement.id ||
+                        savingAnnouncementId === selectedAnnouncement.id
+                      "
+                    >
+                      {{ selectedAnnouncement.is_published ? tl('撤回发布') : tl('发布') }}
+                    </button>
+                    <button
+                      class="ghost"
+                      type="button"
+                      @click="toggleAnnouncementPin(selectedAnnouncement)"
+                      :disabled="
+                        updatingAnnouncementId === selectedAnnouncement.id ||
+                        deletingAnnouncementId === selectedAnnouncement.id ||
+                        savingAnnouncementId === selectedAnnouncement.id
+                      "
+                    >
+                      {{ selectedAnnouncement.is_pinned ? tl('取消置顶') : tl('置顶') }}
+                    </button>
+                    <button
+                      class="danger"
+                      type="button"
+                      @click="removeAnnouncement(selectedAnnouncement)"
+                      :disabled="
+                        deletingAnnouncementId === selectedAnnouncement.id ||
+                        updatingAnnouncementId === selectedAnnouncement.id ||
+                        savingAnnouncementId === selectedAnnouncement.id
+                      "
+                    >
+                      {{ deletingAnnouncementId === selectedAnnouncement.id ? tl('删除中...') : tl('删除公告') }}
+                    </button>
+                  </div>
+                </details>
               </template>
-              <p v-else class="muted">从左侧选择一个公告查看详情。</p>
+              <p v-else class="muted">{{ tl('从左侧选择一个公告查看详情。') }}</p>
             </section>
           </div>
         </template>
@@ -1023,16 +1316,16 @@
 
     <section v-if="adminModule === 'operations' && operationsSubTab === 'runtime'" class="panel">
       <div class="row-between">
-        <h2>运行概览</h2>
+        <h2>{{ tl('运行概览') }}</h2>
         <div class="actions-row compact-actions">
-          <span v-if="runtimeOverview" class="muted">更新于 {{ formatTime(runtimeOverview.generated_at) }}</span>
+          <span v-if="runtimeOverview" class="muted">{{ tl('更新于') }} {{ formatTime(runtimeOverview.generated_at) }}</span>
           <button
             class="ghost"
             type="button"
             @click="handleRunExpiredReaper"
             :disabled="runtimeReaperBusy !== ''"
           >
-            {{ runtimeReaperBusy === "expired" ? "回收中..." : "执行过期回收" }}
+            {{ runtimeReaperBusy === "expired" ? tl('回收中...') : tl('执行过期回收') }}
           </button>
           <button
             class="ghost"
@@ -1040,7 +1333,7 @@
             @click="handleRunStaleReaper"
             :disabled="runtimeReaperBusy !== ''"
           >
-            {{ runtimeReaperBusy === "stale" ? "回收中..." : "执行心跳超时回收" }}
+            {{ runtimeReaperBusy === "stale" ? tl('回收中...') : tl('执行心跳超时回收') }}
           </button>
         </div>
       </div>
@@ -1048,40 +1341,40 @@
       <p v-if="runtimeError" class="error">{{ runtimeError }}</p>
       <p v-if="runtimeReaperError" class="error">{{ runtimeReaperError }}</p>
       <p v-if="runtimeReaperResult" class="muted mono">
-        最近回收：mode={{ runtimeReaperResult.mode }} · scanned={{ runtimeReaperResult.scanned }} ·
+        {{ tl('最近回收：mode=') }}{{ runtimeReaperResult.mode }} · scanned={{ runtimeReaperResult.scanned }} ·
         reaped={{ runtimeReaperResult.reaped }} · failed={{ runtimeReaperResult.failed }} ·
         updated_at={{ formatTime(runtimeReaperResult.generated_at) }}
       </p>
 
       <div v-if="runtimeOverview" class="runtime-metrics">
         <article class="metric-card">
-          <h3>基础规模</h3>
-          <p>用户 {{ runtimeOverview.total_users }} · 队伍 {{ runtimeOverview.total_teams }}</p>
-          <p>比赛 {{ runtimeOverview.total_contests }} · 题目 {{ runtimeOverview.total_challenges }}</p>
+          <h3>{{ tl('基础规模') }}</h3>
+          <p>{{ tl('用户') }} {{ runtimeOverview.total_users }} {{ tl('· 队伍') }} {{ runtimeOverview.total_teams }}</p>
+          <p>{{ tl('比赛') }} {{ runtimeOverview.total_contests }} {{ tl('· 题目') }} {{ runtimeOverview.total_challenges }}</p>
         </article>
         <article class="metric-card">
-          <h3>比赛与提交</h3>
-          <p>运行中比赛 {{ runtimeOverview.running_contests }}</p>
-          <p>总提交 {{ runtimeOverview.total_submissions }} · 24h 提交 {{ runtimeOverview.submissions_last_24h }}</p>
+          <h3>{{ tl('比赛与提交') }}</h3>
+          <p>{{ tl('运行中比赛') }} {{ runtimeOverview.running_contests }}</p>
+          <p>{{ tl('总提交') }} {{ runtimeOverview.total_submissions }} {{ tl('· 24h 提交') }} {{ runtimeOverview.submissions_last_24h }}</p>
         </article>
         <article class="metric-card">
-          <h3>实例健康</h3>
-          <p>总实例 {{ runtimeOverview.instances_total }} · 运行中 {{ runtimeOverview.instances_running }}</p>
-          <p>失败 {{ runtimeOverview.instances_failed }} · 30 分钟内到期 {{ runtimeOverview.instances_expiring_within_30m }}</p>
-          <p>已过期未销毁 {{ runtimeOverview.instances_expired_not_destroyed }}</p>
+          <h3>{{ tl('实例健康') }}</h3>
+          <p>{{ tl('总实例') }} {{ runtimeOverview.instances_total }} {{ tl('· 运行中') }} {{ runtimeOverview.instances_running }}</p>
+          <p>{{ tl('失败') }} {{ runtimeOverview.instances_failed }} {{ tl('· 30 分钟内到期') }} {{ runtimeOverview.instances_expiring_within_30m }}</p>
+          <p>{{ tl('已过期未销毁') }} {{ runtimeOverview.instances_expired_not_destroyed }}</p>
         </article>
       </div>
 
-      <h3>最近失败实例</h3>
+      <h3>{{ tl('最近失败实例') }}</h3>
       <table v-if="runtimeOverview && runtimeOverview.recent_failed_instances.length > 0" class="scoreboard-table">
         <thead>
           <tr>
-            <th>更新时间</th>
-            <th>比赛</th>
-            <th>队伍</th>
-            <th>题目</th>
-            <th>状态</th>
-            <th>到期</th>
+            <th>{{ tl('更新时间') }}</th>
+            <th>{{ tl('比赛') }}</th>
+            <th>{{ tl('队伍') }}</th>
+            <th>{{ tl('题目') }}</th>
+            <th>{{ tl('状态') }}</th>
+            <th>{{ tl('到期') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -1095,53 +1388,56 @@
           </tr>
         </tbody>
       </table>
-      <p v-else class="muted">暂无失败实例。</p>
+      <p v-else class="muted">{{ tl('暂无失败实例。') }}</p>
     </section>
 
     <section v-if="adminModule === 'operations' && operationsSubTab === 'alerts'" class="panel">
       <div class="row-between">
-        <h2>运行告警</h2>
+        <h2>{{ tl('运行告警') }}</h2>
         <div class="actions-row compact-actions">
           <button class="ghost" type="button" @click="loadRuntimeAlerts()" :disabled="loadingRuntimeAlerts">
-            {{ loadingRuntimeAlerts ? "加载中..." : "刷新告警" }}
+            {{ loadingRuntimeAlerts ? tl('加载中...') : tl('刷新告警') }}
           </button>
           <button class="primary" type="button" @click="handleScanRuntimeAlerts" :disabled="runtimeAlertScanBusy">
-            {{ runtimeAlertScanBusy ? "扫描中..." : "触发扫描" }}
+            {{ runtimeAlertScanBusy ? tl('扫描中...') : tl('触发扫描') }}
           </button>
         </div>
       </div>
 
-      <div class="actions-row">
-        <label>
-          <span>状态</span>
-          <select v-model="runtimeAlertStatusFilter">
-            <option value="">all</option>
-            <option value="open">open</option>
-            <option value="acknowledged">acknowledged</option>
-            <option value="resolved">resolved</option>
-          </select>
-        </label>
-        <label>
-          <span>级别</span>
-          <select v-model="runtimeAlertSeverityFilter">
-            <option value="">all</option>
-            <option value="info">info</option>
-            <option value="warning">warning</option>
-            <option value="critical">critical</option>
-          </select>
-        </label>
-        <label>
-          <span>告警类型</span>
-          <input v-model.trim="runtimeAlertTypeFilter" placeholder="instance_heartbeat_stale" />
-        </label>
-        <label>
-          <span>条数</span>
-          <input v-model.number="runtimeAlertLimit" type="number" min="1" max="500" />
-        </label>
-        <button class="ghost" type="button" @click="loadRuntimeAlerts()" :disabled="loadingRuntimeAlerts">
-          应用筛选
-        </button>
-      </div>
+      <details class="filter-sheet">
+        <summary>{{ tl('展开筛选条件') }}</summary>
+        <div class="actions-row filter-sheet-body">
+          <label>
+            <span>{{ tl('状态') }}</span>
+            <select v-model="runtimeAlertStatusFilter">
+              <option value="">all</option>
+              <option value="open">open</option>
+              <option value="acknowledged">acknowledged</option>
+              <option value="resolved">resolved</option>
+            </select>
+          </label>
+          <label>
+            <span>{{ tl('级别') }}</span>
+            <select v-model="runtimeAlertSeverityFilter">
+              <option value="">all</option>
+              <option value="info">info</option>
+              <option value="warning">warning</option>
+              <option value="critical">critical</option>
+            </select>
+          </label>
+          <label>
+            <span>{{ tl('告警类型') }}</span>
+            <input v-model.trim="runtimeAlertTypeFilter" />
+          </label>
+          <label>
+            <span>{{ tl('条数') }}</span>
+            <input v-model.number="runtimeAlertLimit" type="number" min="1" max="500" />
+          </label>
+          <button class="ghost" type="button" @click="loadRuntimeAlerts()" :disabled="loadingRuntimeAlerts">
+            {{ tl('应用筛选') }}
+          </button>
+        </div>
+      </details>
 
       <p v-if="runtimeAlertError" class="error">{{ runtimeAlertError }}</p>
 
@@ -1164,9 +1460,9 @@
               <span class="badge">{{ item.severity }}</span>
             </div>
             <p class="muted mono runtime-alert-line">{{ item.alert_type }}</p>
-            <p class="muted runtime-alert-line">状态 {{ item.status }} · 最近 {{ formatTime(item.last_seen_at) }}</p>
+            <p class="muted runtime-alert-line">{{ tl('状态') }} {{ item.status }} {{ tl('· 最近') }} {{ formatTime(item.last_seen_at) }}</p>
           </button>
-          <p v-if="runtimeAlerts.length === 0" class="muted">暂无运行告警。</p>
+          <p v-if="runtimeAlerts.length === 0" class="muted">{{ tl('暂无运行告警。') }}</p>
         </div>
 
         <div class="runtime-alert-detail">
@@ -1182,105 +1478,111 @@
               <span class="badge mono">{{ selectedRuntimeAlert.source_type }}</span>
             </div>
             <div class="runtime-alert-meta">
-              <p>首次发现：{{ formatTime(selectedRuntimeAlert.first_seen_at) }}</p>
-              <p>最近发现：{{ formatTime(selectedRuntimeAlert.last_seen_at) }}</p>
-              <p>确认人：{{ selectedRuntimeAlert.acknowledged_by_username ?? "-" }}</p>
-              <p>恢复人：{{ selectedRuntimeAlert.resolved_by_username ?? "-" }}</p>
+              <p>{{ tl('首次发现：') }}{{ formatTime(selectedRuntimeAlert.first_seen_at) }}</p>
+              <p>{{ tl('最近发现：') }}{{ formatTime(selectedRuntimeAlert.last_seen_at) }}</p>
+              <p>{{ tl('确认人：') }}{{ selectedRuntimeAlert.acknowledged_by_username ?? "-" }}</p>
+              <p>{{ tl('恢复人：') }}{{ selectedRuntimeAlert.resolved_by_username ?? "-" }}</p>
             </div>
 
             <label>
-              <span>处理备注（可选）</span>
+              <span>{{ tl('处理备注（可选）') }}</span>
               <input
                 v-model.trim="runtimeAlertActionNote"
-                placeholder="用于 ack / resolve 审计记录"
+                :placeholder="tl('用于 ack / resolve 审计记录')"
               />
             </label>
 
-            <div class="actions-row">
-              <button
-                class="ghost"
-                type="button"
-                @click="handleAcknowledgeRuntimeAlert(selectedRuntimeAlert)"
-                :disabled="
-                  runtimeAlertUpdatingId === selectedRuntimeAlert.id ||
-                  selectedRuntimeAlert.status !== 'open'
-                "
-              >
-                {{ runtimeAlertUpdatingId === selectedRuntimeAlert.id ? "处理中..." : "确认告警" }}
-              </button>
-              <button
-                class="primary"
-                type="button"
-                @click="handleResolveRuntimeAlert(selectedRuntimeAlert)"
-                :disabled="
-                  runtimeAlertUpdatingId === selectedRuntimeAlert.id ||
-                  selectedRuntimeAlert.status === 'resolved'
-                "
-              >
-                {{ runtimeAlertUpdatingId === selectedRuntimeAlert.id ? "处理中..." : "标记恢复" }}
-              </button>
-            </div>
+            <details class="action-sheet">
+              <summary>{{ tl('显示告警操作菜单') }}</summary>
+              <div class="actions-row action-sheet-body">
+                <button
+                  class="ghost"
+                  type="button"
+                  @click="handleAcknowledgeRuntimeAlert(selectedRuntimeAlert)"
+                  :disabled="
+                    runtimeAlertUpdatingId === selectedRuntimeAlert.id ||
+                    selectedRuntimeAlert.status !== 'open'
+                  "
+                >
+                  {{ runtimeAlertUpdatingId === selectedRuntimeAlert.id ? tl('处理中...') : tl('确认告警') }}
+                </button>
+                <button
+                  class="primary"
+                  type="button"
+                  @click="handleResolveRuntimeAlert(selectedRuntimeAlert)"
+                  :disabled="
+                    runtimeAlertUpdatingId === selectedRuntimeAlert.id ||
+                    selectedRuntimeAlert.status === 'resolved'
+                  "
+                >
+                  {{ runtimeAlertUpdatingId === selectedRuntimeAlert.id ? tl('处理中...') : tl('标记恢复') }}
+                </button>
+              </div>
+            </details>
 
             <details class="runtime-alert-detail-json">
-              <summary>展示详细信息（JSON）</summary>
+              <summary>{{ tl('展示详细信息（JSON）') }}</summary>
               <pre class="mono">{{ formatJson(selectedRuntimeAlert.detail) }}</pre>
             </details>
           </template>
-          <p v-else class="muted">从左侧选择一个告警查看详情。</p>
+          <p v-else class="muted">{{ tl('从左侧选择一个告警查看详情。') }}</p>
         </div>
       </div>
     </section>
 
     <section v-if="adminModule === 'users'" class="panel">
       <div class="row-between">
-        <h2>用户管理</h2>
+        <h2>{{ tl('用户管理') }}</h2>
         <button class="ghost" type="button" @click="loadUsers" :disabled="loadingUsers">
-          {{ loadingUsers ? "加载中..." : "刷新用户" }}
+          {{ loadingUsers ? tl('加载中...') : tl('刷新用户') }}
         </button>
       </div>
 
-      <div class="actions-row">
-        <label>
-          <span>关键词</span>
-          <input v-model.trim="userKeyword" placeholder="用户名或邮箱" />
-        </label>
-        <label>
-          <span>角色</span>
-          <select v-model="userRoleFilter">
-            <option value="">all</option>
-            <option value="player">player</option>
-            <option value="admin">admin</option>
-            <option value="judge">judge</option>
-          </select>
-        </label>
-        <label>
-          <span>状态</span>
-          <select v-model="userStatusFilter">
-            <option value="">all</option>
-            <option value="active">active</option>
-            <option value="disabled">disabled</option>
-          </select>
-        </label>
-        <label>
-          <span>条数</span>
-          <input v-model.number="userLimit" type="number" min="1" max="1000" />
-        </label>
-        <button class="ghost" type="button" @click="loadUsers" :disabled="loadingUsers">
-          应用筛选
-        </button>
-      </div>
+      <details class="filter-sheet">
+        <summary>{{ tl('展开筛选条件') }}</summary>
+        <div class="actions-row filter-sheet-body">
+          <label>
+            <span>{{ tl('关键词') }}</span>
+            <input v-model.trim="userKeyword" :placeholder="tl('用户名或邮箱')" />
+          </label>
+          <label>
+            <span>{{ tl('角色') }}</span>
+            <select v-model="userRoleFilter">
+              <option value="">all</option>
+              <option value="player">player</option>
+              <option value="admin">admin</option>
+              <option value="judge">judge</option>
+            </select>
+          </label>
+          <label>
+            <span>{{ tl('状态') }}</span>
+            <select v-model="userStatusFilter">
+              <option value="">all</option>
+              <option value="active">active</option>
+              <option value="disabled">disabled</option>
+            </select>
+          </label>
+          <label>
+            <span>{{ tl('条数') }}</span>
+            <input v-model.number="userLimit" type="number" min="1" max="1000" />
+          </label>
+          <button class="ghost" type="button" @click="loadUsers" :disabled="loadingUsers">
+            {{ tl('应用筛选') }}
+          </button>
+        </div>
+      </details>
 
       <p v-if="userError" class="error">{{ userError }}</p>
 
       <table v-if="users.length > 0" class="scoreboard-table">
         <thead>
           <tr>
-            <th>用户名</th>
-            <th>邮箱</th>
-            <th>角色</th>
-            <th>状态</th>
-            <th>创建时间</th>
-            <th>操作</th>
+            <th>{{ tl('用户名') }}</th>
+            <th>{{ tl('邮箱') }}</th>
+            <th>{{ tl('角色') }}</th>
+            <th>{{ tl('状态') }}</th>
+            <th>{{ tl('创建时间') }}</th>
+            <th>{{ tl('操作') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -1291,7 +1593,20 @@
             <td>{{ item.status }}</td>
             <td>{{ formatTime(item.created_at) }}</td>
             <td>
-              <div class="actions-row">
+              <button
+                class="ghost"
+                type="button"
+                :disabled="
+                  updatingUserId === item.id ||
+                  resettingUserId === item.id ||
+                  updatingUserRoleId === item.id ||
+                  deletingUserAccountId === item.id
+                "
+                @click="selectedUserId = selectedUserId === item.id ? '' : item.id"
+              >
+                {{ selectedUserId === item.id ? tl('收起操作') : tl('管理该账号') }}
+              </button>
+              <div v-if="selectedUserId === item.id" class="actions-row user-actions-menu">
                 <button
                   class="ghost"
                   type="button"
@@ -1303,7 +1618,7 @@
                   "
                   @click="toggleUserStatus(item)"
                 >
-                  {{ item.status === "active" ? "禁用" : "启用" }}
+                  {{ item.status === "active" ? tl('禁用') : tl('启用') }}
                 </button>
                 <select
                   v-model="roleDrafts[item.id]"
@@ -1329,13 +1644,13 @@
                   "
                   @click="handleUpdateUserRole(item)"
                 >
-                  {{ updatingUserRoleId === item.id ? "更新中..." : "更新角色" }}
+                  {{ updatingUserRoleId === item.id ? tl('更新中...') : tl('更新角色') }}
                 </button>
                 <input
                   v-model="resetPasswords[item.id]"
                   type="password"
                   minlength="8"
-                  placeholder="新密码(>=8)"
+                  :placeholder="tl('新密码(>=8)')"
                 />
                 <button
                   class="primary"
@@ -1348,7 +1663,7 @@
                   "
                   @click="handleResetUserPassword(item)"
                 >
-                  {{ resettingUserId === item.id ? "重置中..." : "重置密码" }}
+                  {{ resettingUserId === item.id ? tl('重置中...') : tl('重置密码') }}
                 </button>
                 <button
                   class="danger"
@@ -1361,21 +1676,21 @@
                   "
                   @click="handleDeleteUserAccount(item)"
                 >
-                  {{ deletingUserAccountId === item.id ? "删除中..." : "删除账号" }}
+                  {{ deletingUserAccountId === item.id ? tl('删除中...') : tl('删除账号') }}
                 </button>
               </div>
             </td>
           </tr>
         </tbody>
       </table>
-      <p v-else class="muted">暂无用户记录。</p>
+      <p v-else class="muted">{{ tl('暂无用户记录。') }}</p>
     </section>
 
     <section v-if="adminModule === 'operations' && operationsSubTab === 'instances'" class="panel">
       <div class="row-between">
-        <h2>实例监控</h2>
+        <h2>{{ tl('实例监控') }}</h2>
         <label class="inline-check">
-          <span>状态过滤</span>
+          <span>{{ tl('状态过滤') }}</span>
           <select v-model="instanceFilter" @change="loadInstances">
             <option value="">all</option>
             <option value="creating">creating</option>
@@ -1392,13 +1707,13 @@
       <table v-if="instances.length > 0" class="scoreboard-table">
         <thead>
           <tr>
-            <th>比赛</th>
-            <th>队伍</th>
-            <th>题目</th>
-            <th>状态</th>
-            <th>子网</th>
-            <th>到期</th>
-            <th>操作</th>
+            <th>{{ tl('比赛') }}</th>
+            <th>{{ tl('队伍') }}</th>
+            <th>{{ tl('题目') }}</th>
+            <th>{{ tl('状态') }}</th>
+            <th>{{ tl('子网') }}</th>
+            <th>{{ tl('到期') }}</th>
+            <th>{{ tl('操作') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -1418,22 +1733,22 @@
               >
                 {{
                   loadingInstanceRuntimeMetricsId === item.id
-                    ? "加载中..."
+                    ? tl('加载中...')
                     : selectedInstanceId === item.id
-                      ? "刷新指标"
-                      : "查看指标"
+                      ? tl('刷新指标')
+                      : tl('查看指标')
                 }}
               </button>
             </td>
           </tr>
         </tbody>
       </table>
-      <p v-else class="muted">暂无实例记录。</p>
+      <p v-else class="muted">{{ tl('暂无实例记录。') }}</p>
 
       <section v-if="selectedInstanceRuntimeMetrics" class="instance-metrics-panel">
         <div class="row-between">
-          <h3>实例指标：{{ selectedInstance?.team_name ?? selectedInstanceRuntimeMetrics.instance.team_name }}</h3>
-          <span class="muted">更新于 {{ formatTime(selectedInstanceRuntimeMetrics.generated_at) }}</span>
+          <h3>{{ tl('实例指标：') }}{{ selectedInstance?.team_name ?? selectedInstanceRuntimeMetrics.instance.team_name }}</h3>
+          <span class="muted">{{ tl('更新于') }} {{ formatTime(selectedInstanceRuntimeMetrics.generated_at) }}</span>
         </div>
         <p class="muted mono">
           project={{ selectedInstanceRuntimeMetrics.instance.compose_project_name }} ·
@@ -1442,19 +1757,19 @@
 
         <div class="runtime-metrics">
           <article class="metric-card">
-            <h3>服务状态</h3>
-            <p>总服务 {{ selectedInstanceRuntimeMetrics.summary.services_total }}</p>
-            <p>运行中 {{ selectedInstanceRuntimeMetrics.summary.running_services }}</p>
-            <p>不健康 {{ selectedInstanceRuntimeMetrics.summary.unhealthy_services }}</p>
+            <h3>{{ tl('服务状态') }}</h3>
+            <p>{{ tl('总服务') }} {{ selectedInstanceRuntimeMetrics.summary.services_total }}</p>
+            <p>{{ tl('运行中') }} {{ selectedInstanceRuntimeMetrics.summary.running_services }}</p>
+            <p>{{ tl('不健康') }} {{ selectedInstanceRuntimeMetrics.summary.unhealthy_services }}</p>
           </article>
           <article class="metric-card">
-            <h3>资源汇总</h3>
-            <p>CPU 总计 {{ formatPercentValue(selectedInstanceRuntimeMetrics.summary.cpu_percent_total) }}</p>
+            <h3>{{ tl('资源汇总') }}</h3>
+            <p>{{ tl('CPU 总计') }} {{ formatPercentValue(selectedInstanceRuntimeMetrics.summary.cpu_percent_total) }}</p>
             <p>
-              内存 {{ formatResourceBytes(selectedInstanceRuntimeMetrics.summary.memory_usage_bytes_total) }} /
+              {{ tl('内存') }} {{ formatResourceBytes(selectedInstanceRuntimeMetrics.summary.memory_usage_bytes_total) }} /
               {{ formatResourceBytes(selectedInstanceRuntimeMetrics.summary.memory_limit_bytes_total) }}
             </p>
-            <p>重启中服务 {{ selectedInstanceRuntimeMetrics.summary.restarting_services }}</p>
+            <p>{{ tl('重启中服务') }} {{ selectedInstanceRuntimeMetrics.summary.restarting_services }}</p>
           </article>
         </div>
 
@@ -1469,11 +1784,11 @@
         <table v-if="selectedInstanceRuntimeMetrics.services.length > 0" class="scoreboard-table">
           <thead>
             <tr>
-              <th>服务</th>
-              <th>状态</th>
+              <th>{{ tl('服务') }}</th>
+              <th>{{ tl('状态') }}</th>
               <th>CPU</th>
-              <th>内存</th>
-              <th>网络 RX/TX</th>
+              <th>{{ tl('内存') }}</th>
+              <th>{{ tl('网络 RX/TX') }}</th>
               <th>IP</th>
             </tr>
           </thead>
@@ -1506,38 +1821,41 @@
 
     <section v-if="adminModule === 'audit'" class="panel">
       <div class="row-between">
-        <h2>审计日志</h2>
+        <h2>{{ tl('审计日志') }}</h2>
         <button class="ghost" type="button" @click="loadAuditLogs" :disabled="auditLoading">
-          {{ auditLoading ? "加载中..." : "刷新日志" }}
+          {{ auditLoading ? tl('加载中...') : tl('刷新日志') }}
         </button>
       </div>
 
-      <div class="actions-row">
-        <label>
-          <span>action</span>
-          <input v-model.trim="auditActionFilter" placeholder="如：admin.contest.create" />
-        </label>
-        <label>
-          <span>target_type</span>
-          <input v-model.trim="auditTargetTypeFilter" placeholder="如：contest" />
-        </label>
-        <label>
-          <span>条数</span>
-          <input v-model.number="auditLimit" type="number" min="1" max="1000" />
-        </label>
-        <button class="ghost" type="button" @click="loadAuditLogs" :disabled="auditLoading">
-          应用筛选
-        </button>
-      </div>
+      <details class="filter-sheet">
+        <summary>{{ tl('展开筛选条件') }}</summary>
+        <div class="actions-row filter-sheet-body">
+          <label>
+            <span>action</span>
+            <input v-model.trim="auditActionFilter" />
+          </label>
+          <label>
+            <span>target_type</span>
+            <input v-model.trim="auditTargetTypeFilter" />
+          </label>
+          <label>
+            <span>{{ tl('条数') }}</span>
+            <input v-model.number="auditLimit" type="number" min="1" max="1000" />
+          </label>
+          <button class="ghost" type="button" @click="loadAuditLogs" :disabled="auditLoading">
+            {{ tl('应用筛选') }}
+          </button>
+        </div>
+      </details>
 
       <p v-if="auditError" class="error">{{ auditError }}</p>
 
       <table v-if="auditLogs.length > 0" class="scoreboard-table">
         <thead>
           <tr>
-            <th>时间</th>
-            <th>操作人</th>
-            <th>角色</th>
+            <th>{{ tl('时间') }}</th>
+            <th>{{ tl('操作人') }}</th>
+            <th>{{ tl('角色') }}</th>
             <th>action</th>
             <th>target</th>
             <th>detail</th>
@@ -1554,22 +1872,26 @@
           </tr>
         </tbody>
       </table>
-      <p v-else class="muted">暂无审计记录。</p>
+      <p v-else class="muted">{{ tl('暂无审计记录。') }}</p>
     </section>
+      </div>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 
 import {
   ApiClientError,
   buildApiAssetUrl,
   createAdminChallenge,
+  createAdminChallengeCategory,
   createAdminContestAnnouncement,
   createAdminContest,
   acknowledgeAdminRuntimeAlert,
   deleteAdminChallenge,
+  deleteAdminChallengeCategory,
   deleteAdminChallengeAttachment,
   deleteAdminContest,
   deleteAdminContestAnnouncement,
@@ -1579,6 +1901,7 @@ import {
   getAdminInstanceRuntimeMetrics,
   getAdminRuntimeOverview,
   getAdminChallengeDetail,
+  listAdminChallengeCategories,
   listAdminRuntimeAlerts,
   listAdminChallengeRuntimeTemplateLint,
   listAdminChallengeAttachments,
@@ -1603,6 +1926,7 @@ import {
   updateAdminUserRole,
   updateAdminUserStatus,
   type AdminChallengeAttachmentItem,
+  type AdminChallengeCategoryItem,
   type AdminChallengeDetailItem,
   type AdminAuditLogItem,
   type AdminChallengeItem,
@@ -1620,18 +1944,461 @@ import {
   type AdminRuntimeOverview,
   type AdminUserItem,
   updateAdminChallenge,
+  updateAdminChallengeCategory,
   updateAdminContest,
   updateAdminContestStatus,
   updateAdminContestChallenge,
   upsertAdminContestChallenge
 } from "../api/client";
+import { useL10n } from "../composables/useL10n";
+import { renderMarkdownToHtml } from "../composables/useMarkdown";
 import { useAuthStore } from "../stores/auth";
 import { useUiStore } from "../stores/ui";
 
 const authStore = useAuthStore();
 const uiStore = useUiStore();
+const { locale, tr } = useL10n();
+
+const adminTextMap: Record<string, string> = {
+  "· 24h 提交": "· 24h submissions",
+  "· 30 分钟内到期": "· expiring within 30m",
+  "· 版本 v": "· version v",
+  "· 队伍": "· teams",
+  "· 题目": "· challenges",
+  "· 运行中": "· running",
+  "· 状态": "· status",
+  "· 最近": "· latest",
+  "按标题、slug、分类筛选": "Filter by title, slug, category",
+  "按标题、slug、状态筛选": "Filter by title, slug, status",
+  "版本/附件": "Version/Attachment",
+  "版本备注（可选）": "Version notes (optional)",
+  "版本号必须是大于等于 1 的整数": "Version number must be an integer greater than or equal to 1.",
+  "版本号非法": "Invalid version number",
+  "版本与附件：": "Versions & Files:",
+  "保存比赛失败": "Failed to save contest",
+  "保存题目失败": "Failed to save challenge",
+  "保存修改": "Save changes",
+  "保存中...": "Saving...",
+  "比赛": "Contests",
+  "比赛公告管理": "Contest Announcement Management",
+  "比赛管理": "Contest Management",
+  "比赛题目挂载": "Contest Challenge Bindings",
+  "比赛已创建": "Contest created",
+  "比赛已更新": "Contest updated",
+  "比赛已销毁": "Contest deleted",
+  "比赛与提交": "Contests & Submissions",
+  "比赛状态已更新": "Contest status updated",
+  "编辑": "edit",
+  "编辑比赛配置": "Edit match configuration",
+  "标记恢复": "mark recovery",
+  "标签（逗号分隔）": "Tags (comma separated)",
+  "标题": "title",
+  "标题或 slug": "title or slug",
+  "不健康": "Unhealthy",
+  "操作": "Actions",
+  "操作人": "Actor",
+  "草稿": "Draft",
+  "测试镜像（拉取+构建探测）": "Test image (pull + build probe)",
+  "测试中...": "Testing...",
+  "查看指标": "View metrics",
+  "场": "contests",
+  "撤回发布": "Withdraw publication",
+  "初始状态": "initial state",
+  "处理备注（可选）": "Process notes (optional)",
+  "处理中...": "Processing...",
+  "触发扫描": "trigger scan",
+  "触发运行告警扫描失败": "Failed to run runtime alert scan",
+  "创建公告": "Create announcement",
+  "创建公告失败": "Failed to create announcement",
+  "创建时间": "creation time",
+  "创建中...": "Creating...",
+  "从左侧选择一个比赛查看详情与状态操作。": "Select a contest on the left to view details and status actions.",
+  "从左侧选择一个告警查看详情。": "Select an alert on the left to view details.",
+  "从左侧选择一个公告查看详情。": "Select an announcement on the left to view details.",
+  "从左侧选择一个挂载题目查看详情。": "Select a bound challenge on the left to view details.",
+  "错误": "Error",
+  "当前比赛未挂载题目。": "No challenges are bound to this contest.",
+  "当前未设置海报。": "No posters are currently set.",
+  "到期": "Expires",
+  "动态衰减参数": "Dynamic attenuation parameters",
+  "队伍": "Team",
+  "发布": "Publish",
+  "发布时间（可选）": "Release time (optional)",
+  "发布时间已清除": "Release time cleared",
+  "访问模式": "access mode",
+  "分类": "Category",
+  "分值": "Points",
+  "封榜时间（可选）": "Closing time (optional)",
+  "服务": "Service",
+  "服务状态": "Service status",
+  "附件已删除": "Attachment deleted",
+  "附件已上传": "Attachment uploaded",
+  "该海报当前在比赛中心不可预览（仅 public 且 scheduled/running/ended 可见）。": "This poster is currently not visible in contest center (only when visibility is public and status is scheduled/running/ended).",
+  "该题将在比赛内即时可见。": "This challenge is now immediately visible in contest.",
+  "告警类型": "Alarm type",
+  "告警已恢复": "Alert resolved",
+  "告警已确认": "Alert acknowledged",
+  "更新比赛状态失败": "Failed to update contest status",
+  "更新公告失败": "Failed to update announcement",
+  "更新角色": "Update role",
+  "更新排序失败": "Failed to update sort",
+  "更新时间": "Update time",
+  "更新题目失败": "Failed to update challenge",
+  "更新用户角色失败": "Failed to update user role",
+  "更新用户状态失败": "Failed to update user status",
+  "更新于": "updated on",
+  "更新中...": "Updating...",
+  "公告标题": "Announcement title",
+  "公告列表": "Announcement list",
+  "公告内容": "Announcement content",
+  "公告内容不完整": "Announcement content incomplete",
+  "公告已保存。": "Announcement saved.",
+  "公告已撤回": "Announcement unpublished",
+  "公告已创建": "Announcement created",
+  "公告已发布": "Announcement published",
+  "公告已更新": "Announcement updated",
+  "公告已取消置顶": "Announcement unpinned",
+  "公告已删除": "Announcement deleted",
+  "公告已置顶": "Announcement pinned",
+  "公告置顶状态已更新": "Pin status updated",
+  "公告状态已更新": "Announcement status updated",
+  "挂载/更新题目": "Bind/Update Challenge",
+  "挂载成功": "Binding updated",
+  "挂载或更新": "Mount or update",
+  "挂载失败": "Binding failed",
+  "挂载已移除": "Binding removed",
+  "关键词": "keywords",
+  "管理该账号": "Manage this account",
+  "管理公告": "Manage announcements",
+  "管理台已刷新": "Admin console refreshed",
+  "管理题目挂载": "Manage challenge bindings",
+  "过期实例回收已执行": "Expired instance reaper executed",
+  "海报已删除": "Poster deleted",
+  "海报已上传": "Poster uploaded",
+  "恢复人：": "Restoration Person:",
+  "恢复运行告警失败": "Failed to resolve runtime alert",
+  "回滚版本号": "Rollback version number",
+  "回滚备注（可选）": "Rollback notes (optional)",
+  "回滚到该版本": "Roll back to this version",
+  "回滚题目版本失败": "Failed to rollback challenge version",
+  "回滚中...": "Rolling back...",
+  "回收中...": "Recycling...",
+  "积分模式": "Points mode",
+  "基础规模": "Base metrics",
+  "级别": "level",
+  "加载比赛失败": "Failed to load contests",
+  "加载到左侧表单": "Load to left form",
+  "加载公告失败": "Failed to load announcements",
+  "加载挂载失败": "Failed to load bindings",
+  "加载模板校验结果失败": "Failed to load template lint results",
+  "加载审计日志失败": "Failed to load audit logs",
+  "加载实例失败": "Failed to load instances",
+  "加载实例运行指标失败": "Failed to load instance metrics",
+  "加载题目版本失败": "Failed to load challenge versions",
+  "加载题目附件失败": "Failed to load challenge attachments",
+  "加载题目失败": "Failed to load challenges",
+  "加载题目详情失败": "Failed to load challenge details",
+  "加载用户列表失败": "Failed to load users",
+  "加载运行概览失败": "Failed to load runtime overview",
+  "加载运行告警失败": "Failed to load runtime alerts",
+  "加载中...": "loading...",
+  "角色": "Role",
+  "角色非法": "Invalid role",
+  "角色未变化": "Role unchanged",
+  "角色已更新": "Role updated",
+  "结果": "result",
+  "结束时间": "end time",
+  "仅错误": "only errors",
+  "禁用": "disabled",
+  "镜像": "Image",
+  "镜像仓库地址": "Image registry URL",
+  "镜像测试失败": "Image test failed",
+  "镜像测试通过": "Image test passed",
+  "镜像为空": "Image is empty",
+  "开始时间": "start time",
+  "可见性": "Visibility",
+  "可以继续挂载题目并调整状态。": "You can continue binding challenges and adjusting status.",
+  "可以继续管理版本、附件或挂载到比赛。": "You can continue with versions, attachments, or contest bindings.",
+  "快速筛选": "Quick filter",
+  "立即发布": "Publish immediately",
+  "没有匹配的比赛。": "No matching contests.",
+  "没有匹配的题目。": "No matching challenges.",
+  "密码过短": "Password too short",
+  "密码已重置": "Password reset",
+  "描述": "Description",
+  "描述（可选）": "Description (optional)",
+  "模板": "template",
+  "难度": "difficulty",
+  "内部端口": "internal port",
+  "内存": "Memory",
+  "内容": "content",
+  "排序": "sort",
+  "排序已更新": "Sort updated",
+  "启用": "enabled",
+  "清除发布时间": "Clear publishing time",
+  "清除发布时间失败": "Failed to clear release time",
+  "请先填写镜像仓库地址": "Please provide image registry address first.",
+  "请先选择海报文件": "Please select a poster file first.",
+  "请先选择要管理的题目": "Please select a challenge to manage first.",
+  "请先选择一个附件文件": "Please select an attachment file first.",
+  "请先在“赛事配置”中选择一个比赛。": "Please select a competition in \"Event Configuration\" first.",
+  "请先在“题库配置”中选择一个题目，再切换到版本管理。": "Please select a question in \"Question Bank Configuration\" first, and then switch to version management.",
+  "请先在中间列选择一个比赛。": "Please select a match in the middle column first.",
+  "请选择题目": "Select a challenge",
+  "取消编辑": "Cancel edit",
+  "取消置顶": "Unpin",
+  "确认告警": "Confirm alarm",
+  "确认人：": "Confirmed by:",
+  "确认运行告警失败": "Failed to acknowledge runtime alert",
+  "入口协议": "Entry protocol",
+  "赛事列表": "Contest list",
+  "扫描中...": "Scanning...",
+  "扫描总数": "Total number of scans",
+  "删除比赛海报失败": "Failed to delete contest poster",
+  "删除附件": "Delete attachment",
+  "删除公告": "Delete announcement",
+  "删除公告失败": "Failed to delete announcement",
+  "删除海报": "Delete poster",
+  "删除题目附件失败": "Failed to delete challenge attachment",
+  "删除账号": "Delete account",
+  "删除账号失败": "Failed to delete account",
+  "删除中...": "Deleting...",
+  "上传比赛海报": "Upload contest poster",
+  "上传比赛海报失败": "Failed to upload contest poster",
+  "上传附件": "Upload attachment",
+  "上传海报": "Upload poster",
+  "上传题目附件失败": "Failed to upload challenge attachment",
+  "上传中...": "Uploading...",
+  "上移": "move up",
+  "审计日志": "Audit log",
+  "失败": "Failed",
+  "时间": "time",
+  "实例监控": "Instance monitoring",
+  "实例健康": "Instance health",
+  "实例指标：": "Instance metrics:",
+  "收起操作": "Collapse operation",
+  "首次发现：": "First discovered:",
+  "刷新告警": "Refresh alerts",
+  "刷新日志": "Refresh logs",
+  "刷新失败": "Refresh failed",
+  "刷新校验": "Refresh lint",
+  "刷新用户": "Refresh users",
+  "刷新指标": "Refresh metrics",
+  "题解可见策略": "Visible strategies for solving problems",
+  "题解内容（可选）": "Solution content (optional)",
+  "题库概览": "Challenge Library Overview",
+  "题目": "Challenge",
+  "题目已创建": "Challenge created",
+  "题目已从当前比赛移除。": "Challenge removed from current contest.",
+  "题目已更新": "Challenge updated",
+  "题目已挂载/更新到当前比赛。": "Challenge bound/updated for the current contest.",
+  "题目已回滚": "Challenge rolled back",
+  "题目已销毁": "Challenge deleted",
+  "题目状态已更新": "Challenge status updated",
+  "题型": "Challenge type",
+  "条数": "Number of items",
+  "通过": "Passed",
+  "网络 RX/TX": "Network RX/TX",
+  "未登录或会话过期": "Not signed in or session expired",
+  "未发布": "Unpublished",
+  "未选择比赛": "No contest selected",
+  "未选择海报": "No poster selected",
+  "未选择题目": "No challenge selected",
+  "未选择文件": "No file selected",
+  "无法测试镜像": "Cannot test image",
+  "下线": "offline",
+  "下移": "move down",
+  "显示比赛操作菜单": "Show contest actions",
+  "显示告警操作菜单": "Show alert actions",
+  "显示公告操作菜单": "Show announcement actions",
+  "显示挂载操作菜单": "Show binding actions",
+  "显示题目操作菜单": "Show challenge actions",
+  "销毁": "destroy",
+  "销毁比赛": "Destroy the game",
+  "销毁比赛失败": "Failed to delete contest",
+  "销毁题目失败": "Failed to delete challenge",
+  "销毁中...": "Destroying...",
+  "校验": "check",
+  "心跳超时实例回收已执行": "Stale-heartbeat reaper executed",
+  "新密码(>=8)": "New password(>=8)",
+  "新密码至少需要 8 位字符": "New password must contain at least 8 characters.",
+  "信息": "information",
+  "选择并管理": "Select and manage",
+  "选择题目": "Select topic",
+  "移除挂载": "Remove mount",
+  "移除挂载失败": "Failed to remove binding",
+  "已挂载题目": "Questions have been mounted",
+  "已过期未销毁": "Expired but not destroyed",
+  "已选中": "selected",
+  "已载入比赛配置": "Contest config loaded",
+  "已载入题目配置": "Challenge config loaded",
+  "应用筛选": "Apply filters",
+  "用户": "user",
+  "用户管理": "User management",
+  "用户名": "username",
+  "用户名或邮箱": "Username or email",
+  "用户状态已更新": "User status updated",
+  "用于 ack / resolve 审计记录": "for ack / resolve audit records",
+  "邮箱": "Mail",
+  "运行概览": "Runtime Overview",
+  "运行告警": "Runtime Alerts",
+  "运行告警：过期实例未销毁": "Runtime alert: expired instance not destroyed",
+  "运行告警：实例即将到期": "Runtime alert: instance expiring soon",
+  "运行告警：实例失败": "Runtime alert: instance failure",
+  "运行告警扫描完成": "Runtime alert scan completed",
+  "运行模板校验": "Runtime template lint",
+  "运行模式": "Runtime mode",
+  "运行中": "Running",
+  "运行中比赛": "Running contests",
+  "暂无版本记录。": "There is no version record yet.",
+  "暂无附件。": "There are no attachments yet.",
+  "暂无公告。": "No announcement yet.",
+  "暂无匹配的模板校验记录。": "There is currently no matching template verification record.",
+  "暂无审计记录。": "There is no audit record yet.",
+  "暂无失败实例。": "There are no failed instances yet.",
+  "暂无实例记录。": "There is no instance record yet.",
+  "暂无用户记录。": "There is no user record yet.",
+  "暂无运行告警。": "There are no operational warnings yet.",
+  "展开筛选条件": "Expand filters",
+  "展示详细信息（JSON）": "Display details (JSON)",
+  "账号已删除": "Account deleted",
+  "正在准备编辑器...": "Preparing editor...",
+  "执行过期回收": "Execute expiration recycling",
+  "执行过期实例回收失败": "Failed to run expired instance reaper",
+  "执行回滚": "perform rollback",
+  "执行心跳超时回收": "Execute heartbeat timeout recycling",
+  "执行心跳超时实例回收失败": "Failed to run stale-heartbeat reaper",
+  "置顶": "pin to top",
+  "置顶公告": "Pinned announcement",
+  "重启中服务": "Restarting service",
+  "重置密码": "reset password",
+  "重置密码失败": "Failed to reset password",
+  "重置中...": "Resetting...",
+  "状态": "state",
+  "状态过滤": "Status filtering",
+  "资源汇总": "Resource summary",
+  "子网": "subnet",
+  "总服务": "Total services",
+  "总实例": "Total instances",
+  "总提交": "total commits",
+  "最近发现：": "Recently discovered:",
+  "最近回收：mode=": "Recent recycling: mode=",
+  "最近失败实例": "Recent failed instances",
+  "最新题目、比赛、实例、审计和运行概览已同步。": "Challenges, contests, instances, audit logs, and runtime overview are synced.",
+  "compose 模板（可选）": "compose template (optional)",
+  "compose（多容器）": "compose (multiple containers)",
+  "CPU 总计": "Total CPU",
+  "direct（直连入口）": "direct (direct entrance)",
+  "dynamic/internal 题型在 compose 模式下必须提供 compose 模板": "dynamic/internal challenges in compose mode require a compose template.",
+  "flag 模式": "flag mode",
+  "flag/哈希": "flag/hash",
+  "single_image 模式必须填写镜像仓库地址": "single_image mode requires an image registry address.",
+  "single_image 模式仅支持 dynamic 或 internal 题型": "single_image mode only supports dynamic/internal challenge types.",
+  "single_image 模式内部端口必须在 1~65535": "single_image internal port must be between 1 and 65535.",
+  "single_image（单镜像）": "single_image (single image)",
+  "ssh_bastion（默认）": "ssh_bastion (default)"
+};;;
+
+function tl(text: string): string {
+  if (locale.value === "zh") {
+    return text;
+  }
+  const exact = adminTextMap[text];
+  if (exact) {
+    return exact;
+  }
+  const editingMatch = text.match(/^正在编辑：(.+)$/);
+  if (editingMatch) {
+    return `Editing: ${editingMatch[1]}`;
+  }
+  const statusMatch = text.match(/^当前状态：(.+)$/);
+  if (statusMatch) {
+    return `Current status: ${statusMatch[1]}`;
+  }
+  const roleSetMatch = text.match(/^(.+) 已设为 (.+)。$/);
+  if (roleSetMatch) {
+    return `${roleSetMatch[1]} set to ${roleSetMatch[2]}.`;
+  }
+  const roleSameMatch = text.match(/^(.+) 当前角色仍为 (.+)。$/);
+  if (roleSameMatch) {
+    return `${roleSameMatch[1]} remains ${roleSameMatch[2]}.`;
+  }
+  const passwordResetMatch = text.match(/^(.+) 的密码已更新。$/);
+  if (passwordResetMatch) {
+    return `${passwordResetMatch[1]}'s password has been updated.`;
+  }
+  const rolledBackMatch = text.match(/^已回滚到版本 v(.+)\。$/);
+  if (rolledBackMatch) {
+    return `Rolled back to version v${rolledBackMatch[1]}.`;
+  }
+  const sortMatch = text.match(/^新排序值：(.+)$/);
+  if (sortMatch) {
+    return `New sort value: ${sortMatch[1]}`;
+  }
+  const deleteChallengeConfirm = text.match(
+    /^确认销毁题目「(.+)」？该操作会删除题目、挂载关系、提交记录与运行实例。$/
+  );
+  if (deleteChallengeConfirm) {
+    return `Delete challenge "${deleteChallengeConfirm[1]}"? This will remove the challenge, bindings, submissions, and instances.`;
+  }
+  const deleteContestPosterConfirm = text.match(/^确认删除比赛「(.+)」的海报？$/);
+  if (deleteContestPosterConfirm) {
+    return `Delete poster for contest "${deleteContestPosterConfirm[1]}"?`;
+  }
+  const deleteContestConfirm = text.match(
+    /^确认销毁比赛「(.+)」？该操作将删除比赛、公告、挂载、提交与实例数据。$/
+  );
+  if (deleteContestConfirm) {
+    return `Delete contest "${deleteContestConfirm[1]}"? This will remove contest, announcements, bindings, submissions, and instances.`;
+  }
+  const deleteUserConfirm = text.match(
+    /^确认删除账号「(.+)」？该操作会禁用并匿名化该账号。$/
+  );
+  if (deleteUserConfirm) {
+    return `Delete account "${deleteUserConfirm[1]}"? The account will be disabled and anonymized.`;
+  }
+  const runtimeScanSummary = text.match(/^新增\/更新 (.+)，自动恢复 (.+)，open (.+)。$/);
+  if (runtimeScanSummary) {
+    return `Upserted ${runtimeScanSummary[1]}, auto-resolved ${runtimeScanSummary[2]}, open ${runtimeScanSummary[3]}.`;
+  }
+  const reaperExpiredSummary = text.match(/^扫描 (.+)，回收 (.+)，失败 (.+)。$/);
+  if (reaperExpiredSummary) {
+    return `Scanned ${reaperExpiredSummary[1]}, reaped ${reaperExpiredSummary[2]}, failed ${reaperExpiredSummary[3]}.`;
+  }
+  const reaperStaleSummary = text.match(/^阈值 (.+) 秒，扫描 (.+)，回收 (.+)。$/);
+  if (reaperStaleSummary) {
+    return `Threshold ${reaperStaleSummary[1]}s, scanned ${reaperStaleSummary[2]}, reaped ${reaperStaleSummary[3]}.`;
+  }
+  const expiringSummary = text.match(
+    /^当前 (.+) 个实例将在 30 分钟内到期（新增 (.+) 个）。$/
+  );
+  if (expiringSummary) {
+    return `${expiringSummary[1]} instances expire within 30 minutes (${expiringSummary[2]} newly increased).`;
+  }
+  const expiredSummary = text.match(/^当前 (.+) 个已过期实例未销毁（新增 (.+) 个）。$/);
+  if (expiredSummary) {
+    return `${expiredSummary[1]} expired instances are not destroyed (${expiredSummary[2]} newly increased).`;
+  }
+  return text;
+}
+
+const notify = {
+  success(title: string, message: string, durationMs?: number) {
+    uiStore.success(tl(title), tl(message), durationMs);
+  },
+  error(title: string, message: string, durationMs?: number) {
+    uiStore.error(tl(title), tl(message), durationMs);
+  },
+  info(title: string, message: string, durationMs?: number) {
+    uiStore.info(tl(title), tl(message), durationMs);
+  },
+  warning(title: string, message: string, durationMs?: number) {
+    uiStore.warning(tl(title), tl(message), durationMs);
+  }
+};
 
 const challenges = ref<AdminChallengeItem[]>([]);
+const challengeCategories = ref<AdminChallengeCategoryItem[]>([]);
 const challengeVersions = ref<AdminChallengeVersionItem[]>([]);
 const challengeAttachments = ref<AdminChallengeAttachmentItem[]>([]);
 const challengeRuntimeLint = ref<AdminChallengeRuntimeLintResponse | null>(null);
@@ -1651,7 +2418,9 @@ const selectedBindingChallengeId = ref("");
 const selectedAnnouncementId = ref("");
 const selectedRuntimeAlertId = ref("");
 const selectedInstanceId = ref("");
+const selectedUserId = ref("");
 const editingChallengeId = ref("");
+const editingChallengeCategoryId = ref("");
 const editingContestId = ref("");
 const adminModule = ref<"challenges" | "contests" | "operations" | "users" | "audit">("challenges");
 const challengeSubTab = ref<"library" | "versions" | "lint">("library");
@@ -1660,6 +2429,7 @@ const operationsSubTab = ref<"runtime" | "alerts" | "instances">("runtime");
 
 const pageError = ref("");
 const challengeError = ref("");
+const challengeCategoryError = ref("");
 const challengeVersionError = ref("");
 const challengeAttachmentError = ref("");
 const challengeLintError = ref("");
@@ -1676,6 +2446,8 @@ const runtimeReaperError = ref("");
 
 const refreshing = ref(false);
 const creatingChallenge = ref(false);
+const savingChallengeCategory = ref(false);
+const deletingChallengeCategoryId = ref("");
 const creatingContest = ref(false);
 const updatingChallengeId = ref("");
 const destroyingChallengeId = ref("");
@@ -1727,9 +2499,15 @@ const auditTargetTypeFilter = ref("");
 const auditLimit = ref(200);
 const statusActions = ["draft", "scheduled", "running", "ended", "archived"];
 const RUNTIME_POLL_INTERVAL_MS = 20_000;
+type AnnouncementEditorMode = "edit" | "preview";
+type MarkdownSnippetPreset = "heading" | "bold" | "italic" | "link" | "code" | "list" | "quote";
 const resetPasswords = reactive<Record<string, string>>({});
 const roleDrafts = reactive<Record<string, string>>({});
 const announcementDrafts = reactive<Record<string, { title: string; content: string }>>({});
+const announcementCreateMode = ref<AnnouncementEditorMode>("edit");
+const announcementEditMode = ref<AnnouncementEditorMode>("edit");
+const announcementCreateTextareaRef = ref<HTMLTextAreaElement | null>(null);
+const announcementEditTextareaRef = ref<HTMLTextAreaElement | null>(null);
 const attachmentInputKey = ref(0);
 const selectedAttachmentFile = ref<File | null>(null);
 const contestPosterInputKey = ref(0);
@@ -1766,6 +2544,12 @@ const newChallenge = reactive({
   runtime_protocol: "http",
 });
 
+const challengeCategoryDraft = reactive({
+  slug: "",
+  display_name: "",
+  sort_order: 100
+});
+
 const rollbackForm = reactive({
   version_no: 1,
   change_note: ""
@@ -1784,6 +2568,97 @@ function isoToLocalInput(value: string) {
   return localInputValue(new Date(value));
 }
 
+function renderAnnouncementMarkdown(markdown: string) {
+  return renderMarkdownToHtml(markdown);
+}
+
+const markdownSnippetMap: Record<
+  MarkdownSnippetPreset,
+  { before: string; after: string; placeholder: string }
+> = {
+  heading: { before: "## ", after: "", placeholder: "小标题" },
+  bold: { before: "**", after: "**", placeholder: "重点内容" },
+  italic: { before: "*", after: "*", placeholder: "强调内容" },
+  link: { before: "[", after: "](https://example.com)", placeholder: "链接文本" },
+  code: { before: "`", after: "`", placeholder: "code" },
+  list: { before: "- ", after: "", placeholder: "列表项" },
+  quote: { before: "> ", after: "", placeholder: "引用内容" }
+};
+
+function getAnnouncementEditorContent(target: "create" | "edit"): string {
+  if (target === "create") {
+    return announcementForm.content;
+  }
+  return currentAnnouncementDraft.value?.content ?? "";
+}
+
+function setAnnouncementEditorContent(target: "create" | "edit", value: string): boolean {
+  if (target === "create") {
+    announcementForm.content = value;
+    return true;
+  }
+
+  const item = selectedAnnouncement.value;
+  if (!item || !announcementDrafts[item.id]) {
+    return false;
+  }
+
+  announcementDrafts[item.id].content = value;
+  return true;
+}
+
+async function insertMarkdownSnippet(target: "create" | "edit", preset: MarkdownSnippetPreset) {
+  if (target === "edit" && !currentAnnouncementDraft.value) {
+    return;
+  }
+
+  const snippet = markdownSnippetMap[preset];
+  if (!snippet) {
+    return;
+  }
+
+  if (target === "create" && announcementCreateMode.value !== "edit") {
+    announcementCreateMode.value = "edit";
+    await nextTick();
+  }
+  if (target === "edit" && announcementEditMode.value !== "edit") {
+    announcementEditMode.value = "edit";
+    await nextTick();
+  }
+
+  const textarea =
+    target === "create" ? announcementCreateTextareaRef.value : announcementEditTextareaRef.value;
+  const source = getAnnouncementEditorContent(target);
+
+  if (!textarea) {
+    const appendPrefix = source && !source.endsWith("\n") ? "\n" : "";
+    void setAnnouncementEditorContent(
+      target,
+      `${source}${appendPrefix}${snippet.before}${snippet.placeholder}${snippet.after}`
+    );
+    return;
+  }
+
+  const start = textarea.selectionStart ?? source.length;
+  const end = textarea.selectionEnd ?? source.length;
+  const selectedText = source.slice(start, end) || snippet.placeholder;
+  const nextValue =
+    source.slice(0, start) + snippet.before + selectedText + snippet.after + source.slice(end);
+
+  const updated = setAnnouncementEditorContent(target, nextValue);
+  if (!updated) {
+    return;
+  }
+
+  await nextTick();
+  const nextCursorStart = start + snippet.before.length;
+  const nextCursorEnd = nextCursorStart + selectedText.length;
+  const activeTextarea =
+    target === "create" ? announcementCreateTextareaRef.value : announcementEditTextareaRef.value;
+  activeTextarea?.focus();
+  activeTextarea?.setSelectionRange(nextCursorStart, nextCursorEnd);
+}
+
 const now = new Date();
 const defaultStart = localInputValue(new Date(now.getTime() + 30 * 60_000));
 const defaultEnd = localInputValue(new Date(now.getTime() + 3 * 60 * 60_000));
@@ -1796,6 +2671,9 @@ const newContest = reactive({
   status: "draft",
   scoring_mode: "static",
   dynamic_decay: 20,
+  first_blood_bonus_percent: 10,
+  second_blood_bonus_percent: 5,
+  third_blood_bonus_percent: 2,
   start_at: defaultStart,
   end_at: defaultEnd,
   freeze_at: ""
@@ -1830,6 +2708,16 @@ const selectedAnnouncement = computed(() => {
   return contestAnnouncements.value.find((item) => item.id === selectedAnnouncementId.value) ?? null;
 });
 
+const currentAnnouncementDraft = computed(() => {
+  const item = selectedAnnouncement.value;
+  if (!item) {
+    return null;
+  }
+  return announcementDrafts[item.id] ?? null;
+});
+
+const currentAnnouncementDraftContent = computed(() => currentAnnouncementDraft.value?.content ?? "");
+
 const selectedRuntimeAlert = computed(() => {
   return runtimeAlerts.value.find((item) => item.id === selectedRuntimeAlertId.value) ?? null;
 });
@@ -1840,6 +2728,36 @@ const selectedInstance = computed(() => {
 
 const challengeLintItems = computed<AdminChallengeRuntimeLintItem[]>(() => {
   return challengeRuntimeLint.value?.items ?? [];
+});
+
+const sortedChallengeCategories = computed(() => {
+  const rows = [...challengeCategories.value];
+  rows.sort((a, b) => {
+    if (a.sort_order !== b.sort_order) {
+      return a.sort_order - b.sort_order;
+    }
+    return a.slug.localeCompare(b.slug);
+  });
+  return rows;
+});
+
+const challengeCategoryOptions = computed(() => {
+  const options = [...sortedChallengeCategories.value];
+  if (
+    newChallenge.category &&
+    !options.some((item) => item.slug === newChallenge.category)
+  ) {
+    options.push({
+      id: `legacy-${newChallenge.category}`,
+      slug: newChallenge.category,
+      display_name: newChallenge.category,
+      sort_order: 999_999,
+      is_builtin: false,
+      created_at: "",
+      updated_at: ""
+    });
+  }
+  return options;
 });
 
 const filteredChallenges = computed(() => {
@@ -1877,29 +2795,30 @@ const filteredContests = computed(() => {
 });
 
 const challengeFormTitle = computed(() => {
-  return editingChallengeId.value ? "编辑题目" : "创建题目";
+  return editingChallengeId.value ? tr("编辑题目", "Edit Challenge") : tr("创建题目", "Create Challenge");
 });
 
 const challengeSubmitLabel = computed(() => {
   if (creatingChallenge.value) {
-    return editingChallengeId.value ? "保存中..." : "创建中...";
+    return editingChallengeId.value ? tr("保存中...", "Saving...") : tr("创建中...", "Creating...");
   }
-  return editingChallengeId.value ? "保存修改" : "创建题目";
+  return editingChallengeId.value ? tr("保存修改", "Save changes") : tr("创建题目", "Create challenge");
 });
 
 const contestFormTitle = computed(() => {
-  return editingContestId.value ? "编辑比赛" : "创建比赛";
+  return editingContestId.value ? tr("编辑比赛", "Edit Contest") : tr("创建比赛", "Create Contest");
 });
 
 const contestSubmitLabel = computed(() => {
   if (creatingContest.value) {
-    return editingContestId.value ? "保存中..." : "创建中...";
+    return editingContestId.value ? tr("保存中...", "Saving...") : tr("创建中...", "Creating...");
   }
-  return editingContestId.value ? "保存修改" : "创建比赛";
+  return editingContestId.value ? tr("保存修改", "Save changes") : tr("创建比赛", "Create contest");
 });
 
 function formatTime(input: string) {
-  return new Date(input).toLocaleString();
+  const localeTag = locale.value === "en" ? "en-US" : "zh-CN";
+  return new Date(input).toLocaleString(localeTag);
 }
 
 function formatAuditDetail(detail: Record<string, unknown>) {
@@ -1938,7 +2857,7 @@ function resetChallengeForm() {
   editingChallengeId.value = "";
   newChallenge.title = "";
   newChallenge.slug = "";
-  newChallenge.category = "web";
+  newChallenge.category = sortedChallengeCategories.value[0]?.slug ?? "web";
   newChallenge.description = "";
   newChallenge.difficulty = "normal";
   newChallenge.static_score = 100;
@@ -1969,6 +2888,9 @@ function resetContestForm() {
   newContest.status = "draft";
   newContest.scoring_mode = "static";
   newContest.dynamic_decay = 20;
+  newContest.first_blood_bonus_percent = 10;
+  newContest.second_blood_bonus_percent = 5;
+  newContest.third_blood_bonus_percent = 2;
   newContest.start_at = defaultStart;
   newContest.end_at = defaultEnd;
   newContest.freeze_at = "";
@@ -2030,6 +2952,9 @@ function applyContestToForm(item: AdminContestItem) {
   newContest.status = item.status;
   newContest.scoring_mode = item.scoring_mode;
   newContest.dynamic_decay = item.dynamic_decay;
+  newContest.first_blood_bonus_percent = item.first_blood_bonus_percent;
+  newContest.second_blood_bonus_percent = item.second_blood_bonus_percent;
+  newContest.third_blood_bonus_percent = item.third_blood_bonus_percent;
   newContest.start_at = isoToLocalInput(item.start_at);
   newContest.end_at = isoToLocalInput(item.end_at);
   newContest.freeze_at = item.freeze_at ? isoToLocalInput(item.freeze_at) : "";
@@ -2137,9 +3062,136 @@ function fileToBase64(file: File): Promise<string> {
 
 function accessTokenOrThrow() {
   if (!authStore.accessToken) {
-    throw new ApiClientError("未登录或会话过期", "unauthorized");
+    throw new ApiClientError(tl("未登录或会话过期"), "unauthorized");
   }
   return authStore.accessToken;
+}
+
+function resetChallengeCategoryDraft() {
+  editingChallengeCategoryId.value = "";
+  challengeCategoryDraft.slug = "";
+  challengeCategoryDraft.display_name = "";
+  challengeCategoryDraft.sort_order = 100;
+}
+
+function loadChallengeCategoryIntoDraft(item: AdminChallengeCategoryItem) {
+  editingChallengeCategoryId.value = item.id;
+  challengeCategoryDraft.slug = item.slug;
+  challengeCategoryDraft.display_name = item.display_name;
+  challengeCategoryDraft.sort_order = item.sort_order;
+  challengeCategoryError.value = "";
+}
+
+async function loadChallengeCategories(options?: { silentError?: boolean }) {
+  challengeCategoryError.value = "";
+  try {
+    challengeCategories.value = await listAdminChallengeCategories(accessTokenOrThrow());
+    if (
+      challengeCategories.value.length > 0 &&
+      !challengeCategories.value.some((item) => item.slug === newChallenge.category)
+    ) {
+      newChallenge.category = sortedChallengeCategories.value[0].slug;
+    }
+  } catch (err) {
+    challengeCategoryError.value =
+      err instanceof ApiClientError ? err.message : tr("加载题目类别失败", "Failed to load challenge categories");
+    if (!options?.silentError) {
+      uiStore.error(tr("加载题目类别失败", "Failed to load challenge categories"), challengeCategoryError.value);
+    }
+  }
+}
+
+async function handleSaveChallengeCategory() {
+  const slug = challengeCategoryDraft.slug.trim().toLowerCase();
+  const displayName = challengeCategoryDraft.display_name.trim();
+  const sortOrder = Number.isFinite(challengeCategoryDraft.sort_order)
+    ? Math.floor(challengeCategoryDraft.sort_order)
+    : 100;
+  const previousSlug =
+    editingChallengeCategoryId.value
+      ? challengeCategories.value.find((item) => item.id === editingChallengeCategoryId.value)
+          ?.slug ?? ""
+      : "";
+  if (!slug) {
+    challengeCategoryError.value = tr("请填写类别 slug。", "Please provide a category slug.");
+    uiStore.warning(tr("类别保存失败", "Category save failed"), challengeCategoryError.value);
+    return;
+  }
+
+  savingChallengeCategory.value = true;
+  challengeCategoryError.value = "";
+
+  try {
+    if (editingChallengeCategoryId.value) {
+      const updated = await updateAdminChallengeCategory(
+        editingChallengeCategoryId.value,
+        {
+          slug,
+          display_name: displayName || undefined,
+          sort_order: sortOrder
+        },
+        accessTokenOrThrow()
+      );
+      if (previousSlug && newChallenge.category === previousSlug) {
+        newChallenge.category = updated.slug;
+      }
+      uiStore.success(tr("类别已更新", "Category updated"), updated.slug, 2000);
+    } else {
+      const created = await createAdminChallengeCategory(
+        {
+          slug,
+          display_name: displayName || undefined,
+          sort_order: sortOrder
+        },
+        accessTokenOrThrow()
+      );
+      newChallenge.category = created.slug;
+      uiStore.success(tr("类别已创建", "Category created"), created.slug, 2000);
+    }
+    resetChallengeCategoryDraft();
+    await loadChallengeCategories({ silentError: true });
+  } catch (err) {
+    challengeCategoryError.value =
+      err instanceof ApiClientError ? err.message : tr("保存题目类别失败", "Failed to save challenge category");
+    uiStore.error(tr("保存题目类别失败", "Failed to save challenge category"), challengeCategoryError.value);
+  } finally {
+    savingChallengeCategory.value = false;
+  }
+}
+
+async function handleDeleteChallengeCategory(item: AdminChallengeCategoryItem) {
+  if (
+    !window.confirm(
+      tr(
+        `确认删除题目类别「${item.display_name}」？`,
+        `Delete challenge category "${item.display_name}"?`
+      )
+    )
+  ) {
+    return;
+  }
+
+  deletingChallengeCategoryId.value = item.id;
+  challengeCategoryError.value = "";
+
+  try {
+    await deleteAdminChallengeCategory(item.id, accessTokenOrThrow());
+    if (newChallenge.category === item.slug) {
+      const fallback = sortedChallengeCategories.value.find((category) => category.slug !== item.slug);
+      newChallenge.category = fallback?.slug ?? "";
+    }
+    if (editingChallengeCategoryId.value === item.id) {
+      resetChallengeCategoryDraft();
+    }
+    await loadChallengeCategories({ silentError: true });
+    uiStore.warning(tr("类别已删除", "Category removed"), item.slug, 2000);
+  } catch (err) {
+    challengeCategoryError.value =
+      err instanceof ApiClientError ? err.message : tr("删除题目类别失败", "Failed to delete challenge category");
+    uiStore.error(tr("删除题目类别失败", "Failed to delete challenge category"), challengeCategoryError.value);
+  } finally {
+    deletingChallengeCategoryId.value = "";
+  }
 }
 
 function shrinkFailureAlertCache(maxSize: number) {
@@ -2171,7 +3223,7 @@ function emitRuntimeAlerts(overview: AdminRuntimeOverview) {
     }
 
     seenRuntimeFailureKeys.add(key);
-    uiStore.error(
+    notify.error(
       "运行告警：实例失败",
       `${item.contest_title} / ${item.team_name} / ${item.challenge_title}（${item.status}）`,
       6500
@@ -2181,7 +3233,7 @@ function emitRuntimeAlerts(overview: AdminRuntimeOverview) {
 
   if (overview.instances_expiring_within_30m > lastExpiringWithin30mCount.value) {
     const increased = overview.instances_expiring_within_30m - lastExpiringWithin30mCount.value;
-    uiStore.warning(
+    notify.warning(
       "运行告警：实例即将到期",
       `当前 ${overview.instances_expiring_within_30m} 个实例将在 30 分钟内到期（新增 ${increased} 个）。`,
       5000
@@ -2191,7 +3243,7 @@ function emitRuntimeAlerts(overview: AdminRuntimeOverview) {
   if (overview.instances_expired_not_destroyed > lastExpiredNotDestroyedCount.value) {
     const increased =
       overview.instances_expired_not_destroyed - lastExpiredNotDestroyedCount.value;
-    uiStore.warning(
+    notify.warning(
       "运行告警：过期实例未销毁",
       `当前 ${overview.instances_expired_not_destroyed} 个已过期实例未销毁（新增 ${increased} 个）。`,
       5000
@@ -2215,8 +3267,8 @@ async function loadChallenges() {
       }
     }
   } catch (err) {
-    challengeError.value = err instanceof ApiClientError ? err.message : "加载题目失败";
-    uiStore.error("加载题目失败", challengeError.value);
+    challengeError.value = err instanceof ApiClientError ? err.message : tl("加载题目失败");
+    notify.error("加载题目失败", challengeError.value);
   }
 }
 
@@ -2234,8 +3286,8 @@ async function loadChallengeVersions() {
       { limit: 50 }
     );
   } catch (err) {
-    challengeVersionError.value = err instanceof ApiClientError ? err.message : "加载题目版本失败";
-    uiStore.error("加载题目版本失败", challengeVersionError.value);
+    challengeVersionError.value = err instanceof ApiClientError ? err.message : tl("加载题目版本失败");
+    notify.error("加载题目版本失败", challengeVersionError.value);
   }
 }
 
@@ -2254,8 +3306,8 @@ async function loadChallengeAttachments() {
     );
   } catch (err) {
     challengeAttachmentError.value =
-      err instanceof ApiClientError ? err.message : "加载题目附件失败";
-    uiStore.error("加载题目附件失败", challengeAttachmentError.value);
+      err instanceof ApiClientError ? err.message : tl("加载题目附件失败");
+    notify.error("加载题目附件失败", challengeAttachmentError.value);
   }
 }
 
@@ -2277,9 +3329,9 @@ async function loadChallengeRuntimeLint(options?: { silentError?: boolean }) {
       }
     );
   } catch (err) {
-    challengeLintError.value = err instanceof ApiClientError ? err.message : "加载模板校验结果失败";
+    challengeLintError.value = err instanceof ApiClientError ? err.message : tl("加载模板校验结果失败");
     if (!options?.silentError) {
-      uiStore.error("加载模板校验结果失败", challengeLintError.value);
+      notify.error("加载模板校验结果失败", challengeLintError.value);
     }
   } finally {
     loadingChallengeRuntimeLint.value = false;
@@ -2300,8 +3352,8 @@ async function loadContests() {
       selectedContestId.value = contests.value[0].id;
     }
   } catch (err) {
-    contestError.value = err instanceof ApiClientError ? err.message : "加载比赛失败";
-    uiStore.error("加载比赛失败", contestError.value);
+    contestError.value = err instanceof ApiClientError ? err.message : tl("加载比赛失败");
+    notify.error("加载比赛失败", contestError.value);
   }
 }
 
@@ -2330,8 +3382,8 @@ async function loadContestBindings() {
       selectedBindingChallengeId.value = rows[0].challenge_id;
     }
   } catch (err) {
-    bindingError.value = err instanceof ApiClientError ? err.message : "加载挂载失败";
-    uiStore.error("加载挂载失败", bindingError.value);
+    bindingError.value = err instanceof ApiClientError ? err.message : tl("加载挂载失败");
+    notify.error("加载挂载失败", bindingError.value);
   }
 }
 
@@ -2371,8 +3423,8 @@ async function loadContestAnnouncements() {
       }
     }
   } catch (err) {
-    announcementError.value = err instanceof ApiClientError ? err.message : "加载公告失败";
-    uiStore.error("加载公告失败", announcementError.value);
+    announcementError.value = err instanceof ApiClientError ? err.message : tl("加载公告失败");
+    notify.error("加载公告失败", announcementError.value);
   }
 }
 
@@ -2399,8 +3451,8 @@ async function loadInstances() {
       await loadInstanceRuntimeMetrics(selectedInstanceId.value, { silentError: true });
     }
   } catch (err) {
-    instanceError.value = err instanceof ApiClientError ? err.message : "加载实例失败";
-    uiStore.error("加载实例失败", instanceError.value);
+    instanceError.value = err instanceof ApiClientError ? err.message : tl("加载实例失败");
+    notify.error("加载实例失败", instanceError.value);
   }
 }
 
@@ -2418,10 +3470,10 @@ async function loadInstanceRuntimeMetrics(
       accessTokenOrThrow()
     );
   } catch (err) {
-    const message = err instanceof ApiClientError ? err.message : "加载实例运行指标失败";
+    const message = err instanceof ApiClientError ? err.message : tl("加载实例运行指标失败");
     if (!options?.silentError) {
       instanceError.value = message;
-      uiStore.error("加载实例运行指标失败", message);
+      notify.error("加载实例运行指标失败", message);
     }
   } finally {
     loadingInstanceRuntimeMetricsId.value = "";
@@ -2443,9 +3495,13 @@ async function loadUsers() {
     for (const item of users.value) {
       roleDrafts[item.id] = item.role;
     }
+
+    if (selectedUserId.value && !users.value.some((item) => item.id === selectedUserId.value)) {
+      selectedUserId.value = "";
+    }
   } catch (err) {
-    userError.value = err instanceof ApiClientError ? err.message : "加载用户列表失败";
-    uiStore.error("加载用户列表失败", userError.value);
+    userError.value = err instanceof ApiClientError ? err.message : tl("加载用户列表失败");
+    notify.error("加载用户列表失败", userError.value);
   } finally {
     loadingUsers.value = false;
   }
@@ -2464,9 +3520,9 @@ async function loadRuntimeOverview(options?: { silentError?: boolean }) {
 
     runtimeOverview.value = overview;
   } catch (err) {
-    runtimeError.value = err instanceof ApiClientError ? err.message : "加载运行概览失败";
+    runtimeError.value = err instanceof ApiClientError ? err.message : tl("加载运行概览失败");
     if (!options?.silentError) {
-      uiStore.error("加载运行概览失败", runtimeError.value);
+      notify.error("加载运行概览失败", runtimeError.value);
     }
   }
 }
@@ -2501,9 +3557,9 @@ async function loadRuntimeAlerts(options?: { silentError?: boolean; keepSelectio
 
     selectedRuntimeAlertId.value = rows[0].id;
   } catch (err) {
-    runtimeAlertError.value = err instanceof ApiClientError ? err.message : "加载运行告警失败";
+    runtimeAlertError.value = err instanceof ApiClientError ? err.message : tl("加载运行告警失败");
     if (!options?.silentError) {
-      uiStore.error("加载运行告警失败", runtimeAlertError.value);
+      notify.error("加载运行告警失败", runtimeAlertError.value);
     }
   } finally {
     loadingRuntimeAlerts.value = false;
@@ -2529,14 +3585,14 @@ async function handleScanRuntimeAlerts() {
       loadRuntimeAlerts({ silentError: true, keepSelection: true }),
       loadRuntimeOverview({ silentError: true })
     ]);
-    uiStore.success(
+    notify.success(
       "运行告警扫描完成",
       `新增/更新 ${summary.upserted}，自动恢复 ${summary.auto_resolved}，open ${summary.open_count}。`,
       3200
     );
   } catch (err) {
-    runtimeAlertError.value = err instanceof ApiClientError ? err.message : "触发运行告警扫描失败";
-    uiStore.error("触发运行告警扫描失败", runtimeAlertError.value);
+    runtimeAlertError.value = err instanceof ApiClientError ? err.message : tl("触发运行告警扫描失败");
+    notify.error("触发运行告警扫描失败", runtimeAlertError.value);
   } finally {
     runtimeAlertScanBusy.value = false;
   }
@@ -2554,15 +3610,15 @@ async function handleRunExpiredReaper() {
       loadRuntimeOverview({ silentError: true }),
       loadRuntimeAlerts({ silentError: true, keepSelection: true })
     ]);
-    uiStore.success(
+    notify.success(
       "过期实例回收已执行",
       `扫描 ${result.scanned}，回收 ${result.reaped}，失败 ${result.failed}。`,
       3600
     );
   } catch (err) {
     runtimeReaperError.value =
-      err instanceof ApiClientError ? err.message : "执行过期实例回收失败";
-    uiStore.error("执行过期实例回收失败", runtimeReaperError.value);
+      err instanceof ApiClientError ? err.message : tl("执行过期实例回收失败");
+    notify.error("执行过期实例回收失败", runtimeReaperError.value);
   } finally {
     runtimeReaperBusy.value = "";
   }
@@ -2580,15 +3636,15 @@ async function handleRunStaleReaper() {
       loadRuntimeOverview({ silentError: true }),
       loadRuntimeAlerts({ silentError: true, keepSelection: true })
     ]);
-    uiStore.success(
+    notify.success(
       "心跳超时实例回收已执行",
       `阈值 ${result.heartbeat_stale_seconds ?? "-"} 秒，扫描 ${result.scanned}，回收 ${result.reaped}。`,
       3800
     );
   } catch (err) {
     runtimeReaperError.value =
-      err instanceof ApiClientError ? err.message : "执行心跳超时实例回收失败";
-    uiStore.error("执行心跳超时实例回收失败", runtimeReaperError.value);
+      err instanceof ApiClientError ? err.message : tl("执行心跳超时实例回收失败");
+    notify.error("执行心跳超时实例回收失败", runtimeReaperError.value);
   } finally {
     runtimeReaperBusy.value = "";
   }
@@ -2606,10 +3662,10 @@ async function handleAcknowledgeRuntimeAlert(item: AdminRuntimeAlertItem) {
     await acknowledgeAdminRuntimeAlert(item.id, accessTokenOrThrow(), runtimeAlertNotePayload());
     await loadRuntimeAlerts({ keepSelection: true });
     runtimeAlertActionNote.value = "";
-    uiStore.info("告警已确认", item.title);
+    notify.info("告警已确认", item.title);
   } catch (err) {
-    runtimeAlertError.value = err instanceof ApiClientError ? err.message : "确认运行告警失败";
-    uiStore.error("确认运行告警失败", runtimeAlertError.value);
+    runtimeAlertError.value = err instanceof ApiClientError ? err.message : tl("确认运行告警失败");
+    notify.error("确认运行告警失败", runtimeAlertError.value);
   } finally {
     runtimeAlertUpdatingId.value = "";
   }
@@ -2627,10 +3683,10 @@ async function handleResolveRuntimeAlert(item: AdminRuntimeAlertItem) {
     await resolveAdminRuntimeAlert(item.id, accessTokenOrThrow(), runtimeAlertNotePayload());
     await loadRuntimeAlerts({ keepSelection: true });
     runtimeAlertActionNote.value = "";
-    uiStore.success("告警已恢复", item.title);
+    notify.success("告警已恢复", item.title);
   } catch (err) {
-    runtimeAlertError.value = err instanceof ApiClientError ? err.message : "恢复运行告警失败";
-    uiStore.error("恢复运行告警失败", runtimeAlertError.value);
+    runtimeAlertError.value = err instanceof ApiClientError ? err.message : tl("恢复运行告警失败");
+    notify.error("恢复运行告警失败", runtimeAlertError.value);
   } finally {
     runtimeAlertUpdatingId.value = "";
   }
@@ -2647,8 +3703,8 @@ async function loadAuditLogs() {
       limit: Number.isFinite(auditLimit.value) ? Math.max(1, Math.min(1000, auditLimit.value)) : 200
     });
   } catch (err) {
-    auditError.value = err instanceof ApiClientError ? err.message : "加载审计日志失败";
-    uiStore.error("加载审计日志失败", auditError.value);
+    auditError.value = err instanceof ApiClientError ? err.message : tl("加载审计日志失败");
+    notify.error("加载审计日志失败", auditError.value);
   } finally {
     auditLoading.value = false;
   }
@@ -2660,6 +3716,7 @@ async function refreshAll() {
 
   try {
     await Promise.all([
+      loadChallengeCategories(),
       loadChallenges(),
       loadContests(),
       loadInstances(),
@@ -2672,10 +3729,10 @@ async function refreshAll() {
     if (selectedChallengeId.value) {
       await Promise.all([loadChallengeVersions(), loadChallengeAttachments()]);
     }
-    uiStore.success("管理台已刷新", "最新题目、比赛、实例、审计和运行概览已同步。", 2400);
+    notify.success("管理台已刷新", "最新题目、比赛、实例、审计和运行概览已同步。", 2400);
   } catch (err) {
-    pageError.value = err instanceof ApiClientError ? err.message : "刷新失败";
-    uiStore.error("刷新失败", pageError.value);
+    pageError.value = err instanceof ApiClientError ? err.message : tl("刷新失败");
+    notify.error("刷新失败", pageError.value);
   } finally {
     refreshing.value = false;
   }
@@ -2689,10 +3746,10 @@ async function handleLoadChallengeForEdit(challengeId: string) {
     const detail = await getAdminChallengeDetail(challengeId, accessTokenOrThrow());
     applyChallengeDetailToForm(detail);
     challengeRuntimeImageTestResult.value = null;
-    uiStore.info("已载入题目配置", `正在编辑：${detail.title}`);
+    notify.info("已载入题目配置", `正在编辑：${detail.title}`);
   } catch (err) {
-    challengeError.value = err instanceof ApiClientError ? err.message : "加载题目详情失败";
-    uiStore.error("加载题目详情失败", challengeError.value);
+    challengeError.value = err instanceof ApiClientError ? err.message : tl("加载题目详情失败");
+    notify.error("加载题目详情失败", challengeError.value);
   }
 }
 
@@ -2705,14 +3762,14 @@ async function handleTestChallengeRuntimeImage() {
   challengeRuntimeImageTestResult.value = null;
 
   if (newChallenge.runtime_mode !== "single_image") {
-    challengeImageTestError.value = "仅 single_image 模式支持镜像测试";
-    uiStore.warning("无法测试镜像", challengeImageTestError.value);
+    challengeImageTestError.value = tl("仅 single_image 模式支持镜像测试");
+    notify.warning("无法测试镜像", challengeImageTestError.value);
     return;
   }
 
   if (!newChallenge.runtime_image.trim()) {
-    challengeImageTestError.value = "请先填写镜像仓库地址";
-    uiStore.warning("镜像为空", challengeImageTestError.value);
+    challengeImageTestError.value = tl("请先填写镜像仓库地址");
+    notify.warning("镜像为空", challengeImageTestError.value);
     return;
   }
 
@@ -2728,13 +3785,13 @@ async function handleTestChallengeRuntimeImage() {
     );
     challengeRuntimeImageTestResult.value = result;
     if (result.succeeded) {
-      uiStore.success("镜像测试通过", result.image);
+      notify.success("镜像测试通过", result.image);
     } else {
-      uiStore.warning("镜像测试失败", result.image);
+      notify.warning("镜像测试失败", result.image);
     }
   } catch (err) {
-    challengeImageTestError.value = err instanceof ApiClientError ? err.message : "镜像测试失败";
-    uiStore.error("镜像测试失败", challengeImageTestError.value);
+    challengeImageTestError.value = err instanceof ApiClientError ? err.message : tl("镜像测试失败");
+    notify.error("镜像测试失败", challengeImageTestError.value);
   } finally {
     testingChallengeRuntimeImage.value = false;
   }
@@ -2748,7 +3805,7 @@ async function handleCreateChallenge() {
     const isEditMode = !!editingChallengeId.value;
     if (newChallenge.runtime_mode === "single_image") {
       if (!newChallenge.runtime_image.trim()) {
-        challengeError.value = "single_image 模式必须填写镜像仓库地址";
+        challengeError.value = tl("single_image 模式必须填写镜像仓库地址");
         return;
       }
       if (
@@ -2756,11 +3813,11 @@ async function handleCreateChallenge() {
         newChallenge.runtime_internal_port < 1 ||
         newChallenge.runtime_internal_port > 65535
       ) {
-        challengeError.value = "single_image 模式内部端口必须在 1~65535";
+        challengeError.value = tl("single_image 模式内部端口必须在 1~65535");
         return;
       }
       if (newChallenge.challenge_type === "static") {
-        challengeError.value = "single_image 模式仅支持 dynamic 或 internal 题型";
+        challengeError.value = tl("single_image 模式仅支持 dynamic 或 internal 题型");
         return;
       }
     }
@@ -2770,16 +3827,21 @@ async function handleCreateChallenge() {
       (newChallenge.challenge_type === "dynamic" || newChallenge.challenge_type === "internal") &&
       !newChallenge.compose_template.trim()
     ) {
-      challengeError.value = "dynamic/internal 题型在 compose 模式下必须提供 compose 模板";
+      challengeError.value = tl("dynamic/internal 题型在 compose 模式下必须提供 compose 模板");
       return;
     }
 
     const runtimeMetadata = buildChallengeRuntimeMetadata();
+    const selectedCategory = newChallenge.category.trim().toLowerCase();
+    if (!selectedCategory) {
+      challengeError.value = tr("请选择题目类别。", "Please select a challenge category.");
+      return;
+    }
 
     const payload = {
       title: newChallenge.title,
       slug: newChallenge.slug,
-      category: newChallenge.category,
+      category: selectedCategory,
       description: newChallenge.description || undefined,
       difficulty: newChallenge.difficulty,
       static_score: newChallenge.static_score,
@@ -2807,13 +3869,13 @@ async function handleCreateChallenge() {
     resetChallengeForm();
 
     await loadChallenges();
-    uiStore.success(
+    notify.success(
       isEditMode ? "题目已更新" : "题目已创建",
       "可以继续管理版本、附件或挂载到比赛。"
     );
   } catch (err) {
-    challengeError.value = err instanceof ApiClientError ? err.message : "保存题目失败";
-    uiStore.error("保存题目失败", challengeError.value);
+    challengeError.value = err instanceof ApiClientError ? err.message : tl("保存题目失败");
+    notify.error("保存题目失败", challengeError.value);
   } finally {
     creatingChallenge.value = false;
   }
@@ -2839,17 +3901,17 @@ async function updateChallengeStatus(challengeId: string, status: "draft" | "pub
     if (selectedChallengeId.value === challengeId) {
       await loadChallengeVersions();
     }
-    uiStore.info("题目状态已更新", `当前状态：${status}`);
+    notify.info("题目状态已更新", `当前状态：${status}`);
   } catch (err) {
-    challengeError.value = err instanceof ApiClientError ? err.message : "更新题目失败";
-    uiStore.error("更新题目失败", challengeError.value);
+    challengeError.value = err instanceof ApiClientError ? err.message : tl("更新题目失败");
+    notify.error("更新题目失败", challengeError.value);
   } finally {
     updatingChallengeId.value = "";
   }
 }
 
 async function handleDestroyChallenge(item: AdminChallengeItem) {
-  if (!window.confirm(`确认销毁题目「${item.title}」？该操作会删除题目、挂载关系、提交记录与运行实例。`)) {
+  if (!window.confirm(tl(`确认销毁题目「${item.title}」？该操作会删除题目、挂载关系、提交记录与运行实例。`))) {
     return;
   }
 
@@ -2864,10 +3926,10 @@ async function handleDestroyChallenge(item: AdminChallengeItem) {
       challengeAttachments.value = [];
     }
     await Promise.all([loadChallenges(), loadContests(), loadContestBindings()]);
-    uiStore.warning("题目已销毁", item.title);
+    notify.warning("题目已销毁", item.title);
   } catch (err) {
-    challengeError.value = err instanceof ApiClientError ? err.message : "销毁题目失败";
-    uiStore.error("销毁题目失败", challengeError.value);
+    challengeError.value = err instanceof ApiClientError ? err.message : tl("销毁题目失败");
+    notify.error("销毁题目失败", challengeError.value);
   } finally {
     destroyingChallengeId.value = "";
   }
@@ -2875,14 +3937,14 @@ async function handleDestroyChallenge(item: AdminChallengeItem) {
 
 async function handleRollbackChallengeVersion() {
   if (!selectedChallengeId.value) {
-    challengeVersionError.value = "请先选择要管理的题目";
-    uiStore.warning("未选择题目", challengeVersionError.value);
+    challengeVersionError.value = tl("请先选择要管理的题目");
+    notify.warning("未选择题目", challengeVersionError.value);
     return;
   }
 
   if (!Number.isFinite(rollbackForm.version_no) || rollbackForm.version_no < 1) {
-    challengeVersionError.value = "版本号必须是大于等于 1 的整数";
-    uiStore.warning("版本号非法", challengeVersionError.value);
+    challengeVersionError.value = tl("版本号必须是大于等于 1 的整数");
+    notify.warning("版本号非法", challengeVersionError.value);
     return;
   }
 
@@ -2899,11 +3961,11 @@ async function handleRollbackChallengeVersion() {
       accessTokenOrThrow()
     );
     await Promise.all([loadChallenges(), loadChallengeVersions()]);
-    uiStore.success("题目已回滚", `已回滚到版本 v${Math.floor(rollbackForm.version_no)}。`);
+    notify.success("题目已回滚", `已回滚到版本 v${Math.floor(rollbackForm.version_no)}。`);
   } catch (err) {
     challengeVersionError.value =
-      err instanceof ApiClientError ? err.message : "回滚题目版本失败";
-    uiStore.error("回滚题目版本失败", challengeVersionError.value);
+      err instanceof ApiClientError ? err.message : tl("回滚题目版本失败");
+    notify.error("回滚题目版本失败", challengeVersionError.value);
   } finally {
     rollingBack.value = false;
   }
@@ -2916,14 +3978,14 @@ async function rollbackToVersion(versionNo: number) {
 
 async function handleUploadChallengeAttachment() {
   if (!selectedChallengeId.value) {
-    challengeAttachmentError.value = "请先选择要管理的题目";
-    uiStore.warning("未选择题目", challengeAttachmentError.value);
+    challengeAttachmentError.value = tl("请先选择要管理的题目");
+    notify.warning("未选择题目", challengeAttachmentError.value);
     return;
   }
 
   if (!selectedAttachmentFile.value) {
-    challengeAttachmentError.value = "请先选择一个附件文件";
-    uiStore.warning("未选择文件", challengeAttachmentError.value);
+    challengeAttachmentError.value = tl("请先选择一个附件文件");
+    notify.warning("未选择文件", challengeAttachmentError.value);
     return;
   }
 
@@ -2945,11 +4007,11 @@ async function handleUploadChallengeAttachment() {
     selectedAttachmentFile.value = null;
     attachmentInputKey.value += 1;
     await loadChallengeAttachments();
-    uiStore.success("附件已上传", file.name);
+    notify.success("附件已上传", file.name);
   } catch (err) {
     challengeAttachmentError.value =
-      err instanceof ApiClientError ? err.message : "上传题目附件失败";
-    uiStore.error("上传题目附件失败", challengeAttachmentError.value);
+      err instanceof ApiClientError ? err.message : tl("上传题目附件失败");
+    notify.error("上传题目附件失败", challengeAttachmentError.value);
   } finally {
     uploadingAttachment.value = false;
   }
@@ -2970,11 +4032,11 @@ async function deleteChallengeAttachment(attachmentId: string) {
       accessTokenOrThrow()
     );
     await loadChallengeAttachments();
-    uiStore.warning("附件已删除", "已从当前题目移除附件。");
+    notify.warning("附件已删除", "已从当前题目移除附件。");
   } catch (err) {
     challengeAttachmentError.value =
-      err instanceof ApiClientError ? err.message : "删除题目附件失败";
-    uiStore.error("删除题目附件失败", challengeAttachmentError.value);
+      err instanceof ApiClientError ? err.message : tl("删除题目附件失败");
+    notify.error("删除题目附件失败", challengeAttachmentError.value);
   } finally {
     deletingAttachmentId.value = "";
   }
@@ -2983,7 +4045,7 @@ async function deleteChallengeAttachment(attachmentId: string) {
 function handleLoadContestForEdit(item: AdminContestItem) {
   applyContestToForm(item);
   contestError.value = "";
-  uiStore.info("已载入比赛配置", `正在编辑：${item.title}`);
+  notify.info("已载入比赛配置", `正在编辑：${item.title}`);
 }
 
 function handleCancelContestEdit() {
@@ -2997,7 +4059,29 @@ async function handleCreateContest() {
   try {
     const isEditMode = !!editingContestId.value;
     if (!Number.isFinite(newContest.dynamic_decay) || newContest.dynamic_decay < 1) {
-      throw new ApiClientError("dynamic_decay 必须为大于等于 1 的整数", "bad_request");
+      throw new ApiClientError(tl("dynamic_decay 必须为大于等于 1 的整数"), "bad_request");
+    }
+    const bloodBonuses = [
+      newContest.first_blood_bonus_percent,
+      newContest.second_blood_bonus_percent,
+      newContest.third_blood_bonus_percent
+    ];
+    if (
+      bloodBonuses.some(
+        (value) =>
+          !Number.isFinite(value) ||
+          value < 0 ||
+          value > 500 ||
+          Math.floor(value) !== value
+      )
+    ) {
+      throw new ApiClientError(
+        tr(
+          "一二三血加成必须为 0-500 的整数百分比。",
+          "Blood bonuses must be integer percentages between 0 and 500."
+        ),
+        "bad_request"
+      );
     }
 
     const payload = {
@@ -3008,6 +4092,9 @@ async function handleCreateContest() {
       status: newContest.status,
       scoring_mode: newContest.scoring_mode,
       dynamic_decay: Math.floor(newContest.dynamic_decay),
+      first_blood_bonus_percent: Math.floor(newContest.first_blood_bonus_percent),
+      second_blood_bonus_percent: Math.floor(newContest.second_blood_bonus_percent),
+      third_blood_bonus_percent: Math.floor(newContest.third_blood_bonus_percent),
       start_at: localInputToIso(newContest.start_at),
       end_at: localInputToIso(newContest.end_at),
       freeze_at: newContest.freeze_at ? localInputToIso(newContest.freeze_at) : undefined
@@ -3034,13 +4121,13 @@ async function handleCreateContest() {
     await loadContests();
     selectedContestId.value = targetContestId;
     await Promise.all([loadContestBindings(), loadContestAnnouncements()]);
-    uiStore.success(
+    notify.success(
       isEditMode ? "比赛已更新" : "比赛已创建",
       "可以继续挂载题目并调整状态。"
     );
   } catch (err) {
-    contestError.value = err instanceof ApiClientError ? err.message : "保存比赛失败";
-    uiStore.error("保存比赛失败", contestError.value);
+    contestError.value = err instanceof ApiClientError ? err.message : tl("保存比赛失败");
+    notify.error("保存比赛失败", contestError.value);
   } finally {
     creatingContest.value = false;
   }
@@ -3053,10 +4140,10 @@ async function updateContestStatus(contestId: string, status: string) {
   try {
     await updateAdminContestStatus(contestId, status, accessTokenOrThrow());
     await loadContests();
-    uiStore.info("比赛状态已更新", `当前状态：${status}`);
+    notify.info("比赛状态已更新", `当前状态：${status}`);
   } catch (err) {
-    contestError.value = err instanceof ApiClientError ? err.message : "更新比赛状态失败";
-    uiStore.error("更新比赛状态失败", contestError.value);
+    contestError.value = err instanceof ApiClientError ? err.message : tl("更新比赛状态失败");
+    notify.error("更新比赛状态失败", contestError.value);
   } finally {
     updatingContestId.value = "";
   }
@@ -3064,14 +4151,14 @@ async function updateContestStatus(contestId: string, status: string) {
 
 async function handleUploadContestPoster() {
   if (!selectedContestId.value) {
-    contestError.value = "请先选择比赛";
-    uiStore.warning("未选择比赛", contestError.value);
+    contestError.value = tl("请先选择比赛");
+    notify.warning("未选择比赛", contestError.value);
     return;
   }
 
   if (!selectedContestPosterFile.value) {
-    contestError.value = "请先选择海报文件";
-    uiStore.warning("未选择海报", contestError.value);
+    contestError.value = tl("请先选择海报文件");
+    notify.warning("未选择海报", contestError.value);
     return;
   }
 
@@ -3093,10 +4180,10 @@ async function handleUploadContestPoster() {
     selectedContestPosterFile.value = null;
     contestPosterInputKey.value += 1;
     await loadContests();
-    uiStore.success("海报已上传", file.name);
+    notify.success("海报已上传", file.name);
   } catch (err) {
-    contestError.value = err instanceof ApiClientError ? err.message : "上传比赛海报失败";
-    uiStore.error("上传比赛海报失败", contestError.value);
+    contestError.value = err instanceof ApiClientError ? err.message : tl("上传比赛海报失败");
+    notify.error("上传比赛海报失败", contestError.value);
   } finally {
     uploadingContestPoster.value = false;
   }
@@ -3107,7 +4194,7 @@ async function handleDeleteContestPoster(item: AdminContestItem) {
     return;
   }
 
-  if (!window.confirm(`确认删除比赛「${item.title}」的海报？`)) {
+  if (!window.confirm(tl(`确认删除比赛「${item.title}」的海报？`))) {
     return;
   }
 
@@ -3117,17 +4204,17 @@ async function handleDeleteContestPoster(item: AdminContestItem) {
   try {
     await deleteAdminContestPoster(item.id, accessTokenOrThrow());
     await loadContests();
-    uiStore.warning("海报已删除", item.title);
+    notify.warning("海报已删除", item.title);
   } catch (err) {
-    contestError.value = err instanceof ApiClientError ? err.message : "删除比赛海报失败";
-    uiStore.error("删除比赛海报失败", contestError.value);
+    contestError.value = err instanceof ApiClientError ? err.message : tl("删除比赛海报失败");
+    notify.error("删除比赛海报失败", contestError.value);
   } finally {
     deletingContestPosterId.value = "";
   }
 }
 
 async function handleDestroyContest(item: AdminContestItem) {
-  if (!window.confirm(`确认销毁比赛「${item.title}」？该操作将删除比赛、公告、挂载、提交与实例数据。`)) {
+  if (!window.confirm(tl(`确认销毁比赛「${item.title}」？该操作将删除比赛、公告、挂载、提交与实例数据。`))) {
     return;
   }
 
@@ -3144,10 +4231,10 @@ async function handleDestroyContest(item: AdminContestItem) {
       selectedAnnouncementId.value = "";
     }
     await Promise.all([loadContests(), loadContestBindings(), loadContestAnnouncements()]);
-    uiStore.warning("比赛已销毁", item.title);
+    notify.warning("比赛已销毁", item.title);
   } catch (err) {
-    contestError.value = err instanceof ApiClientError ? err.message : "销毁比赛失败";
-    uiStore.error("销毁比赛失败", contestError.value);
+    contestError.value = err instanceof ApiClientError ? err.message : tl("销毁比赛失败");
+    notify.error("销毁比赛失败", contestError.value);
   } finally {
     destroyingContestId.value = "";
   }
@@ -3162,13 +4249,13 @@ async function toggleUserStatus(item: AdminUserItem) {
   try {
     await updateAdminUserStatus(item.id, nextStatus, accessTokenOrThrow());
     await loadUsers();
-    uiStore.info(
+    notify.info(
       "用户状态已更新",
       `${item.username} 已${nextStatus === "active" ? "启用" : "禁用"}。`
     );
   } catch (err) {
-    userError.value = err instanceof ApiClientError ? err.message : "更新用户状态失败";
-    uiStore.error("更新用户状态失败", userError.value);
+    userError.value = err instanceof ApiClientError ? err.message : tl("更新用户状态失败");
+    notify.error("更新用户状态失败", userError.value);
   } finally {
     updatingUserId.value = "";
   }
@@ -3177,8 +4264,8 @@ async function toggleUserStatus(item: AdminUserItem) {
 async function handleResetUserPassword(item: AdminUserItem) {
   const nextPassword = (resetPasswords[item.id] ?? "").trim();
   if (nextPassword.length < 8) {
-    userError.value = "新密码至少需要 8 位字符";
-    uiStore.warning("密码过短", userError.value);
+    userError.value = tl("新密码至少需要 8 位字符");
+    notify.warning("密码过短", userError.value);
     return;
   }
 
@@ -3189,10 +4276,10 @@ async function handleResetUserPassword(item: AdminUserItem) {
     await resetAdminUserPassword(item.id, nextPassword, accessTokenOrThrow());
     resetPasswords[item.id] = "";
     await loadUsers();
-    uiStore.success("密码已重置", `${item.username} 的密码已更新。`);
+    notify.success("密码已重置", `${item.username} 的密码已更新。`);
   } catch (err) {
-    userError.value = err instanceof ApiClientError ? err.message : "重置密码失败";
-    uiStore.error("重置密码失败", userError.value);
+    userError.value = err instanceof ApiClientError ? err.message : tl("重置密码失败");
+    notify.error("重置密码失败", userError.value);
   } finally {
     resettingUserId.value = "";
   }
@@ -3201,13 +4288,13 @@ async function handleResetUserPassword(item: AdminUserItem) {
 async function handleUpdateUserRole(item: AdminUserItem) {
   const nextRole = (roleDrafts[item.id] ?? "").trim().toLowerCase();
   if (!["player", "judge", "admin"].includes(nextRole)) {
-    userError.value = "角色必须是 player / judge / admin";
-    uiStore.warning("角色非法", userError.value);
+    userError.value = tl("角色必须是 player / judge / admin");
+    notify.warning("角色非法", userError.value);
     return;
   }
 
   if (nextRole === item.role) {
-    uiStore.info("角色未变化", `${item.username} 当前角色仍为 ${item.role}。`);
+    notify.info("角色未变化", `${item.username} 当前角色仍为 ${item.role}。`);
     return;
   }
 
@@ -3217,17 +4304,17 @@ async function handleUpdateUserRole(item: AdminUserItem) {
   try {
     await updateAdminUserRole(item.id, nextRole, accessTokenOrThrow());
     await loadUsers();
-    uiStore.success("角色已更新", `${item.username} 已设为 ${nextRole}。`);
+    notify.success("角色已更新", `${item.username} 已设为 ${nextRole}。`);
   } catch (err) {
-    userError.value = err instanceof ApiClientError ? err.message : "更新用户角色失败";
-    uiStore.error("更新用户角色失败", userError.value);
+    userError.value = err instanceof ApiClientError ? err.message : tl("更新用户角色失败");
+    notify.error("更新用户角色失败", userError.value);
   } finally {
     updatingUserRoleId.value = "";
   }
 }
 
 async function handleDeleteUserAccount(item: AdminUserItem) {
-  if (!window.confirm(`确认删除账号「${item.username}」？该操作会禁用并匿名化该账号。`)) {
+  if (!window.confirm(tl(`确认删除账号「${item.username}」？该操作会禁用并匿名化该账号。`))) {
     return;
   }
 
@@ -3237,10 +4324,10 @@ async function handleDeleteUserAccount(item: AdminUserItem) {
   try {
     await deleteAdminUser(item.id, accessTokenOrThrow());
     await loadUsers();
-    uiStore.warning("账号已删除", `${item.username} 已被禁用并匿名化。`);
+    notify.warning("账号已删除", `${item.username} 已被禁用并匿名化。`);
   } catch (err) {
-    userError.value = err instanceof ApiClientError ? err.message : "删除账号失败";
-    uiStore.error("删除账号失败", userError.value);
+    userError.value = err instanceof ApiClientError ? err.message : tl("删除账号失败");
+    notify.error("删除账号失败", userError.value);
   } finally {
     deletingUserAccountId.value = "";
   }
@@ -3258,6 +4345,7 @@ function selectBinding(challengeId: string) {
 
 function selectAnnouncement(announcementId: string) {
   selectedAnnouncementId.value = announcementId;
+  announcementEditMode.value = "edit";
 }
 
 function loadBindingIntoForm(item: AdminContestChallengeItem) {
@@ -3268,8 +4356,16 @@ function loadBindingIntoForm(item: AdminContestChallengeItem) {
 
 async function handleCreateAnnouncement() {
   if (!selectedContestId.value) {
-    announcementError.value = "请先选择比赛";
-    uiStore.warning("未选择比赛", announcementError.value);
+    announcementError.value = tl("请先选择比赛");
+    notify.warning("未选择比赛", announcementError.value);
+    return;
+  }
+
+  const title = announcementForm.title.trim();
+  const content = announcementForm.content.trim();
+  if (!title || !content) {
+    announcementError.value = tl("公告标题和内容不能为空");
+    notify.warning("公告内容不完整", announcementError.value);
     return;
   }
 
@@ -3280,8 +4376,8 @@ async function handleCreateAnnouncement() {
     const created = await createAdminContestAnnouncement(
       selectedContestId.value,
       {
-        title: announcementForm.title,
-        content: announcementForm.content,
+        title,
+        content,
         is_published: announcementForm.is_published,
         is_pinned: announcementForm.is_pinned
       },
@@ -3291,12 +4387,13 @@ async function handleCreateAnnouncement() {
     announcementForm.content = "";
     announcementForm.is_published = false;
     announcementForm.is_pinned = false;
+    announcementCreateMode.value = "edit";
     selectedAnnouncementId.value = created.id;
     await loadContestAnnouncements();
-    uiStore.success("公告已创建", "公告已保存。");
+    notify.success("公告已创建", "公告已保存。");
   } catch (err) {
-    announcementError.value = err instanceof ApiClientError ? err.message : "创建公告失败";
-    uiStore.error("创建公告失败", announcementError.value);
+    announcementError.value = err instanceof ApiClientError ? err.message : tl("创建公告失败");
+    notify.error("创建公告失败", announcementError.value);
   } finally {
     creatingAnnouncement.value = false;
   }
@@ -3318,13 +4415,13 @@ async function toggleAnnouncementPublish(item: AdminContestAnnouncementItem) {
       accessTokenOrThrow()
     );
     await loadContestAnnouncements();
-    uiStore.info(
+    notify.info(
       "公告状态已更新",
       !item.is_published ? "公告已发布" : "公告已撤回"
     );
   } catch (err) {
-    announcementError.value = err instanceof ApiClientError ? err.message : "更新公告失败";
-    uiStore.error("更新公告失败", announcementError.value);
+    announcementError.value = err instanceof ApiClientError ? err.message : tl("更新公告失败");
+    notify.error("更新公告失败", announcementError.value);
   } finally {
     updatingAnnouncementId.value = "";
   }
@@ -3340,8 +4437,8 @@ async function saveAnnouncementEdit(item: AdminContestAnnouncementItem) {
   const content = draft?.content?.trim() ?? "";
 
   if (!title || !content) {
-    announcementError.value = "公告标题和内容不能为空";
-    uiStore.warning("公告内容不完整", announcementError.value);
+    announcementError.value = tl("公告标题和内容不能为空");
+    notify.warning("公告内容不完整", announcementError.value);
     return;
   }
 
@@ -3356,10 +4453,10 @@ async function saveAnnouncementEdit(item: AdminContestAnnouncementItem) {
       accessTokenOrThrow()
     );
     await loadContestAnnouncements();
-    uiStore.success("公告已更新", item.title);
+    notify.success("公告已更新", item.title);
   } catch (err) {
-    announcementError.value = err instanceof ApiClientError ? err.message : "更新公告失败";
-    uiStore.error("更新公告失败", announcementError.value);
+    announcementError.value = err instanceof ApiClientError ? err.message : tl("更新公告失败");
+    notify.error("更新公告失败", announcementError.value);
   } finally {
     savingAnnouncementId.value = "";
   }
@@ -3381,13 +4478,13 @@ async function toggleAnnouncementPin(item: AdminContestAnnouncementItem) {
       accessTokenOrThrow()
     );
     await loadContestAnnouncements();
-    uiStore.info(
+    notify.info(
       "公告置顶状态已更新",
       !item.is_pinned ? "公告已置顶" : "公告已取消置顶"
     );
   } catch (err) {
-    announcementError.value = err instanceof ApiClientError ? err.message : "更新公告失败";
-    uiStore.error("更新公告失败", announcementError.value);
+    announcementError.value = err instanceof ApiClientError ? err.message : tl("更新公告失败");
+    notify.error("更新公告失败", announcementError.value);
   } finally {
     updatingAnnouncementId.value = "";
   }
@@ -3408,10 +4505,10 @@ async function removeAnnouncement(item: AdminContestAnnouncementItem) {
       accessTokenOrThrow()
     );
     await loadContestAnnouncements();
-    uiStore.warning("公告已删除", item.title);
+    notify.warning("公告已删除", item.title);
   } catch (err) {
-    announcementError.value = err instanceof ApiClientError ? err.message : "删除公告失败";
-    uiStore.error("删除公告失败", announcementError.value);
+    announcementError.value = err instanceof ApiClientError ? err.message : tl("删除公告失败");
+    notify.error("删除公告失败", announcementError.value);
   } finally {
     deletingAnnouncementId.value = "";
   }
@@ -3419,8 +4516,8 @@ async function removeAnnouncement(item: AdminContestAnnouncementItem) {
 
 async function handleUpsertBinding() {
   if (!selectedContestId.value) {
-    bindingError.value = "请先选择比赛";
-    uiStore.warning("未选择比赛", bindingError.value);
+    bindingError.value = tl("请先选择比赛");
+    notify.warning("未选择比赛", bindingError.value);
     return;
   }
 
@@ -3441,10 +4538,10 @@ async function handleUpsertBinding() {
 
     selectedBindingChallengeId.value = targetChallengeId;
     await loadContestBindings();
-    uiStore.success("挂载成功", "题目已挂载/更新到当前比赛。");
+    notify.success("挂载成功", "题目已挂载/更新到当前比赛。");
   } catch (err) {
-    bindingError.value = err instanceof ApiClientError ? err.message : "挂载失败";
-    uiStore.error("挂载失败", bindingError.value);
+    bindingError.value = err instanceof ApiClientError ? err.message : tl("挂载失败");
+    notify.error("挂载失败", bindingError.value);
   } finally {
     bindingBusy.value = false;
   }
@@ -3466,10 +4563,10 @@ async function quickAdjustSort(challengeId: string, nextSort: number) {
       accessTokenOrThrow()
     );
     await loadContestBindings();
-    uiStore.info("排序已更新", `新排序值：${nextSort}`);
+    notify.info("排序已更新", `新排序值：${nextSort}`);
   } catch (err) {
-    bindingError.value = err instanceof ApiClientError ? err.message : "更新排序失败";
-    uiStore.error("更新排序失败", bindingError.value);
+    bindingError.value = err instanceof ApiClientError ? err.message : tl("更新排序失败");
+    notify.error("更新排序失败", bindingError.value);
   } finally {
     bindingBusy.value = false;
   }
@@ -3491,10 +4588,10 @@ async function clearBindingReleaseAt(challengeId: string) {
       accessTokenOrThrow()
     );
     await loadContestBindings();
-    uiStore.info("发布时间已清除", "该题将在比赛内即时可见。");
+    notify.info("发布时间已清除", "该题将在比赛内即时可见。");
   } catch (err) {
-    bindingError.value = err instanceof ApiClientError ? err.message : "清除发布时间失败";
-    uiStore.error("清除发布时间失败", bindingError.value);
+    bindingError.value = err instanceof ApiClientError ? err.message : tl("清除发布时间失败");
+    notify.error("清除发布时间失败", bindingError.value);
   } finally {
     bindingBusy.value = false;
   }
@@ -3511,10 +4608,10 @@ async function removeBinding(challengeId: string) {
   try {
     await deleteAdminContestChallenge(selectedContestId.value, challengeId, accessTokenOrThrow());
     await loadContestBindings();
-    uiStore.warning("挂载已移除", "题目已从当前比赛移除。");
+    notify.warning("挂载已移除", "题目已从当前比赛移除。");
   } catch (err) {
-    bindingError.value = err instanceof ApiClientError ? err.message : "移除挂载失败";
-    uiStore.error("移除挂载失败", bindingError.value);
+    bindingError.value = err instanceof ApiClientError ? err.message : tl("移除挂载失败");
+    notify.error("移除挂载失败", bindingError.value);
   } finally {
     bindingBusy.value = false;
   }
@@ -3525,6 +4622,8 @@ watch(
   () => {
     selectedBindingChallengeId.value = "";
     selectedAnnouncementId.value = "";
+    announcementCreateMode.value = "edit";
+    announcementEditMode.value = "edit";
     selectedContestPosterFile.value = null;
     contestPosterInputKey.value += 1;
     bindingForm.challenge_id = "";
@@ -3532,6 +4631,13 @@ watch(
     bindingForm.release_at = "";
     loadContestBindings();
     loadContestAnnouncements();
+  }
+);
+
+watch(
+  () => selectedAnnouncementId.value,
+  () => {
+    announcementEditMode.value = "edit";
   }
 );
 
@@ -3575,24 +4681,75 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.admin-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.admin-side-nav {
+  position: sticky;
+  top: 5.3rem;
+  max-height: calc(100vh - 6.4rem);
+  overflow: auto;
+  display: grid;
+  gap: 0.85rem;
+  align-content: start;
+}
+
+.admin-side-group {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.nav-group-label {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(18, 18, 18, 0.48);
+}
+
+.side-nav-btn {
+  text-align: left;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.32);
+  color: rgba(20, 20, 20, 0.82);
+  padding: 0.5rem 0.62rem;
+  cursor: pointer;
+  transition: background-color 150ms ease, transform 150ms ease, color 150ms ease;
+}
+
+.side-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.52);
+  transform: translateY(-1px);
+}
+
+.side-nav-btn.active {
+  background: rgba(14, 14, 14, 0.86);
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.side-sub-btn {
+  font-size: 0.9rem;
+}
+
+.admin-main {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
 .admin-grid {
   grid-template-columns: minmax(0, 1fr);
-}
-
-.module-tabs {
-  margin-top: 0.75rem;
-}
-
-.module-tabs .ghost.active {
-  border-color: var(--brand-strong);
-  color: var(--brand-strong);
-  background: rgba(64, 132, 255, 0.12);
 }
 
 .module-split {
   display: grid;
   gap: 0.95rem;
-  margin-top: 0.8rem;
+  margin-top: 0.74rem;
   align-items: stretch;
 }
 
@@ -3605,14 +4762,27 @@ onUnmounted(() => {
 }
 
 .module-column {
-  border: 1px solid rgba(96, 120, 160, 0.24);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.36);
   padding: 0.85rem;
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
   min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.module-column::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(12, 12, 12, 0.16), rgba(12, 12, 12, 0.16)) top / 100% 1px no-repeat,
+    linear-gradient(rgba(12, 12, 12, 0.16), rgba(12, 12, 12, 0.16)) left / 1px 100% no-repeat,
+    repeating-linear-gradient(90deg, transparent 0 9px, rgba(12, 12, 12, 0.24) 9px 14px) bottom / 100% 1px no-repeat;
 }
 
 .module-column-fill {
@@ -3633,6 +4803,10 @@ onUnmounted(() => {
   grid-column: 1 / -1;
 }
 
+.compact-grid .category-actions {
+  grid-column: 1 / -1;
+}
+
 .search-field {
   display: grid;
   gap: 0.35rem;
@@ -3645,14 +4819,128 @@ onUnmounted(() => {
   gap: 0.65rem;
   flex: 1;
   min-height: 320px;
+  max-height: 650px;
   overflow: auto;
   padding-right: 0.2rem;
   align-content: start;
 }
 
+.challenge-category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.46rem;
+}
+
+.category-item {
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 0.52rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.category-actions {
+  justify-content: flex-start;
+}
+
+.challenge-card {
+  cursor: pointer;
+}
+
 .challenge-card.active {
-  border-color: var(--brand-strong);
-  box-shadow: 0 0 0 2px rgba(45, 107, 255, 0.16);
+  background: rgba(18, 18, 18, 0.84);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.challenge-card.active .muted {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.challenge-card.active .badge {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.action-menu {
+  border-top: 1px dashed rgba(255, 255, 255, 0.28);
+  padding-top: 0.44rem;
+}
+
+.action-sheet {
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.36);
+  padding: 0.42rem 0.5rem;
+  position: relative;
+}
+
+.action-sheet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(rgba(12, 12, 12, 0.14), rgba(12, 12, 12, 0.14)) top / 100% 1px no-repeat,
+    repeating-linear-gradient(90deg, transparent 0 8px, rgba(12, 12, 12, 0.22) 8px 13px) bottom / 100% 1px no-repeat;
+}
+
+.action-sheet > summary {
+  font-size: 0.86rem;
+  color: rgba(18, 18, 18, 0.8);
+  padding: 0.2rem 0;
+}
+
+.action-sheet-body {
+  margin-top: 0.44rem;
+  padding-top: 0.44rem;
+  border-top: 1px dashed rgba(12, 12, 12, 0.24);
+}
+
+.action-sheet-inverse {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.action-sheet-inverse > summary {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.action-sheet-inverse .action-sheet-body {
+  border-top-color: rgba(255, 255, 255, 0.28);
+}
+
+.filter-sheet {
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.38);
+  padding: 0.44rem 0.52rem;
+  margin-bottom: 0.62rem;
+  position: relative;
+}
+
+.filter-sheet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(rgba(12, 12, 12, 0.14), rgba(12, 12, 12, 0.14)) top / 100% 1px no-repeat,
+    linear-gradient(rgba(12, 12, 12, 0.14), rgba(12, 12, 12, 0.14)) left / 1px 100% no-repeat;
+}
+
+.filter-sheet > summary {
+  font-size: 0.86rem;
+  color: rgba(18, 18, 18, 0.82);
+  padding: 0.2rem 0;
+}
+
+.filter-sheet-body {
+  margin-top: 0.44rem;
+  padding-top: 0.44rem;
+  border-top: 1px dashed rgba(12, 12, 12, 0.24);
+  align-items: flex-end;
+}
+
+.filter-sheet-body > button.ghost {
+  align-self: flex-end;
 }
 
 .compact-actions {
@@ -3661,60 +4949,201 @@ onUnmounted(() => {
 
 .contest-browser {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
-  gap: 0.8rem;
+  grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1.45fr);
+  gap: 0.92rem;
   flex: 1;
-  min-height: 420px;
+  min-height: 520px;
   min-width: 0;
 }
 
 .contest-list-pane {
   display: grid;
-  gap: 0.5rem;
+  gap: 0.64rem;
   min-height: 0;
   overflow: auto;
   padding-right: 0.2rem;
   align-content: start;
 }
 
+.announcement-pane {
+  overflow: auto;
+  padding-right: 0;
+}
+
+.announcement-block {
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.44);
+  padding: 0.68rem;
+  display: grid;
+  gap: 0.56rem;
+  align-content: start;
+  position: relative;
+}
+
+.announcement-block::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(rgba(12, 12, 12, 0.16), rgba(12, 12, 12, 0.16)) top / 100% 1px no-repeat,
+    repeating-linear-gradient(90deg, transparent 0 8px, rgba(12, 12, 12, 0.2) 8px 12px) bottom / 100% 1px no-repeat;
+}
+
+.announcement-create-form {
+  grid-template-columns: 1fr;
+  gap: 0.52rem;
+}
+
+.announcement-create-form > button.primary {
+  width: 100%;
+}
+
+.announcement-editor-label {
+  margin-bottom: -0.1rem;
+}
+
+.announcement-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.32rem;
+}
+
+.announcement-toolbar .ghost {
+  min-height: 1.74rem;
+  padding: 0.22rem 0.5rem;
+  font-size: 0.78rem;
+}
+
+.announcement-mode-switch {
+  gap: 0.18rem;
+  padding: 0.2rem;
+}
+
+.announcement-mode-switch .ghost {
+  min-height: 1.7rem;
+  padding-inline: 0.58rem;
+}
+
+.announcement-mode-switch .ghost.active {
+  background: rgba(18, 18, 18, 0.84);
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.announcement-editor-title {
+  font-size: 0.8rem;
+  color: rgba(18, 18, 18, 0.74);
+}
+
+.announcement-editor-shell {
+  min-height: 190px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.54);
+  padding: 0.44rem;
+  display: grid;
+  align-content: start;
+  overflow: hidden;
+}
+
+.announcement-editor-shell-large {
+  min-height: 320px;
+}
+
+.announcement-editor-textarea {
+  width: 100%;
+  min-height: 170px;
+  resize: vertical;
+  border: 1px solid rgba(12, 12, 12, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.68);
+  padding: 0.58rem 0.62rem;
+  line-height: 1.58;
+}
+
+.announcement-editor-textarea-lg {
+  min-height: 290px;
+}
+
+.announcement-markdown-preview {
+  min-height: 100%;
+  max-height: 400px;
+  overflow: auto;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.62);
+  padding: 0.58rem 0.66rem;
+}
+
+.announcement-markdown-hint {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
 .contest-list-item {
   text-align: left;
-  border: 1px solid rgba(96, 120, 160, 0.28);
   border-radius: 10px;
   padding: 0.6rem 0.62rem;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.44);
   display: grid;
   gap: 0.2rem;
   cursor: pointer;
-  transition: border-color 140ms ease, background-color 140ms ease;
+  border: 1px solid transparent;
+  transition: background-color 140ms ease, transform 140ms ease;
+}
+
+.contest-list-item:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.58);
 }
 
 .contest-list-item.active {
-  border-color: var(--brand-strong);
-  background: rgba(64, 132, 255, 0.12);
+  background: rgba(18, 18, 18, 0.84);
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.contest-list-item.active .muted {
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .contest-detail-pane {
-  border: 1px solid rgba(96, 120, 160, 0.28);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.82);
-  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.44);
+  padding: 0.76rem;
   min-height: 0;
   display: grid;
   align-content: start;
-  gap: 0.6rem;
+  gap: 0.62rem;
   overflow: auto;
+  position: relative;
+}
+
+.contest-detail-pane::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(rgba(12, 12, 12, 0.16), rgba(12, 12, 12, 0.16)) top / 100% 1px no-repeat,
+    linear-gradient(rgba(12, 12, 12, 0.16), rgba(12, 12, 12, 0.16)) right / 1px 100% no-repeat;
 }
 
 .contest-detail-pane h4 {
   margin: 0;
 }
 
+.announcement-edit-form {
+  gap: 0.58rem;
+}
+
+.announcement-detail-pane .action-sheet {
+  margin-top: 0.08rem;
+}
+
 .image-test-block {
   grid-column: 1 / -1;
-  border: 1px solid rgba(96, 120, 160, 0.24);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.42);
   padding: 0.58rem;
 }
 
@@ -3724,27 +5153,26 @@ onUnmounted(() => {
 }
 
 .image-test-result.failed {
-  border-left: 3px solid rgba(185, 28, 28, 0.6);
+  border-left: 3px solid rgba(120, 24, 24, 0.72);
   padding-left: 0.45rem;
 }
 
 .image-test-step {
-  border: 1px solid rgba(96, 120, 160, 0.24);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.52);
   padding: 0.4rem 0.5rem;
 }
 
 .image-test-step summary {
   cursor: pointer;
-  color: var(--brand-strong);
+  color: rgba(12, 12, 12, 0.9);
 }
 
 .image-test-step pre {
   margin: 0.45rem 0 0;
   max-height: 220px;
   overflow: auto;
-  background: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.4);
   border-radius: 8px;
   padding: 0.5rem;
   white-space: pre-wrap;
@@ -3756,8 +5184,7 @@ onUnmounted(() => {
   max-height: 220px;
   object-fit: cover;
   border-radius: 10px;
-  border: 1px solid rgba(96, 120, 160, 0.28);
-  background: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .challenge-lint-metrics {
@@ -3772,15 +5199,13 @@ onUnmounted(() => {
 }
 
 .lint-badge-ok {
-  border-color: rgba(22, 163, 74, 0.4);
-  color: #166534;
-  background: rgba(22, 163, 74, 0.08);
+  background: rgba(28, 82, 28, 0.78);
+  color: rgba(255, 255, 255, 0.94);
 }
 
 .lint-badge-error {
-  border-color: rgba(185, 28, 28, 0.4);
-  color: #991b1b;
-  background: rgba(185, 28, 28, 0.08);
+  background: rgba(120, 24, 24, 0.82);
+  color: rgba(255, 255, 255, 0.94);
 }
 
 .runtime-alert-layout {
@@ -3792,18 +5217,28 @@ onUnmounted(() => {
 
 .instance-metrics-panel {
   margin-top: 0.8rem;
-  border: 1px solid rgba(96, 120, 160, 0.28);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.44);
   padding: 0.75rem;
   display: grid;
   gap: 0.65rem;
+  position: relative;
+}
+
+.instance-metrics-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(12, 12, 12, 0.16), rgba(12, 12, 12, 0.16)) top / 100% 1px no-repeat,
+    linear-gradient(rgba(12, 12, 12, 0.16), rgba(12, 12, 12, 0.16)) left / 1px 100% no-repeat;
 }
 
 .runtime-alert-list {
-  border: 1px solid rgba(96, 120, 160, 0.28);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.4);
   padding: 0.6rem;
   display: grid;
   gap: 0.45rem;
@@ -3814,36 +5249,44 @@ onUnmounted(() => {
 
 .runtime-alert-item {
   text-align: left;
-  border: 1px solid rgba(96, 120, 160, 0.28);
+  border: 1px solid transparent;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.48);
   padding: 0.58rem 0.6rem;
   display: grid;
   gap: 0.2rem;
   cursor: pointer;
-  transition: border-color 130ms ease, transform 130ms ease;
+  transition: transform 130ms ease, background-color 130ms ease;
 }
 
 .runtime-alert-item:hover {
-  border-color: var(--brand-strong);
+  background: rgba(255, 255, 255, 0.62);
   transform: translateY(-1px);
 }
 
 .runtime-alert-item.active {
-  border-color: var(--brand-strong);
-  box-shadow: 0 0 0 2px rgba(45, 107, 255, 0.16);
+  background: rgba(18, 18, 18, 0.84);
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.runtime-alert-item.active .muted {
+  color: rgba(255, 255, 255, 0.74);
+}
+
+.runtime-alert-item.active .badge {
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .runtime-alert-item.severity-critical {
-  border-left: 3px solid var(--danger);
+  border-left: 3px solid rgba(120, 24, 24, 0.82);
 }
 
 .runtime-alert-item.severity-warning {
-  border-left: 3px solid var(--warning);
+  border-left: 3px solid rgba(92, 70, 18, 0.82);
 }
 
 .runtime-alert-item.severity-info {
-  border-left: 3px solid var(--brand-strong);
+  border-left: 3px solid rgba(20, 20, 20, 0.76);
 }
 
 .runtime-alert-title {
@@ -3855,15 +5298,26 @@ onUnmounted(() => {
 }
 
 .runtime-alert-detail {
-  border: 1px solid rgba(96, 120, 160, 0.28);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.44);
   padding: 0.8rem;
   min-height: 0;
   overflow: auto;
   display: grid;
   gap: 0.65rem;
   align-content: start;
+  position: relative;
+}
+
+.runtime-alert-detail::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(12, 12, 12, 0.16), rgba(12, 12, 12, 0.16)) top / 100% 1px no-repeat,
+    linear-gradient(rgba(12, 12, 12, 0.16), rgba(12, 12, 12, 0.16)) right / 1px 100% no-repeat;
 }
 
 .runtime-alert-detail h3 {
@@ -3881,9 +5335,8 @@ onUnmounted(() => {
 }
 
 .runtime-alert-meta {
-  border: 1px solid rgba(96, 120, 160, 0.24);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.46);
   padding: 0.5rem 0.55rem;
 }
 
@@ -3893,7 +5346,7 @@ onUnmounted(() => {
 
 .runtime-alert-detail-json summary {
   cursor: pointer;
-  color: var(--brand-strong);
+  color: rgba(12, 12, 12, 0.9);
   font-weight: 600;
 }
 
@@ -3901,15 +5354,109 @@ onUnmounted(() => {
   margin: 0.5rem 0 0;
   max-height: 260px;
   overflow: auto;
-  border: 1px solid rgba(96, 120, 160, 0.24);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.42);
   padding: 0.58rem;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
+.user-actions-menu {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed rgba(12, 12, 12, 0.24);
+}
+
+:root[data-theme="dark"] .nav-group-label {
+  color: var(--fg-2);
+}
+
+:root[data-theme="dark"] .side-nav-btn {
+  background: var(--glass-soft);
+  color: var(--fg-1);
+}
+
+:root[data-theme="dark"] .side-nav-btn:hover {
+  background: var(--glass-mid);
+}
+
+:root[data-theme="dark"] .side-nav-btn.active {
+  background: var(--fg-0);
+  color: var(--bg-0);
+}
+
+:root[data-theme="dark"] .module-column,
+:root[data-theme="dark"] .action-sheet,
+:root[data-theme="dark"] .filter-sheet,
+:root[data-theme="dark"] .announcement-block,
+:root[data-theme="dark"] .announcement-editor-shell,
+:root[data-theme="dark"] .announcement-editor-textarea,
+:root[data-theme="dark"] .announcement-markdown-preview,
+:root[data-theme="dark"] .category-item,
+:root[data-theme="dark"] .contest-list-item,
+:root[data-theme="dark"] .contest-detail-pane,
+:root[data-theme="dark"] .image-test-block,
+:root[data-theme="dark"] .image-test-step,
+:root[data-theme="dark"] .image-test-step pre,
+:root[data-theme="dark"] .metric-card,
+:root[data-theme="dark"] .runtime-alert-item,
+:root[data-theme="dark"] .runtime-alert-detail,
+:root[data-theme="dark"] .runtime-alert-detail-json pre {
+  background: var(--glass-mid);
+}
+
+:root[data-theme="dark"] .module-column::before,
+:root[data-theme="dark"] .action-sheet::before,
+:root[data-theme="dark"] .filter-sheet::before,
+:root[data-theme="dark"] .announcement-block::before,
+:root[data-theme="dark"] .contest-detail-pane::before,
+:root[data-theme="dark"] .runtime-alert-detail::before {
+  background:
+    linear-gradient(var(--line-soft), var(--line-soft)) top / 100% 1px no-repeat,
+    linear-gradient(var(--line-soft), var(--line-soft)) left / 1px 100% no-repeat,
+    repeating-linear-gradient(90deg, transparent 0 9px, var(--line-mid) 9px 14px) bottom / 100% 1px no-repeat;
+}
+
+:root[data-theme="dark"] .action-sheet > summary,
+:root[data-theme="dark"] .filter-sheet > summary,
+:root[data-theme="dark"] .image-test-step summary,
+:root[data-theme="dark"] .runtime-alert-detail-json summary {
+  color: var(--fg-1);
+}
+
+:root[data-theme="dark"] .action-sheet-body,
+:root[data-theme="dark"] .filter-sheet-body,
+:root[data-theme="dark"] .user-actions-menu {
+  border-top-color: var(--line-mid);
+}
+
+:root[data-theme="dark"] .announcement-editor-title,
+:root[data-theme="dark"] .announcement-markdown-hint {
+  color: rgba(228, 228, 228, 0.72);
+}
+
+:root[data-theme="dark"] .runtime-alert-item.status-open {
+  border-left-color: color-mix(in srgb, var(--fg-0) 74%, transparent);
+}
+
+:root[data-theme="dark"] .runtime-alert-item.status-acknowledged {
+  border-left-color: color-mix(in srgb, var(--warn) 80%, transparent);
+}
+
+:root[data-theme="dark"] .runtime-alert-item.status-resolved {
+  border-left-color: color-mix(in srgb, var(--ok) 80%, transparent);
+}
+
 @media (max-width: 1220px) {
+  .admin-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-side-nav {
+    position: static;
+    max-height: none;
+  }
+
   .challenge-split,
   .contest-split {
     grid-template-columns: 1fr;

@@ -1,4 +1,7 @@
-use crate::config::AppConfig;
+use crate::{
+    config::AppConfig,
+    password_policy::{enforce_password_policy, PasswordContext},
+};
 use anyhow::Context;
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
@@ -72,9 +75,17 @@ async fn ensure_default_admin_user(db: &PgPool, config: &AppConfig) -> anyhow::R
         return Ok(());
     }
 
-    if password.len() < 8 {
+    if let Err(reason) = enforce_password_policy(
+        config,
+        password,
+        PasswordContext {
+            username: Some(username),
+            email: Some(&email),
+        },
+    ) {
         warn!(
-            "default admin bootstrap skipped: DEFAULT_ADMIN_PASSWORD must be at least 8 characters"
+            reason = %reason,
+            "default admin bootstrap skipped: DEFAULT_ADMIN_PASSWORD does not pass policy"
         );
         return Ok(());
     }
@@ -104,6 +115,8 @@ async fn ensure_default_admin_user(db: &PgPool, config: &AppConfig) -> anyhow::R
                     "UPDATE users
                      SET role = 'admin',
                          status = 'active',
+                         email_verified = TRUE,
+                         email_verified_at = COALESCE(email_verified_at, NOW()),
                          password_hash = $2,
                          updated_at = NOW()
                      WHERE id = $1",
@@ -125,6 +138,8 @@ async fn ensure_default_admin_user(db: &PgPool, config: &AppConfig) -> anyhow::R
                     "UPDATE users
                      SET role = 'admin',
                          status = 'active',
+                         email_verified = TRUE,
+                         email_verified_at = COALESCE(email_verified_at, NOW()),
                          updated_at = NOW()
                      WHERE id = $1",
                 )
@@ -143,8 +158,8 @@ async fn ensure_default_admin_user(db: &PgPool, config: &AppConfig) -> anyhow::R
         }
         None => {
             let created_id = sqlx::query_scalar::<_, uuid::Uuid>(
-                "INSERT INTO users (username, email, password_hash, role, status)
-                 VALUES ($1, $2, $3, 'admin', 'active')
+                "INSERT INTO users (username, email, password_hash, role, status, email_verified, email_verified_at)
+                 VALUES ($1, $2, $3, 'admin', 'active', TRUE, NOW())
                  RETURNING id",
             )
             .bind(username)

@@ -1,6 +1,6 @@
 # Rust CTF API Reference
 
-最后更新：2026-02-18  
+最后更新：2026-02-19  
 适用后端版本：`backend`（Axum / `/api/v1` 路由）
 
 ## 1. 维护约定
@@ -80,16 +80,40 @@
 
 ## 4. 认证与用户中心 API
 
+## `GET /site/settings`
+
+- 鉴权：无需
+- 用途：获取前台站点文案配置（品牌名、副标题、首页标题/简介/签名、Footer 文案）
+- 成功：`200`
+- 响应字段：
+  - `site_name`
+  - `site_subtitle`
+  - `home_title`
+  - `home_tagline`
+  - `home_signature`
+  - `footer_text`
+
+## `GET /auth/password-policy`
+
+- 鉴权：无需
+- 返回当前后端生效的密码策略配置（长度、强度分、字符类别、弱模式拦截规则）
+
 ## `POST /auth/register`
 
 - 鉴权：无需
 - 请求体：
   - `username`：必填，3-32，仅字母/数字/`_`/`-`
   - `email`：必填，合法邮箱
-  - `password`：必填，最少 8 位
-- 成功：`201`
+  - `password`：必填，需满足后端密码策略
+  - `password_confirm`：必填，必须与 `password` 一致
+  - `captcha_token`：可选；当后端启用人机验证时必填（Cloudflare Turnstile token）
+- 成功：
+  - `201`：注册成功并已登录（返回 `auth`）
+  - `202`：注册成功但要求先邮箱验证（`requires_email_verification=true`，`auth=null`）
 - 失败：
   - 用户名或邮箱重复：`409 conflict`
+  - 密码不满足策略或两次密码不一致：`400 bad_request`
+  - 人机验证失败：`400 bad_request`
 
 ## `POST /auth/login`
 
@@ -97,10 +121,13 @@
 - 请求体：
   - `identifier`：必填，用户名或邮箱
   - `password`：必填
+  - `captcha_token`：可选；当后端启用人机验证时必填（Cloudflare Turnstile token）
 - 成功：`200`
 - 失败：
   - 账号不存在或密码错误：`401 unauthorized`
   - 账号被禁用：`403 forbidden`
+  - 启用强制邮箱验证且邮箱未验证：`400 bad_request`
+  - 人机验证失败：`400 bad_request`
 
 ## `POST /auth/refresh`
 
@@ -130,8 +157,39 @@
 - 鉴权：必须
 - 请求体：
   - `current_password`：必填
-  - `new_password`：必填，最少 8 位，且不能与旧密码相同
+  - `new_password`：必填，需满足后端密码策略，且不能与旧密码相同
+  - `new_password_confirm`：可选；若提供必须与 `new_password` 一致
 - 成功后：会撤销该用户所有旧会话并签发新 token
+
+## `POST /auth/email-verification/request`
+
+- 鉴权：无需
+- 请求体：
+  - `email`：必填
+- 说明：如果账号存在且尚未验证，会发送验证邮件（防枚举返回通用提示）
+
+## `POST /auth/email-verification/confirm`
+
+- 鉴权：无需
+- 请求体：
+  - `token`：必填
+- 失败：令牌无效或过期 `400 bad_request`
+
+## `POST /auth/password-reset/request`
+
+- 鉴权：无需
+- 请求体：
+  - `email`：必填
+- 说明：如果账号存在，会发送重置邮件（防枚举返回通用提示）
+
+## `POST /auth/password-reset/confirm`
+
+- 鉴权：无需
+- 请求体：
+  - `token`：必填
+  - `new_password`：必填，需满足后端密码策略
+  - `new_password_confirm`：必填，必须与 `new_password` 一致
+- 失败：令牌无效或过期/密码不满足策略 `400 bad_request`
 
 ## `DELETE /auth/account`
 
@@ -151,7 +209,7 @@
 
 ### 认证模块公共响应模型
 
-`AuthResponse`（register/login/refresh/change-password）：
+`AuthResponse`（login/refresh/change-password，及 register 成功自动登录场景）：
 
 ```json
 {
@@ -165,7 +223,34 @@
     "username": "string",
     "email": "string",
     "role": "player|judge|admin",
+    "email_verified": true,
+    "email_verified_at": "datetime|null",
     "created_at": "datetime"
+  }
+}
+```
+
+`RegisterResponse`：
+
+```json
+{
+  "requires_email_verification": false,
+  "message": "registration succeeded",
+  "auth": {
+    "access_token": "string",
+    "refresh_token": "string",
+    "token_type": "Bearer",
+    "access_expires_in_seconds": 3600,
+    "refresh_expires_in_seconds": 604800,
+    "user": {
+      "id": "uuid",
+      "username": "string",
+      "email": "string",
+      "role": "player|judge|admin",
+      "email_verified": true,
+      "email_verified_at": "datetime|null",
+      "created_at": "datetime"
+    }
   }
 }
 ```
@@ -280,6 +365,7 @@
 - 访问控制同上
 - 仅返回已发布公告（`is_published=true` 且 `published_at<=now` 或为空）
 - 排序：置顶优先，再按发布时间/创建时间倒序
+- `content` 支持 Markdown 文本；前端按安全策略渲染为富文本展示
 
 ## 7. 判题提交 API
 
@@ -306,6 +392,9 @@
 - 动态积分：
   - 比赛 `scoring_mode=dynamic` 时生效
   - 依据已解队伍数和 `dynamic_decay` 衰减，分数范围受 `min_score/max_score` 限制
+- 一二三血加成：
+  - 比赛可配置 `first_blood_bonus_percent/second_blood_bonus_percent/third_blood_bonus_percent`
+  - 当前题目首个/第二个/第三个完成解题的队伍，会在基础分上按百分比追加加成
 
 响应模型 `SubmitFlagResponse`：
 
@@ -447,6 +536,20 @@
 
 - `rank,team_id,team_name,score,solved_count,last_submit_at`
 
+### `GET /contests/{contest_id}/scoreboard/timeline`
+
+- 鉴权：必须
+- 用途：返回积分/排名趋势快照，用于绘制动态折线图与导出动画
+- Query（可选）：
+  - `max_snapshots`（默认 800，范围 1..5000）
+  - `top_n`（默认 12，范围 1..200）
+- 返回：
+  - `contest_id,generated_at`
+  - `snapshots[]`：
+    - `trigger_submission_id,timestamp,entries[]`
+    - `entries[]` 结构同 `ScoreboardEntry`
+  - `latest_entries[]`（当前榜单快照，结构同 `ScoreboardEntry`）
+
 ### `GET /contests/{contest_id}/scoreboard/ws`
 
 - 鉴权：必须（两种方式二选一）
@@ -476,10 +579,27 @@
 
 管理端全部在 `/admin/*` 下，均需鉴权。
 
-- 用户管理：仅 `admin`
+- 用户管理与站点设置：仅 `admin`
 - 其余管理接口：`admin|judge`
 
-## 10.1 用户管理（admin only）
+## 10.1 站点设置（admin only）
+
+- `GET /admin/site-settings`
+  - 返回当前站点文案配置与更新时间
+- `PATCH /admin/site-settings`
+  - Body（至少一个字段）：
+    - `site_name`（1..80）
+    - `site_subtitle`（0..160）
+    - `home_title`（1..160）
+    - `home_tagline`（0..2000）
+    - `home_signature`（0..200）
+    - `footer_text`（0..240）
+  - 说明：仅更新请求中提供的字段；会记录审计日志 `admin.site.settings.update`
+
+`AdminSiteSettingsItem`：
+`site_name,site_subtitle,home_title,home_tagline,home_signature,footer_text,updated_by,updated_at`
+
+## 10.2 用户管理（admin only）
 
 - `GET /admin/users`
   - Query：
@@ -506,7 +626,24 @@
 
 `AdminUserItem`：`id,username,email,role,status,created_at,updated_at`
 
-## 10.2 题目管理（admin|judge）
+## 10.3 题目管理（admin|judge）
+
+### 题目类别管理
+
+- `GET /admin/challenge-categories`
+  - 返回：`id,slug,display_name,sort_order,is_builtin,created_at,updated_at`
+- `POST /admin/challenge-categories`
+  - Body：`slug`（必填）、`display_name?`、`sort_order?`
+  - 约束：
+    - `slug` 仅允许 `[a-z0-9_-]`，长度 1..32，大小写不敏感唯一
+    - `display_name` 最长 64
+    - `sort_order` 范围 `-100000..100000`
+- `PATCH /admin/challenge-categories/{category_id}`
+  - 可更新字段：`slug,display_name,sort_order`
+  - 内置类别（`is_builtin=true`）不可修改 `slug`
+- `DELETE /admin/challenge-categories/{category_id}`
+  - 内置类别不可删除
+  - 被题目使用中的类别不可删除（返回 `409`）
 
 ### `GET /admin/challenges`
 
@@ -566,6 +703,8 @@
   - 发布控制：`status,is_visible`
   - 版本备注：`change_note`
 - 关键约束：
+  - `category` 必须存在于 `challenge_categories`
+  - 默认内置类别：`misc,crypto,web,reverse,mobile,osint,pwn,penetration`
   - `difficulty`：`easy|normal|hard|insane`
   - `challenge_type`：`static|dynamic|internal`
   - `flag_mode`：`static|dynamic|script`
@@ -629,7 +768,7 @@
   - 将题目字段还原到指定历史快照
   - 再次递增版本并记录“回滚后”的新快照
 
-## 10.3 题目附件管理（admin|judge）
+## 10.4 题目附件管理（admin|judge）
 
 - `POST /admin/challenges/{challenge_id}/attachments`
   - Body：
@@ -648,32 +787,35 @@
 
 说明：当前仅提供“上传/查询/删除”元数据接口，未提供单独下载 API。
 
-## 10.4 比赛管理（admin|judge）
+## 10.5 比赛管理（admin|judge）
 
 ### `GET /admin/contests`
 
 - 返回字段：  
-  `id,title,slug,description,poster_url,visibility,status,scoring_mode,dynamic_decay,start_at,end_at,freeze_at,created_at,updated_at`
+  `id,title,slug,description,poster_url,visibility,status,scoring_mode,dynamic_decay,first_blood_bonus_percent,second_blood_bonus_percent,third_blood_bonus_percent,start_at,end_at,freeze_at,created_at,updated_at`
 
 ### `POST /admin/contests`
 
 - Body：
   - `title,slug,start_at,end_at` 必填
-  - 可选：`description,visibility,status,scoring_mode,dynamic_decay,freeze_at`
+  - 可选：`description,visibility,status,scoring_mode,dynamic_decay,first_blood_bonus_percent,second_blood_bonus_percent,third_blood_bonus_percent,freeze_at`
 - 约束：
   - `visibility`：`public|private`
   - `status`：`draft|scheduled|running|ended|archived`
   - `scoring_mode`：`static|dynamic`
   - `dynamic_decay`：`1..100000`
+  - `first_blood_bonus_percent`：`0..500`（默认 10）
+  - `second_blood_bonus_percent`：`0..500`（默认 5）
+  - `third_blood_bonus_percent`：`0..500`（默认 2）
   - `end_at` 必须晚于 `start_at`
   - `freeze_at` 必须在 `[start_at, end_at]` 区间内
   - `slug` 唯一
 
 ### `PATCH /admin/contests/{contest_id}`
 
-- 可更新字段：`title,slug,description,visibility,status,scoring_mode,dynamic_decay,start_at,end_at,freeze_at,clear_freeze_at`
+- 可更新字段：`title,slug,description,visibility,status,scoring_mode,dynamic_decay,first_blood_bonus_percent,second_blood_bonus_percent,third_blood_bonus_percent,start_at,end_at,freeze_at,clear_freeze_at`
 - `clear_freeze_at=true` 时清空封榜时间
-- 时间窗口与 `dynamic_decay` 约束同创建
+- 时间窗口、`dynamic_decay`、血量加成百分比约束同创建
 
 ### `PATCH /admin/contests/{contest_id}/status`
 
@@ -703,7 +845,7 @@
 - 删除比赛海报
 - 成功：`204`
 
-## 10.5 比赛题目挂载（admin|judge）
+## 10.6 比赛题目挂载（admin|judge）
 
 - `GET /admin/contests/{contest_id}/challenges`
 - `POST /admin/contests/{contest_id}/challenges`
@@ -719,15 +861,17 @@
 
 - `contest_id,challenge_id,challenge_title,challenge_category,challenge_difficulty,sort_order,release_at`
 
-## 10.6 公告管理（admin|judge）
+## 10.7 公告管理（admin|judge）
 
 - `GET /admin/contests/{contest_id}/announcements`
   - Query：`limit`（默认200，1..1000）
 - `POST /admin/contests/{contest_id}/announcements`
   - Body：`title,content,is_published?,is_pinned?`
+  - `content` 支持 Markdown（建议使用，便于结构化公告）
   - 若 `is_published=true`，创建时自动写入 `published_at=now`
 - `PATCH /admin/contests/{contest_id}/announcements/{announcement_id}`
   - Body：`title?,content?,is_published?,is_pinned?`
+  - `content` 可继续使用 Markdown 更新
   - 至少一个字段
   - 发布状态切换逻辑：
     - 置为发布：若历史 `published_at` 为空则补当前时间
@@ -739,7 +883,7 @@
 
 - `id,contest_id,title,content,is_published,is_pinned,published_at,created_by,created_by_username,updated_by,updated_by_username,created_at,updated_at`
 
-## 10.7 运行态与审计（admin|judge）
+## 10.8 运行态与审计（admin|judge）
 
 - `GET /admin/instances`
   - Query：

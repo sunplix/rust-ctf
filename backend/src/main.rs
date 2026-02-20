@@ -1,6 +1,8 @@
 mod auth;
 mod config;
 mod error;
+mod mailer;
+mod password_policy;
 mod routes;
 mod runtime_template;
 mod state;

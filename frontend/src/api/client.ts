@@ -64,6 +64,8 @@ export type AuthUser = {
   username: string;
   email: string;
   role: string;
+  email_verified: boolean;
+  email_verified_at: string | null;
   created_at: string;
 };
 
@@ -74,6 +76,45 @@ export type AuthResponse = {
   access_expires_in_seconds: number;
   refresh_expires_in_seconds: number;
   user: AuthUser;
+};
+
+export type RegisterResponse = {
+  requires_email_verification: boolean;
+  message: string;
+  auth: AuthResponse | null;
+};
+
+export type PasswordPolicySnapshot = {
+  min_length: number;
+  min_strength_score: number;
+  require_lowercase: boolean;
+  require_uppercase: boolean;
+  require_digit: boolean;
+  require_symbol: boolean;
+  min_unique_chars: number;
+  block_weak_patterns: boolean;
+};
+
+export type PasswordPolicyResponse = {
+  policy: PasswordPolicySnapshot;
+};
+
+export type ActionMessageResponse = {
+  message: string;
+};
+
+export type SiteSettings = {
+  site_name: string;
+  site_subtitle: string;
+  home_title: string;
+  home_tagline: string;
+  home_signature: string;
+  footer_text: string;
+};
+
+export type AdminSiteSettings = SiteSettings & {
+  updated_by: string | null;
+  updated_at: string;
 };
 
 export type LoginHistoryItem = {
@@ -200,6 +241,63 @@ export type ScoreboardPushPayload = {
   entries: ScoreboardEntry[];
 };
 
+export type ScoreboardTimelineSnapshot = {
+  trigger_submission_id: number;
+  timestamp: string;
+  entries: ScoreboardEntry[];
+};
+
+export type ScoreboardTimelineResponse = {
+  contest_id: string;
+  generated_at: string;
+  snapshots: ScoreboardTimelineSnapshot[];
+  latest_entries: ScoreboardEntry[];
+};
+
+export type ScoreboardRankingChallenge = {
+  challenge_id: string;
+  challenge_title: string;
+  challenge_slug: string;
+  marker: "first_blood" | "second_blood" | "third_blood" | "solved";
+  score_awarded: number;
+  submitted_at: string;
+};
+
+export type ScoreboardRankingCategory = {
+  category: string;
+  solved_count: number;
+  challenges: ScoreboardRankingChallenge[];
+};
+
+export type ScoreboardRankingEntry = {
+  rank: number;
+  subject_id: string;
+  subject_name: string;
+  total_score: number;
+  solved_count: number;
+  last_submit_at: string | null;
+  categories: ScoreboardRankingCategory[];
+};
+
+export type ScoreboardCategoryChallengeItem = {
+  challenge_id: string;
+  challenge_title: string;
+  challenge_slug: string;
+};
+
+export type ScoreboardCategoryItem = {
+  category: string;
+  challenges: ScoreboardCategoryChallengeItem[];
+};
+
+export type ScoreboardRankingsResponse = {
+  contest_id: string;
+  generated_at: string;
+  categories: ScoreboardCategoryItem[];
+  team_rankings: ScoreboardRankingEntry[];
+  player_rankings: ScoreboardRankingEntry[];
+};
+
 export type InstanceNetworkAccess = {
   mode: string;
   host: string;
@@ -270,6 +368,16 @@ export type AdminChallengeDetailItem = {
   updated_at: string;
 };
 
+export type AdminChallengeCategoryItem = {
+  id: string;
+  slug: string;
+  display_name: string;
+  sort_order: number;
+  is_builtin: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export type AdminChallengeVersionItem = {
   id: string;
   challenge_id: string;
@@ -302,6 +410,9 @@ export type AdminContestItem = {
   status: string;
   scoring_mode: string;
   dynamic_decay: number;
+  first_blood_bonus_percent: number;
+  second_blood_bonus_percent: number;
+  third_blood_bonus_percent: number;
   start_at: string;
   end_at: string;
   freeze_at: string | null;
@@ -543,9 +654,11 @@ export async function register(payload: {
   username: string;
   email: string;
   password: string;
-}): Promise<AuthResponse> {
+  password_confirm: string;
+  captcha_token?: string;
+}): Promise<RegisterResponse> {
   try {
-    const { data } = await api.post<AuthResponse>("/auth/register", payload);
+    const { data } = await api.post<RegisterResponse>("/auth/register", payload);
     return data;
   } catch (error) {
     throw toApiClientError(error);
@@ -555,6 +668,7 @@ export async function register(payload: {
 export async function login(payload: {
   identifier: string;
   password: string;
+  captcha_token?: string;
 }): Promise<AuthResponse> {
   try {
     const { data } = await api.post<AuthResponse>("/auth/login", payload);
@@ -576,6 +690,70 @@ export async function refresh(payload: { refresh_token: string }): Promise<AuthR
 export async function me(accessToken: string): Promise<AuthUser> {
   try {
     const { data } = await api.get<AuthUser>("/auth/me", authHeaders(accessToken));
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function getPasswordPolicy(): Promise<PasswordPolicyResponse> {
+  try {
+    const { data } = await api.get<PasswordPolicyResponse>("/auth/password-policy");
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function getPublicSiteSettings(): Promise<SiteSettings> {
+  try {
+    const { data } = await api.get<SiteSettings>("/site/settings");
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function requestEmailVerification(payload: {
+  email: string;
+}): Promise<ActionMessageResponse> {
+  try {
+    const { data } = await api.post<ActionMessageResponse>("/auth/email-verification/request", payload);
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function confirmEmailVerification(payload: {
+  token: string;
+}): Promise<ActionMessageResponse> {
+  try {
+    const { data } = await api.post<ActionMessageResponse>("/auth/email-verification/confirm", payload);
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function requestPasswordReset(payload: {
+  email: string;
+}): Promise<ActionMessageResponse> {
+  try {
+    const { data } = await api.post<ActionMessageResponse>("/auth/password-reset/request", payload);
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function confirmPasswordReset(payload: {
+  token: string;
+  new_password: string;
+  new_password_confirm: string;
+}): Promise<ActionMessageResponse> {
+  try {
+    const { data } = await api.post<ActionMessageResponse>("/auth/password-reset/confirm", payload);
     return data;
   } catch (error) {
     throw toApiClientError(error);
@@ -897,6 +1075,40 @@ export async function getScoreboard(
   }
 }
 
+export async function getScoreboardTimeline(
+  contestId: string,
+  accessToken: string,
+  query?: { max_snapshots?: number; top_n?: number }
+): Promise<ScoreboardTimelineResponse> {
+  try {
+    const { data } = await api.get<ScoreboardTimelineResponse>(
+      `/contests/${contestId}/scoreboard/timeline`,
+      {
+        ...authHeaders(accessToken),
+        params: query
+      }
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function getScoreboardRankings(
+  contestId: string,
+  accessToken: string
+): Promise<ScoreboardRankingsResponse> {
+  try {
+    const { data } = await api.get<ScoreboardRankingsResponse>(
+      `/contests/${contestId}/scoreboard/rankings`,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
 export function buildScoreboardWsUrl(contestId: string, accessToken: string): string {
   const url = new URL(API_BASE_URL);
   const protocol = url.protocol === "https:" ? "wss:" : "ws:";
@@ -978,6 +1190,72 @@ export async function getInstanceWireguardConfig(
       authHeaders(accessToken)
     );
     return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function listAdminChallengeCategories(
+  accessToken: string
+): Promise<AdminChallengeCategoryItem[]> {
+  try {
+    const { data } = await api.get<AdminChallengeCategoryItem[]>(
+      "/admin/challenge-categories",
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function createAdminChallengeCategory(
+  payload: {
+    slug: string;
+    display_name?: string;
+    sort_order?: number;
+  },
+  accessToken: string
+): Promise<AdminChallengeCategoryItem> {
+  try {
+    const { data } = await api.post<AdminChallengeCategoryItem>(
+      "/admin/challenge-categories",
+      payload,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function updateAdminChallengeCategory(
+  categoryId: string,
+  payload: {
+    slug?: string;
+    display_name?: string;
+    sort_order?: number;
+  },
+  accessToken: string
+): Promise<AdminChallengeCategoryItem> {
+  try {
+    const { data } = await api.patch<AdminChallengeCategoryItem>(
+      `/admin/challenge-categories/${categoryId}`,
+      payload,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function deleteAdminChallengeCategory(
+  categoryId: string,
+  accessToken: string
+): Promise<void> {
+  try {
+    await api.delete(`/admin/challenge-categories/${categoryId}`, authHeaders(accessToken));
   } catch (error) {
     throw toApiClientError(error);
   }
@@ -1199,6 +1477,38 @@ export async function listAdminUsers(
   }
 }
 
+export async function getAdminSiteSettings(accessToken: string): Promise<AdminSiteSettings> {
+  try {
+    const { data } = await api.get<AdminSiteSettings>("/admin/site-settings", authHeaders(accessToken));
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function updateAdminSiteSettings(
+  payload: {
+    site_name?: string;
+    site_subtitle?: string;
+    home_title?: string;
+    home_tagline?: string;
+    home_signature?: string;
+    footer_text?: string;
+  },
+  accessToken: string
+): Promise<AdminSiteSettings> {
+  try {
+    const { data } = await api.patch<AdminSiteSettings>(
+      "/admin/site-settings",
+      payload,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
 export async function updateAdminUserStatus(
   userId: string,
   status: string,
@@ -1270,6 +1580,9 @@ export async function createAdminContest(
     status?: string;
     scoring_mode?: string;
     dynamic_decay?: number;
+    first_blood_bonus_percent?: number;
+    second_blood_bonus_percent?: number;
+    third_blood_bonus_percent?: number;
     start_at: string;
     end_at: string;
     freeze_at?: string | null;
@@ -1294,6 +1607,9 @@ export async function updateAdminContest(
     status?: string;
     scoring_mode?: string;
     dynamic_decay?: number;
+    first_blood_bonus_percent?: number;
+    second_blood_bonus_percent?: number;
+    third_blood_bonus_percent?: number;
     start_at?: string;
     end_at?: string;
     freeze_at?: string | null;

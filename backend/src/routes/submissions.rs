@@ -51,6 +51,9 @@ struct JudgeContextRow {
     contest_end_at: DateTime<Utc>,
     contest_scoring_mode: String,
     contest_dynamic_decay: i32,
+    contest_first_blood_bonus_percent: i32,
+    contest_second_blood_bonus_percent: i32,
+    contest_third_blood_bonus_percent: i32,
     flag_mode: String,
     flag_hash: String,
     static_score: i32,
@@ -130,6 +133,9 @@ async fn submit_flag(
                 ct.end_at AS contest_end_at,
                 ct.scoring_mode AS contest_scoring_mode,
                 ct.dynamic_decay AS contest_dynamic_decay,
+                ct.first_blood_bonus_percent AS contest_first_blood_bonus_percent,
+                ct.second_blood_bonus_percent AS contest_second_blood_bonus_percent,
+                ct.third_blood_bonus_percent AS contest_third_blood_bonus_percent,
                 c.flag_mode,
                 c.flag_hash,
                 c.static_score,
@@ -469,10 +475,6 @@ async fn calculate_awarded_score(
     contest_id: Uuid,
     challenge_id: Uuid,
 ) -> AppResult<i32> {
-    if ctx.contest_scoring_mode != "dynamic" {
-        return Ok(ctx.static_score);
-    }
-
     let solved_count = sqlx::query_scalar::<_, i64>(
         "SELECT COUNT(DISTINCT team_id)
          FROM submissions
@@ -487,17 +489,36 @@ async fn calculate_awarded_score(
     .await
     .map_err(AppError::internal)?;
 
-    let min_score = ctx.min_score.max(0);
-    let max_score = ctx.max_score.max(min_score);
-    if max_score == min_score {
-        return Ok(max_score);
+    let base_score = if ctx.contest_scoring_mode != "dynamic" {
+        ctx.static_score.max(0)
+    } else {
+        let min_score = ctx.min_score.max(0);
+        let max_score = ctx.max_score.max(min_score);
+        if max_score == min_score {
+            max_score
+        } else {
+            let decay = ctx.contest_dynamic_decay.max(1) as f64;
+            let solves = solved_count.max(0) as f64;
+            let raw = min_score as f64 + (max_score - min_score) as f64 * (decay / (decay + solves));
+            let score = raw.round() as i32;
+            score.clamp(min_score, max_score)
+        }
+    };
+
+    let bonus_percent = match solved_count {
+        0 => ctx.contest_first_blood_bonus_percent,
+        1 => ctx.contest_second_blood_bonus_percent,
+        2 => ctx.contest_third_blood_bonus_percent,
+        _ => 0,
+    }
+    .clamp(0, 500);
+
+    if bonus_percent == 0 || base_score <= 0 {
+        return Ok(base_score);
     }
 
-    let decay = ctx.contest_dynamic_decay.max(1) as f64;
-    let solves = solved_count.max(0) as f64;
-    let raw = min_score as f64 + (max_score - min_score) as f64 * (decay / (decay + solves));
-    let score = raw.round() as i32;
-    Ok(score.clamp(min_score, max_score))
+    let bonus = ((base_score as f64) * (bonus_percent as f64 / 100.0)).round() as i32;
+    Ok(base_score.saturating_add(bonus.max(0)))
 }
 
 fn verify_static_flag(submitted_flag: &str, stored_flag: &str) -> AppResult<bool> {

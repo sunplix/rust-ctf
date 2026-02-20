@@ -1,10 +1,4 @@
-use std::{
-    collections::HashSet,
-    path::PathBuf,
-    process::Stdio,
-    sync::Arc,
-    time::Instant,
-};
+use std::{collections::HashSet, path::PathBuf, process::Stdio, sync::Arc, time::Instant};
 
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
@@ -30,6 +24,7 @@ use uuid::Uuid;
 use crate::{
     auth::{self, AuthenticatedUser},
     error::{AppError, AppResult},
+    password_policy::{enforce_password_policy, PasswordContext},
     routes::instances,
     runtime_template::{
         build_single_image_compose_template, parse_runtime_metadata_options,
@@ -87,6 +82,17 @@ struct AdminChallengeItem {
     tags: Vec<String>,
     writeup_visibility: String,
     current_version: i32,
+    created_at: DateTime<Utc>,
+    updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+struct AdminChallengeCategoryItem {
+    id: Uuid,
+    slug: String,
+    display_name: String,
+    sort_order: i32,
+    is_builtin: bool,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
 }
@@ -338,6 +344,20 @@ struct ChallengeAttachmentsQuery {
     limit: Option<i64>,
 }
 
+#[derive(Debug, Deserialize)]
+struct CreateChallengeCategoryRequest {
+    slug: String,
+    display_name: Option<String>,
+    sort_order: Option<i32>,
+}
+
+#[derive(Debug, Deserialize)]
+struct UpdateChallengeCategoryRequest {
+    slug: Option<String>,
+    display_name: Option<String>,
+    sort_order: Option<i32>,
+}
+
 #[derive(Debug, Serialize, FromRow)]
 struct AdminContestItem {
     id: Uuid,
@@ -349,6 +369,9 @@ struct AdminContestItem {
     status: String,
     scoring_mode: String,
     dynamic_decay: i32,
+    first_blood_bonus_percent: i32,
+    second_blood_bonus_percent: i32,
+    third_blood_bonus_percent: i32,
     start_at: DateTime<Utc>,
     end_at: DateTime<Utc>,
     freeze_at: Option<DateTime<Utc>>,
@@ -365,6 +388,9 @@ struct CreateContestRequest {
     status: Option<String>,
     scoring_mode: Option<String>,
     dynamic_decay: Option<i32>,
+    first_blood_bonus_percent: Option<i32>,
+    second_blood_bonus_percent: Option<i32>,
+    third_blood_bonus_percent: Option<i32>,
     start_at: DateTime<Utc>,
     end_at: DateTime<Utc>,
     freeze_at: Option<DateTime<Utc>>,
@@ -379,6 +405,9 @@ struct UpdateContestRequest {
     status: Option<String>,
     scoring_mode: Option<String>,
     dynamic_decay: Option<i32>,
+    first_blood_bonus_percent: Option<i32>,
+    second_blood_bonus_percent: Option<i32>,
+    third_blood_bonus_percent: Option<i32>,
     start_at: Option<DateTime<Utc>>,
     end_at: Option<DateTime<Utc>>,
     freeze_at: Option<DateTime<Utc>>,
@@ -510,6 +539,16 @@ struct ResetUserPasswordRequest {
     new_password: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct UpdateSiteSettingsRequest {
+    site_name: Option<String>,
+    site_subtitle: Option<String>,
+    home_title: Option<String>,
+    home_tagline: Option<String>,
+    home_signature: Option<String>,
+    footer_text: Option<String>,
+}
+
 #[derive(Debug, Serialize, FromRow)]
 struct AdminInstanceItem {
     id: Uuid,
@@ -619,6 +658,18 @@ struct AdminUserItem {
     role: String,
     status: String,
     created_at: DateTime<Utc>,
+    updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+struct AdminSiteSettingsItem {
+    site_name: String,
+    site_subtitle: String,
+    home_title: String,
+    home_tagline: String,
+    home_signature: String,
+    footer_text: String,
+    updated_by: Option<Uuid>,
     updated_at: DateTime<Utc>,
 }
 
@@ -750,6 +801,10 @@ struct ParsedInstanceStats {
     pids: Option<i64>,
 }
 
+type InstanceStatsRow = (Option<String>, Option<String>, ParsedInstanceStats);
+type InstanceStatsRows = Vec<InstanceStatsRow>;
+type InstanceStatsParseOutput = (InstanceStatsRows, Vec<String>);
+
 #[derive(Debug, Serialize)]
 struct AdminInstanceReaperRunResponse {
     generated_at: DateTime<Utc>,
@@ -773,6 +828,18 @@ pub fn router() -> Router<Arc<AppState>> {
         .route(
             "/admin/users/{user_id}/reset-password",
             post(reset_user_password),
+        )
+        .route(
+            "/admin/site-settings",
+            get(get_site_settings).patch(update_site_settings),
+        )
+        .route(
+            "/admin/challenge-categories",
+            get(list_challenge_categories).post(create_challenge_category),
+        )
+        .route(
+            "/admin/challenge-categories/{category_id}",
+            patch(update_challenge_category).delete(delete_challenge_category),
         )
         .route(
             "/admin/challenges",
@@ -908,6 +975,365 @@ async fn list_users(
     .map_err(AppError::internal)?;
 
     Ok(Json(rows))
+}
+
+async fn get_site_settings(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+) -> AppResult<Json<AdminSiteSettingsItem>> {
+    ensure_admin(&current_user)?;
+
+    let row = sqlx::query_as::<_, AdminSiteSettingsItem>(
+        "SELECT site_name,
+                site_subtitle,
+                home_title,
+                home_tagline,
+                home_signature,
+                footer_text,
+                updated_by,
+                updated_at
+         FROM site_settings
+         WHERE id = TRUE
+         LIMIT 1",
+    )
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or_else(|| AppError::Internal(anyhow::anyhow!("site settings not initialized")))?;
+
+    Ok(Json(row))
+}
+
+async fn update_site_settings(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Json(req): Json<UpdateSiteSettingsRequest>,
+) -> AppResult<Json<AdminSiteSettingsItem>> {
+    ensure_admin(&current_user)?;
+
+    let site_name = normalize_optional_setting(req.site_name.as_deref(), "site_name", 1, 80)?;
+    let site_subtitle =
+        normalize_optional_setting(req.site_subtitle.as_deref(), "site_subtitle", 0, 160)?;
+    let home_title = normalize_optional_setting(req.home_title.as_deref(), "home_title", 1, 160)?;
+    let home_tagline =
+        normalize_optional_setting(req.home_tagline.as_deref(), "home_tagline", 0, 2000)?;
+    let home_signature =
+        normalize_optional_setting(req.home_signature.as_deref(), "home_signature", 0, 200)?;
+    let footer_text = normalize_optional_setting(req.footer_text.as_deref(), "footer_text", 0, 240)?;
+
+    if site_name.is_none()
+        && site_subtitle.is_none()
+        && home_title.is_none()
+        && home_tagline.is_none()
+        && home_signature.is_none()
+        && footer_text.is_none()
+    {
+        return Err(AppError::BadRequest(
+            "at least one site setting field is required".to_string(),
+        ));
+    }
+
+    let row = sqlx::query_as::<_, AdminSiteSettingsItem>(
+        "UPDATE site_settings
+         SET site_name = COALESCE($1, site_name),
+             site_subtitle = COALESCE($2, site_subtitle),
+             home_title = COALESCE($3, home_title),
+             home_tagline = COALESCE($4, home_tagline),
+             home_signature = COALESCE($5, home_signature),
+             footer_text = COALESCE($6, footer_text),
+             updated_by = $7,
+             updated_at = NOW()
+         WHERE id = TRUE
+         RETURNING site_name,
+                   site_subtitle,
+                   home_title,
+                   home_tagline,
+                   home_signature,
+                   footer_text,
+                   updated_by,
+                   updated_at",
+    )
+    .bind(site_name)
+    .bind(site_subtitle)
+    .bind(home_title)
+    .bind(home_tagline)
+    .bind(home_signature)
+    .bind(footer_text)
+    .bind(current_user.user_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or_else(|| AppError::Internal(anyhow::anyhow!("site settings not initialized")))?;
+
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.site.settings.update",
+        "site_settings",
+        None,
+        json!({
+            "site_name": row.site_name,
+            "site_subtitle": row.site_subtitle,
+            "home_title": row.home_title,
+            "footer_text": row.footer_text
+        }),
+    )
+    .await;
+
+    Ok(Json(row))
+}
+
+async fn list_challenge_categories(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+) -> AppResult<Json<Vec<AdminChallengeCategoryItem>>> {
+    ensure_admin_or_judge(&current_user)?;
+
+    let rows = sqlx::query_as::<_, AdminChallengeCategoryItem>(
+        "SELECT id,
+                slug,
+                display_name,
+                sort_order,
+                is_builtin,
+                created_at,
+                updated_at
+         FROM challenge_categories
+         ORDER BY sort_order ASC, created_at ASC",
+    )
+    .fetch_all(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    Ok(Json(rows))
+}
+
+async fn create_challenge_category(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Json(req): Json<CreateChallengeCategoryRequest>,
+) -> AppResult<Json<AdminChallengeCategoryItem>> {
+    ensure_admin_or_judge(&current_user)?;
+
+    let slug = normalize_challenge_category_slug(req.slug.as_str())?;
+    let display_name = normalize_challenge_category_display_name(
+        req.display_name.as_deref().unwrap_or(slug.as_str()),
+    )?;
+    let sort_order = req.sort_order.unwrap_or(100);
+    if !(-100_000..=100_000).contains(&sort_order) {
+        return Err(AppError::BadRequest(
+            "sort_order must be between -100000 and 100000".to_string(),
+        ));
+    }
+
+    let row = sqlx::query_as::<_, AdminChallengeCategoryItem>(
+        "INSERT INTO challenge_categories (
+            slug,
+            display_name,
+            sort_order,
+            is_builtin
+         )
+         VALUES ($1, $2, $3, FALSE)
+         RETURNING id,
+                   slug,
+                   display_name,
+                   sort_order,
+                   is_builtin,
+                   created_at,
+                   updated_at",
+    )
+    .bind(&slug)
+    .bind(&display_name)
+    .bind(sort_order)
+    .fetch_one(&state.db)
+    .await
+    .map_err(|err| {
+        if is_unique_violation(&err) {
+            AppError::Conflict("challenge category slug already exists".to_string())
+        } else {
+            AppError::internal(err)
+        }
+    })?;
+
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.challenge_category.create",
+        "challenge_category",
+        Some(row.id),
+        json!({
+            "slug": &row.slug,
+            "display_name": &row.display_name,
+            "sort_order": row.sort_order
+        }),
+    )
+    .await;
+
+    Ok(Json(row))
+}
+
+async fn update_challenge_category(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Path(category_id): Path<Uuid>,
+    Json(req): Json<UpdateChallengeCategoryRequest>,
+) -> AppResult<Json<AdminChallengeCategoryItem>> {
+    ensure_admin_or_judge(&current_user)?;
+
+    let existing = sqlx::query_as::<_, AdminChallengeCategoryItem>(
+        "SELECT id,
+                slug,
+                display_name,
+                sort_order,
+                is_builtin,
+                created_at,
+                updated_at
+         FROM challenge_categories
+         WHERE id = $1
+         LIMIT 1",
+    )
+    .bind(category_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest(
+        "challenge category not found".to_string(),
+    ))?;
+
+    let slug = match req.slug {
+        Some(value) => normalize_challenge_category_slug(value.as_str())?,
+        None => existing.slug.clone(),
+    };
+    if existing.is_builtin && slug != existing.slug {
+        return Err(AppError::Conflict(
+            "builtin challenge category slug cannot be changed".to_string(),
+        ));
+    }
+
+    let display_name = match req.display_name {
+        Some(value) => normalize_challenge_category_display_name(value.as_str())?,
+        None => existing.display_name.clone(),
+    };
+    let sort_order = req.sort_order.unwrap_or(existing.sort_order);
+    if !(-100_000..=100_000).contains(&sort_order) {
+        return Err(AppError::BadRequest(
+            "sort_order must be between -100000 and 100000".to_string(),
+        ));
+    }
+
+    let row = sqlx::query_as::<_, AdminChallengeCategoryItem>(
+        "UPDATE challenge_categories
+         SET slug = $2,
+             display_name = $3,
+             sort_order = $4,
+             updated_at = NOW()
+         WHERE id = $1
+         RETURNING id,
+                   slug,
+                   display_name,
+                   sort_order,
+                   is_builtin,
+                   created_at,
+                   updated_at",
+    )
+    .bind(category_id)
+    .bind(&slug)
+    .bind(&display_name)
+    .bind(sort_order)
+    .fetch_one(&state.db)
+    .await
+    .map_err(|err| {
+        if is_unique_violation(&err) {
+            AppError::Conflict("challenge category slug already exists".to_string())
+        } else {
+            AppError::internal(err)
+        }
+    })?;
+
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.challenge_category.update",
+        "challenge_category",
+        Some(row.id),
+        json!({
+            "slug": &row.slug,
+            "display_name": &row.display_name,
+            "sort_order": row.sort_order
+        }),
+    )
+    .await;
+
+    Ok(Json(row))
+}
+
+async fn delete_challenge_category(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Path(category_id): Path<Uuid>,
+) -> AppResult<StatusCode> {
+    ensure_admin_or_judge(&current_user)?;
+
+    let row = sqlx::query_as::<_, AdminChallengeCategoryItem>(
+        "SELECT id,
+                slug,
+                display_name,
+                sort_order,
+                is_builtin,
+                created_at,
+                updated_at
+         FROM challenge_categories
+         WHERE id = $1
+         LIMIT 1",
+    )
+    .bind(category_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest(
+        "challenge category not found".to_string(),
+    ))?;
+
+    if row.is_builtin {
+        return Err(AppError::Conflict(
+            "builtin challenge category cannot be deleted".to_string(),
+        ));
+    }
+
+    let usage_count = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(1)
+         FROM challenges
+         WHERE LOWER(category) = LOWER($1)",
+    )
+    .bind(&row.slug)
+    .fetch_one(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+    if usage_count > 0 {
+        return Err(AppError::Conflict(
+            "challenge category is in use by existing challenges".to_string(),
+        ));
+    }
+
+    sqlx::query("DELETE FROM challenge_categories WHERE id = $1")
+        .bind(category_id)
+        .execute(&state.db)
+        .await
+        .map_err(AppError::internal)?;
+
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.challenge_category.delete",
+        "challenge_category",
+        Some(row.id),
+        json!({
+            "slug": &row.slug,
+            "display_name": &row.display_name
+        }),
+    )
+    .await;
+
+    Ok(StatusCode::NO_CONTENT)
 }
 
 async fn delete_user_account(
@@ -1119,11 +1545,33 @@ async fn reset_user_password(
 ) -> AppResult<Json<AdminUserItem>> {
     ensure_admin(&current_user)?;
 
-    if req.new_password.len() < 8 {
-        return Err(AppError::BadRequest(
-            "new_password must be at least 8 characters".to_string(),
-        ));
-    }
+    let target = sqlx::query_as::<_, AdminUserItem>(
+        "SELECT id,
+                username,
+                email,
+                role,
+                status,
+                created_at,
+                updated_at
+         FROM users
+         WHERE id = $1
+         LIMIT 1",
+    )
+    .bind(user_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest("user not found".to_string()))?;
+
+    enforce_password_policy(
+        &state.config,
+        &req.new_password,
+        PasswordContext {
+            username: Some(&target.username),
+            email: Some(&target.email),
+        },
+    )
+    .map_err(AppError::BadRequest)?;
 
     let password_hash = hash_password(&req.new_password)?;
     let row = sqlx::query_as::<_, AdminUserItem>(
@@ -1581,6 +2029,7 @@ async fn create_challenge(
     let title = trim_required(&req.title, "title")?;
     let slug = trim_required(&req.slug, "slug")?.to_lowercase();
     let category = trim_required(&req.category, "category")?.to_lowercase();
+    ensure_challenge_category_exists(state.as_ref(), category.as_str()).await?;
     let difficulty = normalize_with_allowed(
         req.difficulty.as_deref().unwrap_or("normal"),
         DIFFICULTY_ALLOWED,
@@ -1890,6 +2339,9 @@ async fn update_challenge(
         .category
         .map(|v| v.trim().to_lowercase())
         .filter(|v| !v.is_empty());
+    if let Some(category_value) = category.as_deref() {
+        ensure_challenge_category_exists(state.as_ref(), category_value).await?;
+    }
     let compose_template_patch = req
         .compose_template
         .as_ref()
@@ -2507,6 +2959,9 @@ async fn list_contests(
                 status,
                 scoring_mode,
                 dynamic_decay,
+                first_blood_bonus_percent,
+                second_blood_bonus_percent,
+                third_blood_bonus_percent,
                 start_at,
                 end_at,
                 freeze_at,
@@ -2555,6 +3010,14 @@ async fn create_contest(
             "dynamic_decay must be between 1 and 100000".to_string(),
         ));
     }
+    let first_blood_bonus_percent =
+        validate_blood_bonus_percent(req.first_blood_bonus_percent.unwrap_or(10), "first_blood_bonus_percent")?;
+    let second_blood_bonus_percent = validate_blood_bonus_percent(
+        req.second_blood_bonus_percent.unwrap_or(5),
+        "second_blood_bonus_percent",
+    )?;
+    let third_blood_bonus_percent =
+        validate_blood_bonus_percent(req.third_blood_bonus_percent.unwrap_or(2), "third_blood_bonus_percent")?;
 
     let row = sqlx::query_as::<_, AdminContestItem>(
         "INSERT INTO contests (
@@ -2565,12 +3028,15 @@ async fn create_contest(
             status,
             scoring_mode,
             dynamic_decay,
+            first_blood_bonus_percent,
+            second_blood_bonus_percent,
+            third_blood_bonus_percent,
             start_at,
             end_at,
             freeze_at,
             created_by
          )
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
          RETURNING id,
                    title,
                    slug,
@@ -2583,6 +3049,9 @@ async fn create_contest(
                    status,
                    scoring_mode,
                    dynamic_decay,
+                   first_blood_bonus_percent,
+                   second_blood_bonus_percent,
+                   third_blood_bonus_percent,
                    start_at,
                    end_at,
                    freeze_at,
@@ -2596,6 +3065,9 @@ async fn create_contest(
     .bind(status)
     .bind(scoring_mode)
     .bind(dynamic_decay)
+    .bind(first_blood_bonus_percent)
+    .bind(second_blood_bonus_percent)
+    .bind(third_blood_bonus_percent)
     .bind(req.start_at)
     .bind(req.end_at)
     .bind(req.freeze_at)
@@ -2623,6 +3095,9 @@ async fn create_contest(
             "visibility": &row.visibility,
             "scoring_mode": &row.scoring_mode,
             "dynamic_decay": row.dynamic_decay,
+            "first_blood_bonus_percent": row.first_blood_bonus_percent,
+            "second_blood_bonus_percent": row.second_blood_bonus_percent,
+            "third_blood_bonus_percent": row.third_blood_bonus_percent,
             "start_at": row.start_at,
             "end_at": row.end_at,
             "freeze_at": row.freeze_at
@@ -2654,6 +3129,9 @@ async fn update_contest(
                 status,
                 scoring_mode,
                 dynamic_decay,
+                first_blood_bonus_percent,
+                second_blood_bonus_percent,
+                third_blood_bonus_percent,
                 start_at,
                 end_at,
                 freeze_at,
@@ -2698,6 +3176,21 @@ async fn update_contest(
             "dynamic_decay must be between 1 and 100000".to_string(),
         ));
     }
+    let first_blood_bonus_percent = validate_blood_bonus_percent(
+        req.first_blood_bonus_percent
+            .unwrap_or(existing.first_blood_bonus_percent),
+        "first_blood_bonus_percent",
+    )?;
+    let second_blood_bonus_percent = validate_blood_bonus_percent(
+        req.second_blood_bonus_percent
+            .unwrap_or(existing.second_blood_bonus_percent),
+        "second_blood_bonus_percent",
+    )?;
+    let third_blood_bonus_percent = validate_blood_bonus_percent(
+        req.third_blood_bonus_percent
+            .unwrap_or(existing.third_blood_bonus_percent),
+        "third_blood_bonus_percent",
+    )?;
 
     let start_at = req.start_at.unwrap_or(existing.start_at);
     let end_at = req.end_at.unwrap_or(existing.end_at);
@@ -2718,9 +3211,12 @@ async fn update_contest(
              status = $6,
              scoring_mode = $7,
              dynamic_decay = $8,
-             start_at = $9,
-             end_at = $10,
-             freeze_at = $11,
+             first_blood_bonus_percent = $9,
+             second_blood_bonus_percent = $10,
+             third_blood_bonus_percent = $11,
+             start_at = $12,
+             end_at = $13,
+             freeze_at = $14,
              updated_at = NOW()
          WHERE id = $1
          RETURNING id,
@@ -2735,6 +3231,9 @@ async fn update_contest(
                    status,
                    scoring_mode,
                    dynamic_decay,
+                   first_blood_bonus_percent,
+                   second_blood_bonus_percent,
+                   third_blood_bonus_percent,
                    start_at,
                    end_at,
                    freeze_at,
@@ -2749,6 +3248,9 @@ async fn update_contest(
     .bind(status)
     .bind(scoring_mode)
     .bind(dynamic_decay)
+    .bind(first_blood_bonus_percent)
+    .bind(second_blood_bonus_percent)
+    .bind(third_blood_bonus_percent)
     .bind(start_at)
     .bind(end_at)
     .bind(freeze_at)
@@ -2775,6 +3277,9 @@ async fn update_contest(
             "visibility": &row.visibility,
             "scoring_mode": &row.scoring_mode,
             "dynamic_decay": row.dynamic_decay,
+            "first_blood_bonus_percent": row.first_blood_bonus_percent,
+            "second_blood_bonus_percent": row.second_blood_bonus_percent,
+            "third_blood_bonus_percent": row.third_blood_bonus_percent,
             "start_at": row.start_at,
             "end_at": row.end_at,
             "freeze_at": row.freeze_at
@@ -2812,6 +3317,9 @@ async fn update_contest_status(
                    status,
                    scoring_mode,
                    dynamic_decay,
+                   first_blood_bonus_percent,
+                   second_blood_bonus_percent,
+                   third_blood_bonus_percent,
                    start_at,
                    end_at,
                    freeze_at,
@@ -2994,6 +3502,9 @@ async fn upload_contest_poster(
                    status,
                    scoring_mode,
                    dynamic_decay,
+                   first_blood_bonus_percent,
+                   second_blood_bonus_percent,
+                   third_blood_bonus_percent,
                    start_at,
                    end_at,
                    freeze_at,
@@ -3675,14 +4186,13 @@ async fn run_stale_instance_reaper_now(
 ) -> AppResult<Json<AdminInstanceReaperRunResponse>> {
     ensure_admin_or_judge(&current_user)?;
     let batch_size = state.config.instance_stale_reaper_batch_size.clamp(1, 500);
-    let heartbeat_stale_seconds =
-        state.config.instance_heartbeat_stale_seconds.clamp(60, 86_400) as i64;
-    let summary = instances::run_stale_instance_reaper(
-        state.as_ref(),
-        heartbeat_stale_seconds,
-        batch_size,
-    )
-    .await?;
+    let heartbeat_stale_seconds = state
+        .config
+        .instance_heartbeat_stale_seconds
+        .clamp(60, 86_400) as i64;
+    let summary =
+        instances::run_stale_instance_reaper(state.as_ref(), heartbeat_stale_seconds, batch_size)
+            .await?;
 
     record_audit_log(
         state.as_ref(),
@@ -3712,7 +4222,10 @@ async fn run_stale_instance_reaper_now(
     }))
 }
 
-async fn load_admin_instance_item(state: &AppState, instance_id: Uuid) -> AppResult<AdminInstanceItem> {
+async fn load_admin_instance_item(
+    state: &AppState,
+    instance_id: Uuid,
+) -> AppResult<AdminInstanceItem> {
     let row = sqlx::query_as::<_, AdminInstanceItem>(
         "SELECT i.id,
                 i.contest_id,
@@ -3790,9 +4303,10 @@ async fn collect_instance_runtime_metrics(
     inspect_args.extend(container_ids.iter().cloned());
     let inspect_output =
         run_docker_command_or_error(&inspect_args, timeout_seconds, "docker inspect").await?;
-    let inspect_rows = serde_json::from_str::<Vec<Value>>(&inspect_output.output).map_err(|err| {
-        AppError::BadRequest(format!("failed to parse docker inspect output: {err}"))
-    })?;
+    let inspect_rows =
+        serde_json::from_str::<Vec<Value>>(&inspect_output.output).map_err(|err| {
+            AppError::BadRequest(format!("failed to parse docker inspect output: {err}"))
+        })?;
 
     let mut stats_args = vec![
         "stats".to_string(),
@@ -3814,7 +4328,9 @@ async fn collect_instance_runtime_metrics(
             .map(str::to_string)
             .unwrap_or_default();
         if container_id.is_empty() {
-            warnings.push("skip one container entry: missing container id in docker inspect".to_string());
+            warnings.push(
+                "skip one container entry: missing container id in docker inspect".to_string(),
+            );
             continue;
         }
 
@@ -3850,14 +4366,11 @@ async fn collect_instance_runtime_metrics(
             .and_then(|value| value.get("Status"))
             .and_then(Value::as_str)
             .map(str::to_string);
-        let restart_count = row
-            .get("RestartCount")
-            .and_then(Value::as_i64)
-            .or_else(|| {
-                row.get("State")
-                    .and_then(|value| value.get("RestartCount"))
-                    .and_then(Value::as_i64)
-            });
+        let restart_count = row.get("RestartCount").and_then(Value::as_i64).or_else(|| {
+            row.get("State")
+                .and_then(|value| value.get("RestartCount"))
+                .and_then(Value::as_i64)
+        });
         let started_at = row
             .get("State")
             .and_then(|value| value.get("StartedAt"))
@@ -3886,8 +4399,8 @@ async fn collect_instance_runtime_metrics(
             })
             .unwrap_or_default();
 
-        let stats = find_instance_stats(&stats_rows, &container_id, &container_name)
-            .unwrap_or_default();
+        let stats =
+            find_instance_stats(&stats_rows, &container_id, &container_name).unwrap_or_default();
 
         services.push(AdminInstanceRuntimeMetricsService {
             container_id,
@@ -3933,7 +4446,7 @@ async fn run_docker_command_or_error(
     )))
 }
 
-fn parse_instance_stats_output(raw: &str) -> (Vec<(Option<String>, Option<String>, ParsedInstanceStats)>, Vec<String>) {
+fn parse_instance_stats_output(raw: &str) -> InstanceStatsParseOutput {
     let mut rows = Vec::new();
     let mut warnings = Vec::new();
 
@@ -3969,7 +4482,8 @@ fn parse_instance_stats_output(raw: &str) -> (Vec<(Option<String>, Option<String
 
         rows.push((
             parsed.container.map(|value| value.trim().to_string()),
-            parsed.name
+            parsed
+                .name
                 .as_deref()
                 .map(normalize_container_name)
                 .filter(|value| !value.is_empty()),
@@ -3981,7 +4495,7 @@ fn parse_instance_stats_output(raw: &str) -> (Vec<(Option<String>, Option<String
 }
 
 fn find_instance_stats(
-    rows: &[(Option<String>, Option<String>, ParsedInstanceStats)],
+    rows: &[InstanceStatsRow],
     container_id: &str,
     container_name: &str,
 ) -> Option<ParsedInstanceStats> {
@@ -5000,6 +5514,36 @@ fn normalize_optional_filter(value: Option<String>) -> Option<String> {
     })
 }
 
+fn normalize_optional_setting(
+    value: Option<&str>,
+    field: &str,
+    min_len: usize,
+    max_len: usize,
+) -> AppResult<Option<String>> {
+    let Some(raw) = value else {
+        return Ok(None);
+    };
+
+    let trimmed = raw.trim();
+    let len = trimmed.chars().count();
+
+    if len < min_len {
+        return Err(AppError::BadRequest(format!(
+            "{} length must be >= {}",
+            field, min_len
+        )));
+    }
+
+    if len > max_len {
+        return Err(AppError::BadRequest(format!(
+            "{} length must be <= {}",
+            field, max_len
+        )));
+    }
+
+    Ok(Some(trimmed.to_string()))
+}
+
 fn normalize_optional_text(value: &str) -> Option<&str> {
     let trimmed = value.trim();
     if trimmed.is_empty() {
@@ -5047,6 +5591,54 @@ fn validate_compose_runtime_configuration(
 
 fn default_challenge_status() -> String {
     "draft".to_string()
+}
+
+fn normalize_challenge_category_slug(value: &str) -> AppResult<String> {
+    let slug = trim_required(value, "slug")?.to_lowercase();
+    if slug.chars().count() > 32 {
+        return Err(AppError::BadRequest(
+            "slug must be at most 32 characters".to_string(),
+        ));
+    }
+    if !slug
+        .chars()
+        .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '_' || ch == '-')
+    {
+        return Err(AppError::BadRequest(
+            "slug must contain only [a-z0-9_-]".to_string(),
+        ));
+    }
+    Ok(slug)
+}
+
+fn normalize_challenge_category_display_name(value: &str) -> AppResult<String> {
+    let display_name = trim_required(value, "display_name")?;
+    if display_name.chars().count() > 64 {
+        return Err(AppError::BadRequest(
+            "display_name must be at most 64 characters".to_string(),
+        ));
+    }
+    Ok(display_name.to_string())
+}
+
+async fn ensure_challenge_category_exists(state: &AppState, category: &str) -> AppResult<()> {
+    let exists = sqlx::query_scalar::<_, bool>(
+        "SELECT EXISTS(
+            SELECT 1
+            FROM challenge_categories
+            WHERE LOWER(slug) = LOWER($1)
+         )",
+    )
+    .bind(category)
+    .fetch_one(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    if exists {
+        Ok(())
+    } else {
+        Err(AppError::BadRequest("challenge category not found".to_string()))
+    }
 }
 
 fn normalize_tags(tags: Vec<String>) -> AppResult<Vec<String>> {
@@ -5485,6 +6077,16 @@ fn validate_contest_time_window(
     }
 
     Ok(())
+}
+
+fn validate_blood_bonus_percent(value: i32, field: &str) -> AppResult<i32> {
+    if !(0..=500).contains(&value) {
+        return Err(AppError::BadRequest(format!(
+            "{} must be between 0 and 500",
+            field
+        )));
+    }
+    Ok(value)
 }
 
 fn is_unique_violation(err: &sqlx::Error) -> bool {

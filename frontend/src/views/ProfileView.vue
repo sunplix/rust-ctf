@@ -1,86 +1,99 @@
 <template>
-  <section class="page-block">
-    <div class="row-between">
-      <div>
-        <h1>账户中心</h1>
-        <p class="muted">维护个人资料、修改密码并查看最近登录记录。</p>
-      </div>
-      <RouterLink class="ghost-link" to="/contests">返回比赛中心</RouterLink>
-    </div>
+  <section class="page-layout">
+    <article class="surface stack">
+      <header class="section-head">
+        <div class="section-title">
+          <h1>{{ tr("账户设置", "Account Settings") }}</h1>
+        </div>
+        <RouterLink class="btn-line" to="/contests">{{ tr("返回比赛", "Back to contests") }}</RouterLink>
+      </header>
+      <p v-if="pageError" class="error">{{ pageError }}</p>
+    </article>
 
-    <p v-if="pageError" class="error">{{ pageError }}</p>
-
-    <div class="team-layout">
-      <section class="panel team-panel">
-        <h2>个人资料</h2>
+    <div class="cols-2">
+      <section class="surface stack">
+        <h2>{{ tr("个人资料", "Profile") }}</h2>
         <form class="form-grid" @submit.prevent="handleUpdateProfile">
           <label>
-            <span>用户名</span>
+            <span>{{ tr("用户名", "Username") }}</span>
             <input v-model.trim="profileForm.username" maxlength="32" required />
           </label>
           <label>
-            <span>邮箱</span>
+            <span>{{ tr("邮箱", "Email") }}</span>
             <input v-model.trim="profileForm.email" type="email" maxlength="128" required />
           </label>
-          <button class="primary" type="submit" :disabled="updatingProfile">
-            {{ updatingProfile ? "保存中..." : "保存资料" }}
+          <button class="btn-solid" type="submit" :disabled="updatingProfile">
+            {{ updatingProfile ? tr("保存中...", "Saving...") : tr("保存资料", "Save profile") }}
           </button>
         </form>
       </section>
 
-      <section class="panel team-panel">
-        <h2>修改密码</h2>
+      <section class="surface stack">
+        <h2>{{ tr("修改密码", "Change Password") }}</h2>
         <form class="form-grid" @submit.prevent="handleChangePassword">
           <label>
-            <span>当前密码</span>
+            <span>{{ tr("当前密码", "Current password") }}</span>
             <input v-model="passwordForm.current_password" type="password" autocomplete="current-password" required />
           </label>
           <label>
-            <span>新密码</span>
-            <input v-model="passwordForm.new_password" type="password" autocomplete="new-password" minlength="8" required />
+            <span>{{ tr("新密码", "New password") }}</span>
+            <input
+              v-model="passwordForm.new_password"
+              type="password"
+              autocomplete="new-password"
+              minlength="8"
+              required
+            />
           </label>
-          <button class="primary" type="submit" :disabled="changingPassword">
-            {{ changingPassword ? "提交中..." : "修改密码" }}
+          <button class="btn-solid" type="submit" :disabled="changingPassword">
+            {{ changingPassword ? tr("提交中...", "Submitting...") : tr("更新密码", "Update password") }}
           </button>
         </form>
       </section>
     </div>
 
-    <section class="panel team-panel">
-      <div class="row-between">
-        <h2>登录历史</h2>
-        <button class="ghost" type="button" @click="loadHistory" :disabled="loadingHistory">
-          {{ loadingHistory ? "加载中..." : "刷新" }}
+    <section class="surface stack">
+      <header class="row-between">
+        <h2>{{ tr("登录历史", "Login History") }}</h2>
+        <button class="btn-line" type="button" @click="loadHistory" :disabled="loadingHistory">
+          {{ loadingHistory ? tr("加载中...", "Loading...") : tr("刷新", "Refresh") }}
         </button>
-      </div>
-
+      </header>
       <p v-if="historyError" class="error">{{ historyError }}</p>
 
-      <table v-if="history.length > 0" class="scoreboard-table">
-        <thead>
-          <tr>
-            <th>时间</th>
-            <th>动作</th>
-            <th>来源信息</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in history" :key="item.id">
-            <td>{{ formatTime(item.created_at) }}</td>
-            <td class="mono">{{ item.action }}</td>
-            <td class="mono">{{ summarizeDetail(item.detail) }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <p v-else class="muted">暂无登录历史记录。</p>
+      <div v-if="history.length > 0" class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>{{ tr("时间", "Time") }}</th>
+              <th>{{ tr("动作", "Action") }}</th>
+              <th>{{ tr("来源信息", "Source") }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in history" :key="item.id">
+              <td>{{ formatTime(item.created_at) }}</td>
+              <td class="mono">{{ item.action }}</td>
+              <td class="mono">{{ summarizeDetail(item.detail) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p v-else class="soft">{{ tr("暂无登录历史记录。", "No login history records.") }}</p>
     </section>
 
-    <section class="panel team-panel">
-      <h2>危险操作</h2>
-      <p class="muted">删除账号后将立即失效并退出登录，且无法恢复。</p>
-      <button class="danger" type="button" @click="handleDeleteAccount" :disabled="deletingAccount">
-        {{ deletingAccount ? "删除中..." : "删除我的账号" }}
-      </button>
+    <section class="surface stack">
+      <h2>{{ tr("危险操作", "Danger Zone") }}</h2>
+      <p class="muted">{{ tr("删除账号后会立即撤销会话，且不可恢复。", "Deleting the account revokes all sessions and cannot be undone.") }}</p>
+      <div class="context-menu">
+        <button class="btn-danger" type="button" @click="confirmDelete = !confirmDelete">
+          {{ confirmDelete ? tr("取消删除", "Cancel") : tr("删除我的账号", "Delete my account") }}
+        </button>
+        <button v-if="confirmDelete" class="btn-danger" type="button" :disabled="deletingAccount" @click="handleDeleteAccount">
+          {{ deletingAccount ? tr("删除中...", "Deleting...") : tr("确认删除", "Confirm delete") }}
+        </button>
+      </div>
+      <p v-if="confirmDelete" class="warn">{{ tr("确认后将立即退出并删除账号数据。", "This action will sign out and delete account data immediately.") }}</p>
     </section>
   </section>
 </template>
@@ -94,14 +107,16 @@ import {
   changePassword,
   deleteAccount,
   getLoginHistory,
-  type LoginHistoryItem,
-  updateProfile
+  updateProfile,
+  type LoginHistoryItem
 } from "../api/client";
+import { useL10n } from "../composables/useL10n";
 import { useAuthStore } from "../stores/auth";
 import { useUiStore } from "../stores/ui";
 
 const authStore = useAuthStore();
 const uiStore = useUiStore();
+const { locale, tr } = useL10n();
 const router = useRouter();
 
 const pageError = ref("");
@@ -111,6 +126,7 @@ const changingPassword = ref(false);
 const deletingAccount = ref(false);
 const loadingHistory = ref(false);
 const historyError = ref("");
+const confirmDelete = ref(false);
 
 const history = ref<LoginHistoryItem[]>([]);
 
@@ -124,16 +140,17 @@ const passwordForm = reactive({
   new_password: ""
 });
 
-function requireAccessToken() {
+function accessTokenOrThrow() {
   const token = authStore.accessToken;
   if (!token) {
-    throw new ApiClientError("未登录或会话已失效", "unauthorized");
+    throw new ApiClientError(tr("未登录或会话已失效", "Not signed in or session expired"), "unauthorized");
   }
   return token;
 }
 
 function formatTime(input: string) {
-  return new Date(input).toLocaleString();
+  const localeTag = locale.value === "en" ? "en-US" : "zh-CN";
+  return new Date(input).toLocaleString(localeTag);
 }
 
 function summarizeDetail(detail: Record<string, unknown>) {
@@ -156,7 +173,7 @@ async function handleUpdateProfile() {
   pageError.value = "";
 
   try {
-    const token = requireAccessToken();
+    const token = accessTokenOrThrow();
     const updated = await updateProfile(
       {
         username: profileForm.username,
@@ -166,11 +183,12 @@ async function handleUpdateProfile() {
     );
 
     authStore.user = updated;
-    uiStore.success("资料已更新", "用户名和邮箱已保存。");
+    uiStore.success(tr("资料已更新", "Profile updated"), tr("用户名和邮箱已保存。", "Username and email saved."), 2200);
   } catch (err) {
-    const message = err instanceof ApiClientError ? err.message : "更新资料失败";
+    const message = err instanceof ApiClientError ? err.message : tr("更新资料失败", "Failed to update profile");
     pageError.value = message;
-    uiStore.error("更新资料失败", message);
+    uiStore.error(tr("更新资料失败", "Failed to update profile"), message);
+    uiStore.alertError(tr("账户模块", "Account module"), message);
   } finally {
     updatingProfile.value = false;
   }
@@ -181,7 +199,7 @@ async function handleChangePassword() {
   pageError.value = "";
 
   try {
-    const token = requireAccessToken();
+    const token = accessTokenOrThrow();
     const authResponse = await changePassword(
       {
         current_password: passwordForm.current_password,
@@ -193,12 +211,12 @@ async function handleChangePassword() {
     authStore.applyAuthResponse(authResponse);
     passwordForm.current_password = "";
     passwordForm.new_password = "";
-    uiStore.success("密码已更新", "会话已刷新，请使用新密码登录。", 3200);
+    uiStore.success(tr("密码已更新", "Password updated"), tr("会话已刷新。", "Session refreshed."), 2600);
     await loadHistory();
   } catch (err) {
-    const message = err instanceof ApiClientError ? err.message : "修改密码失败";
+    const message = err instanceof ApiClientError ? err.message : tr("修改密码失败", "Failed to change password");
     pageError.value = message;
-    uiStore.error("修改密码失败", message);
+    uiStore.error(tr("修改密码失败", "Failed to change password"), message);
   } finally {
     changingPassword.value = false;
   }
@@ -209,34 +227,31 @@ async function loadHistory() {
   historyError.value = "";
 
   try {
-    const token = requireAccessToken();
+    const token = accessTokenOrThrow();
     history.value = await getLoginHistory(token, { limit: 50 });
   } catch (err) {
-    historyError.value = err instanceof ApiClientError ? err.message : "加载登录历史失败";
+    historyError.value = err instanceof ApiClientError ? err.message : tr("加载登录历史失败", "Failed to load login history");
   } finally {
     loadingHistory.value = false;
   }
 }
 
 async function handleDeleteAccount() {
-  if (!window.confirm("确认删除当前账号？该操作不可恢复。")) {
-    return;
-  }
-
   deletingAccount.value = true;
   pageError.value = "";
 
   try {
-    const token = requireAccessToken();
+    const token = accessTokenOrThrow();
     await deleteAccount(token);
-    const username = authStore.user?.username ?? "当前账号";
+    const username = authStore.user?.username ?? tr("当前账号", "Current account");
     authStore.clearSession();
-    uiStore.warning("账号已删除", `${username} 已被删除并退出登录。`, 3600);
-    router.replace("/login");
+    confirmDelete.value = false;
+    uiStore.warning(tr("账号已删除", "Account deleted"), tr(`${username} 已被删除并退出登录。`, `${username} was deleted and signed out.`), 3400);
+    router.replace("/home");
   } catch (err) {
-    const message = err instanceof ApiClientError ? err.message : "删除账号失败";
+    const message = err instanceof ApiClientError ? err.message : tr("删除账号失败", "Failed to delete account");
     pageError.value = message;
-    uiStore.error("删除账号失败", message);
+    uiStore.error(tr("删除账号失败", "Failed to delete account"), message);
   } finally {
     deletingAccount.value = false;
   }

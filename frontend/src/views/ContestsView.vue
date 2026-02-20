@@ -1,138 +1,157 @@
 <template>
-  <section class="page-block contests-page">
-    <div class="page-head">
-      <div>
-        <h1>比赛中心</h1>
-        <p class="muted">按时间聚焦进行中和即将开始的公开比赛。</p>
-      </div>
-      <button class="ghost" type="button" @click="loadContests" :disabled="loading">
-        {{ loading ? "刷新中..." : "刷新" }}
-      </button>
-    </div>
-
-    <p v-if="error" class="error">{{ error }}</p>
-
-    <div v-if="loading && contests.length === 0" class="panel">正在加载比赛...</div>
-
-    <template v-else>
-      <section v-if="focusContest" class="panel focus-panel">
-        <div class="focus-media" :class="{ empty: !focusContest.poster_url }">
-          <img
-            v-if="focusContest.poster_url"
-            :src="contestPosterUrl(focusContest)"
-            :alt="`${focusContest.title} poster`"
-          />
-          <div v-else class="focus-fallback">NO POSTER</div>
+  <section class="page-layout">
+    <article class="surface stack">
+      <header class="section-head">
+        <div class="section-title">
+          <h1>{{ tr("比赛总览", "Contest Overview") }}</h1>
         </div>
-        <div class="focus-content">
-          <div class="row-between">
-            <h2>{{ focusContest.title }}</h2>
-            <span class="badge">{{ focusContest.status }}</span>
-          </div>
-          <p class="muted mono">{{ formatRange(focusContest.start_at, focusContest.end_at) }}</p>
-          <p class="focus-description">{{ focusContest.description || "暂无比赛描述。" }}</p>
-          <article
-            v-if="focusContest.latest_announcement_title || focusContest.latest_announcement_content"
-            class="focus-announcement"
-          >
-            <strong>{{ focusContest.latest_announcement_title || "最新公告" }}</strong>
-            <p>{{ announcementSummary(focusContest.latest_announcement_content) }}</p>
-            <span class="muted mono" v-if="focusContest.latest_announcement_published_at">
-              {{ formatTime(focusContest.latest_announcement_published_at) }}
-            </span>
-          </article>
-          <RouterLink class="primary-link" :to="`/contests/${focusContest.id}`">进入比赛</RouterLink>
-        </div>
-      </section>
+        <button class="btn-line" type="button" @click="loadContests" :disabled="loading">
+          {{ loading ? tr("刷新中...", "Refreshing...") : tr("刷新", "Refresh") }}
+        </button>
+      </header>
+      <p v-if="error" class="error">{{ error }}</p>
+    </article>
 
-      <section class="contest-section">
-        <div class="row-between section-head">
-          <h3>进行中</h3>
-          <span class="badge">{{ runningContests.length }}</span>
+    <div class="cols-2 contests-layout">
+      <aside class="surface stack">
+        <div class="row-between">
+          <h2>{{ tr("比赛列表", "Contests") }}</h2>
+          <span class="badge">{{ contests.length }}</span>
         </div>
-        <div v-if="runningContests.length === 0" class="panel muted">暂无进行中的比赛。</div>
-        <div v-else class="contest-grid stagger-list">
-          <article v-for="contest in runningContests" :key="contest.id" class="panel timeline-card">
-            <div class="timeline-media" :class="{ empty: !contest.poster_url }">
-              <img v-if="contest.poster_url" :src="contestPosterUrl(contest)" :alt="`${contest.title} poster`" />
-              <div v-else class="timeline-fallback">NO POSTER</div>
+
+        <div v-if="loading && contests.length === 0" class="muted">
+          {{ tr("正在加载比赛数据...", "Loading contests...") }}
+        </div>
+
+        <template v-else>
+          <section class="stack">
+            <div class="row-between">
+              <h3>{{ tr("进行中", "Running") }}</h3>
+              <span class="soft mono">{{ running.length }}</span>
             </div>
-            <div class="timeline-content">
-              <div class="row-between">
-                <strong>{{ contest.title }}</strong>
-                <span class="badge">running</span>
-              </div>
-              <p class="muted mono">{{ formatRange(contest.start_at, contest.end_at) }}</p>
-              <p class="muted timeline-desc">{{ contest.description || "暂无比赛描述。" }}</p>
-              <p class="timeline-announcement" v-if="contest.latest_announcement_title || contest.latest_announcement_content">
-                {{ contest.latest_announcement_title || "最新公告" }}：
-                {{ announcementSummary(contest.latest_announcement_content) }}
-              </p>
-              <RouterLink class="primary-link" :to="`/contests/${contest.id}`">进入比赛</RouterLink>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section class="contest-section">
-        <div class="row-between section-head">
-          <h3>即将开始</h3>
-          <span class="badge">{{ upcomingContests.length }}</span>
-        </div>
-        <div v-if="upcomingContests.length === 0" class="panel muted">暂无即将开始的比赛。</div>
-        <div v-else class="contest-grid stagger-list">
-          <article v-for="contest in upcomingContests" :key="contest.id" class="panel timeline-card">
-            <div class="timeline-media" :class="{ empty: !contest.poster_url }">
-              <img v-if="contest.poster_url" :src="contestPosterUrl(contest)" :alt="`${contest.title} poster`" />
-              <div v-else class="timeline-fallback">NO POSTER</div>
-            </div>
-            <div class="timeline-content">
-              <div class="row-between">
-                <strong>{{ contest.title }}</strong>
-                <span class="badge">scheduled</span>
-              </div>
-              <p class="muted mono">{{ formatRange(contest.start_at, contest.end_at) }}</p>
-              <p class="muted timeline-desc">{{ contest.description || "暂无比赛描述。" }}</p>
-              <p class="timeline-announcement" v-if="contest.latest_announcement_title || contest.latest_announcement_content">
-                {{ contest.latest_announcement_title || "最新公告" }}：
-                {{ announcementSummary(contest.latest_announcement_content) }}
-              </p>
-              <RouterLink class="ghost-link" :to="`/contests/${contest.id}`">查看详情</RouterLink>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section class="contest-section">
-        <details class="panel ended-section">
-          <summary class="row-between">
-            <span>已结束比赛</span>
-            <span class="badge">{{ endedContests.length }}</span>
-          </summary>
-          <div v-if="endedContests.length === 0" class="muted">暂无已结束比赛。</div>
-          <div v-else class="contest-grid stagger-list ended-grid">
-            <article v-for="contest in endedContests" :key="contest.id" class="panel timeline-card ended-card">
-              <div class="timeline-content">
+            <div class="list-board">
+              <button
+                v-for="contest in running"
+                :key="contest.id"
+                class="select-item"
+                :class="{ active: contest.id === selectedContestId }"
+                type="button"
+                @click="selectedContestId = contest.id"
+              >
                 <div class="row-between">
                   <strong>{{ contest.title }}</strong>
-                  <span class="badge">ended</span>
+                  <span class="badge">{{ tr("进行中", "running") }}</span>
                 </div>
-                <p class="muted mono">{{ formatRange(contest.start_at, contest.end_at) }}</p>
-                <p class="muted timeline-desc">{{ contest.description || "暂无比赛描述。" }}</p>
-                <RouterLink class="ghost-link" :to="`/contests/${contest.id}`">进入回顾</RouterLink>
-              </div>
-            </article>
-          </div>
-        </details>
-      </section>
+                <p class="soft mono">{{ formatRange(contest.start_at, contest.end_at) }}</p>
+              </button>
+              <p v-if="running.length === 0" class="soft">{{ tr("暂无进行中比赛。", "No running contests.") }}</p>
+            </div>
+          </section>
 
-      <div v-if="!hasContests" class="panel">暂无可见比赛。</div>
-    </template>
+          <div class="split-line"></div>
+
+          <section class="stack">
+            <div class="row-between">
+              <h3>{{ tr("即将开始", "Scheduled") }}</h3>
+              <span class="soft mono">{{ scheduled.length }}</span>
+            </div>
+            <div class="list-board">
+              <button
+                v-for="contest in scheduled"
+                :key="contest.id"
+                class="select-item"
+                :class="{ active: contest.id === selectedContestId }"
+                type="button"
+                @click="selectedContestId = contest.id"
+              >
+                <div class="row-between">
+                  <strong>{{ contest.title }}</strong>
+                  <span class="badge">{{ tr("待开始", "scheduled") }}</span>
+                </div>
+                <p class="soft mono">{{ formatRange(contest.start_at, contest.end_at) }}</p>
+              </button>
+              <p v-if="scheduled.length === 0" class="soft">{{ tr("暂无即将开始比赛。", "No scheduled contests.") }}</p>
+            </div>
+          </section>
+
+          <div class="split-line"></div>
+
+          <section class="stack">
+            <div class="row-between">
+              <h3>{{ tr("已结束", "Ended") }}</h3>
+              <span class="soft mono">{{ ended.length }}</span>
+            </div>
+            <div class="list-board">
+              <button
+                v-for="contest in ended"
+                :key="contest.id"
+                class="select-item"
+                :class="{ active: contest.id === selectedContestId }"
+                type="button"
+                @click="selectedContestId = contest.id"
+              >
+                <div class="row-between">
+                  <strong>{{ contest.title }}</strong>
+                  <span class="badge">{{ tr("已结束", "ended") }}</span>
+                </div>
+                <p class="soft mono">{{ formatRange(contest.start_at, contest.end_at) }}</p>
+              </button>
+              <p v-if="ended.length === 0" class="soft">{{ tr("暂无已结束比赛。", "No ended contests.") }}</p>
+            </div>
+          </section>
+        </template>
+      </aside>
+
+      <main class="surface stack">
+        <template v-if="selectedContest">
+          <header class="section-head">
+            <div class="section-title">
+              <h2>{{ selectedContest.title }}</h2>
+            </div>
+            <span class="badge">{{ selectedContest.status }}</span>
+          </header>
+
+          <div v-if="selectedContest.poster_url" class="poster-wrap">
+            <img :src="posterUrl(selectedContest)" :alt="`${selectedContest.title} poster`" />
+          </div>
+          <div v-else class="poster-fallback mono">-</div>
+
+          <p class="muted">{{ selectedContest.description || tr("暂无比赛描述。", "No contest description.") }}</p>
+          <p class="soft mono">{{ formatRange(selectedContest.start_at, selectedContest.end_at) }}</p>
+          <p
+            v-if="selectedContest.latest_announcement_title || selectedContest.latest_announcement_content"
+            class="muted"
+          >
+            <strong>{{ selectedContest.latest_announcement_title || tr("最新公告", "Latest announcement") }}：</strong>
+            {{ summarize(selectedContest.latest_announcement_content) }}
+          </p>
+
+          <div class="split-line"></div>
+
+          <section class="stack">
+            <h3>{{ tr("比赛操作", "Actions") }}</h3>
+            <div class="context-menu" v-if="selectedContestId">
+              <RouterLink class="btn-solid" :to="`/contests/${selectedContest.id}`">
+                {{ tr("进入比赛空间", "Open contest workspace") }}
+              </RouterLink>
+              <button class="btn-line" type="button" @click="copyContestId(selectedContest.id)">
+                {{ tr("复制比赛 ID", "Copy contest ID") }}
+              </button>
+              <button class="btn-line" type="button" @click="loadContests" :disabled="loading">
+                {{ tr("同步最新数据", "Sync latest data") }}
+              </button>
+            </div>
+          </section>
+        </template>
+
+        <p v-else class="muted">{{ tr("请选择一个比赛查看详情。", "Select a contest to view details.") }}</p>
+      </main>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 
 import {
   ApiClientError,
@@ -140,17 +159,22 @@ import {
   listContests,
   type ContestListItem
 } from "../api/client";
+import { useL10n } from "../composables/useL10n";
+import { markdownToPlainText } from "../composables/useMarkdown";
 import { useUiStore } from "../stores/ui";
 
+const uiStore = useUiStore();
+const { locale, tr } = useL10n();
+
 const contests = ref<ContestListItem[]>([]);
+const selectedContestId = ref("");
 const loading = ref(false);
 const error = ref("");
-const posterCacheBuster = ref(`${Date.now()}`);
-const uiStore = useUiStore();
+const cacheVersion = ref(`${Date.now()}`);
 
-const orderedContests = computed(() => {
+const sortedContests = computed(() => {
   return [...contests.value].sort((a, b) => {
-    const statusWeight = (status: string) => {
+    const rank = (status: string) => {
       if (status === "running") {
         return 0;
       }
@@ -160,9 +184,9 @@ const orderedContests = computed(() => {
       return 2;
     };
 
-    const weightDelta = statusWeight(a.status) - statusWeight(b.status);
-    if (weightDelta !== 0) {
-      return weightDelta;
+    const byStatus = rank(a.status) - rank(b.status);
+    if (byStatus !== 0) {
+      return byStatus;
     }
 
     if (a.status === "running") {
@@ -173,54 +197,73 @@ const orderedContests = computed(() => {
   });
 });
 
-const runningContests = computed(() => orderedContests.value.filter((item) => item.status === "running"));
-const upcomingContests = computed(() => orderedContests.value.filter((item) => item.status === "scheduled"));
-const endedContests = computed(() => orderedContests.value.filter((item) => item.status === "ended"));
+const running = computed(() => sortedContests.value.filter((item) => item.status === "running"));
+const scheduled = computed(() => sortedContests.value.filter((item) => item.status === "scheduled"));
+const ended = computed(() => sortedContests.value.filter((item) => item.status === "ended"));
 
-const focusContest = computed(() => {
-  if (runningContests.value.length > 0) {
-    return runningContests.value[0];
+const selectedContest = computed(() => {
+  if (!selectedContestId.value) {
+    return null;
   }
-  if (upcomingContests.value.length > 0) {
-    return upcomingContests.value[0];
-  }
-  if (endedContests.value.length > 0) {
-    return endedContests.value[0];
-  }
-  return null;
+  return contests.value.find((contest) => contest.id === selectedContestId.value) ?? null;
 });
 
-const hasContests = computed(() => contests.value.length > 0);
+watch(
+  () => contests.value,
+  (next) => {
+    if (next.length === 0) {
+      selectedContestId.value = "";
+      return;
+    }
+
+    if (!selectedContestId.value || !next.some((contest) => contest.id === selectedContestId.value)) {
+      selectedContestId.value = sortedContests.value[0]?.id ?? "";
+    }
+  },
+  { immediate: true }
+);
 
 function formatTime(input: string) {
-  return new Date(input).toLocaleString();
+  const localeTag = locale.value === "en" ? "en-US" : "zh-CN";
+  return new Date(input).toLocaleString(localeTag);
 }
 
 function formatRange(startAt: string, endAt: string) {
   return `${formatTime(startAt)} ~ ${formatTime(endAt)}`;
 }
 
-function contestPosterUrl(contest: ContestListItem) {
+function posterUrl(contest: ContestListItem) {
   if (!contest.poster_url) {
     return "";
   }
 
   const url = new URL(buildApiAssetUrl(contest.poster_url));
-  url.searchParams.set("v", posterCacheBuster.value);
+  url.searchParams.set("v", cacheVersion.value);
   return url.toString();
 }
 
-function announcementSummary(content: string | null) {
-  const text = (content ?? "").trim();
+function summarize(content: string | null) {
+  const text = markdownToPlainText(content ?? "");
   if (!text) {
-    return "暂无公告内容。";
+    return tr("暂无公告内容。", "No announcement content.");
   }
-
-  if (text.length <= 120) {
+  if (text.length <= 100) {
     return text;
   }
+  return `${text.slice(0, 100)}...`;
+}
 
-  return `${text.slice(0, 120)}...`;
+async function copyContestId(contestId: string) {
+  try {
+    await navigator.clipboard.writeText(contestId);
+    uiStore.info(tr("已复制", "Copied"), tr("比赛 ID 已复制到剪贴板。", "Contest ID copied to clipboard."), 1800);
+  } catch {
+    uiStore.warning(
+      tr("复制失败", "Copy failed"),
+      tr("浏览器不允许写入剪贴板。", "Clipboard access is blocked by the browser."),
+      2200
+    );
+  }
 }
 
 async function loadContests() {
@@ -229,172 +272,54 @@ async function loadContests() {
 
   try {
     contests.value = await listContests();
-    posterCacheBuster.value = `${Date.now()}`;
+    cacheVersion.value = `${Date.now()}`;
   } catch (err) {
-    error.value = err instanceof ApiClientError ? err.message : "加载比赛失败";
-    uiStore.error("加载比赛失败", error.value);
+    const message = err instanceof ApiClientError ? err.message : tr("加载比赛失败", "Failed to load contests");
+    error.value = message;
+    uiStore.error(tr("加载失败", "Load failed"), message);
+    uiStore.alertError(tr("比赛模块", "Contest module"), message);
   } finally {
     loading.value = false;
   }
 }
 
-onMounted(() => {
-  loadContests();
+onMounted(async () => {
+  await loadContests();
 });
 </script>
 
 <style scoped>
-.contests-page {
-  gap: 1rem;
-}
-
-.focus-panel {
-  display: grid;
-  grid-template-columns: minmax(260px, 0.85fr) minmax(0, 1.15fr);
-  gap: 0.9rem;
-  align-items: stretch;
-}
-
-.focus-media {
-  border: 1px solid rgba(148, 163, 184, 0.34);
-  border-radius: 18px;
+.poster-wrap {
+  border-radius: var(--radius-md);
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.72);
-  min-height: 240px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.28);
+  max-height: 280px;
 }
 
-.focus-media img {
+.poster-wrap img {
+  display: block;
   width: 100%;
   height: 100%;
+  max-height: 280px;
   object-fit: cover;
 }
 
-.focus-media.empty,
-.timeline-media.empty {
+.poster-fallback {
+  min-height: 160px;
+  border-radius: var(--radius-md);
   display: grid;
   place-items: center;
+  background: rgba(255, 255, 255, 0.24);
+  color: var(--ink-2);
 }
 
-.focus-fallback,
-.timeline-fallback {
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
-  color: rgba(15, 23, 42, 0.52);
+.contests-layout {
+  align-items: start;
 }
 
-.focus-content {
-  display: grid;
-  gap: 0.5rem;
-  align-content: start;
-}
-
-.focus-content h2 {
-  margin: 0;
-}
-
-.focus-description {
-  margin: 0;
-  white-space: pre-wrap;
-}
-
-.focus-announcement {
-  border: 1px solid rgba(45, 107, 255, 0.28);
-  border-radius: 14px;
-  background: rgba(236, 244, 255, 0.82);
-  padding: 0.68rem;
-  display: grid;
-  gap: 0.24rem;
-}
-
-.focus-announcement p {
-  margin: 0;
-}
-
-.contest-section {
-  display: grid;
-  gap: 0.65rem;
-}
-
-.section-head h3 {
-  margin: 0;
-}
-
-.timeline-card {
-  display: grid;
-  grid-template-columns: 132px minmax(0, 1fr);
-  gap: 0.62rem;
-  align-items: stretch;
-  border-radius: 18px;
-}
-
-.timeline-media {
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.32);
-  background: rgba(255, 255, 255, 0.68);
-  min-height: 110px;
-}
-
-.timeline-media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.timeline-content {
-  display: grid;
-  gap: 0.32rem;
-  align-content: start;
-}
-
-.timeline-content p {
-  margin: 0;
-}
-
-.timeline-desc {
-  line-height: 1.45;
-}
-
-.timeline-announcement {
-  margin: 0;
-  color: rgba(15, 23, 42, 0.88);
-}
-
-.ended-section {
-  display: grid;
-  gap: 0.8rem;
-}
-
-.ended-section summary {
-  cursor: pointer;
-  list-style: none;
-}
-
-.ended-section summary::-webkit-details-marker {
-  display: none;
-}
-
-.ended-grid {
-  margin-top: 0.75rem;
-}
-
-.ended-card {
-  grid-template-columns: minmax(0, 1fr);
-  opacity: 0.88;
-}
-
-@media (max-width: 980px) {
-  .focus-panel {
+@media (max-width: 1180px) {
+  .contests-layout {
     grid-template-columns: 1fr;
-  }
-
-  .timeline-card {
-    grid-template-columns: 1fr;
-  }
-
-  .timeline-media {
-    min-height: 150px;
   }
 }
 </style>

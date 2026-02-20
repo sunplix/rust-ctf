@@ -4,6 +4,7 @@ mod contests;
 mod health;
 pub(crate) mod instances;
 mod scoreboard;
+mod site;
 mod submissions;
 mod teams;
 
@@ -21,6 +22,7 @@ pub fn router() -> Router<Arc<AppState>> {
         .nest("/api/v1", contests::router())
         .nest("/api/v1", instances::router())
         .nest("/api/v1", scoreboard::router())
+        .nest("/api/v1", site::router())
         .nest("/api/v1", submissions::router())
         .nest("/api/v1", teams::router())
 }
