@@ -313,6 +313,34 @@ input[type="checkbox"]:checked::after {
   background: var(--fg-0);
 }
 
+input[type="file"] {
+  padding: 0.28rem 0.34rem;
+  min-height: 2.18rem;
+  color: var(--fg-1);
+  cursor: pointer;
+}
+
+input[type="file"]::file-selector-button,
+input[type="file"]::-webkit-file-upload-button {
+  margin-right: 0.58rem;
+  border: 0;
+  border-radius: 999px;
+  min-height: 1.78rem;
+  padding: 0.26rem 0.74rem;
+  font: inherit;
+  letter-spacing: 0.01em;
+  background: var(--fg-0);
+  color: var(--bg-0);
+  cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease;
+}
+
+input[type="file"]:hover::file-selector-button,
+input[type="file"]:hover::-webkit-file-upload-button {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--fg-0) 92%, #fff 8%);
+}
+
 .app-root {
   min-height: 100vh;
   position: relative;
@@ -1028,6 +1056,112 @@ table.scoreboard-table tbody tr:hover {
 .toast-anim-leave-to {
   opacity: 0;
   transform: translateY(12px) scale(0.98);
+}
+
+body.confirm-open {
+  overflow: hidden;
+}
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 96;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(8, 8, 8, 0.36);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.confirm-card {
+  width: min(560px, 96vw);
+  border-radius: var(--radius-lg);
+  background: var(--glass-strong);
+  backdrop-filter: blur(20px) saturate(114%);
+  -webkit-backdrop-filter: blur(20px) saturate(114%);
+  box-shadow: var(--shadow-strong);
+  padding: 0.86rem 0.94rem;
+  position: relative;
+  display: grid;
+  gap: 0.6rem;
+  overflow: hidden;
+}
+
+.confirm-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(var(--line-soft), var(--line-soft)) top / 100% 1px no-repeat,
+    linear-gradient(90deg, var(--line-soft), var(--line-soft)) left / 1px 100% no-repeat,
+    repeating-linear-gradient(90deg, transparent 0 10px, var(--line-mid) 10px 15px) bottom / 100% 1px no-repeat;
+}
+
+.confirm-head {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.confirm-head h3 {
+  font-size: clamp(1.04rem, 1.8vw, 1.34rem);
+  line-height: 1.36;
+}
+
+.confirm-message {
+  margin: 0;
+  color: var(--fg-1);
+  white-space: pre-wrap;
+  line-height: 1.58;
+}
+
+.prompt-card {
+  width: min(580px, 96vw);
+}
+
+.prompt-field {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.prompt-field > span {
+  font-size: 0.82rem;
+  color: var(--fg-2);
+}
+
+.prompt-field input {
+  min-height: 2.36rem;
+}
+
+.prompt-input-error {
+  margin: 0;
+}
+
+.confirm-actions {
+  justify-content: flex-end;
+}
+
+.confirm-fade-enter-active,
+.confirm-fade-leave-active {
+  transition: opacity 180ms ease;
+}
+
+.confirm-fade-enter-active .confirm-card,
+.confirm-fade-leave-active .confirm-card {
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+.confirm-fade-enter-from,
+.confirm-fade-leave-to {
+  opacity: 0;
+}
+
+.confirm-fade-enter-from .confirm-card,
+.confirm-fade-leave-to .confirm-card {
+  opacity: 0;
+  transform: translateY(8px) scale(0.99);
 }
 
 .fade-switch-enter-active,

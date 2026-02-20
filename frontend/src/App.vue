@@ -100,6 +100,77 @@
       <p>{{ appStore.siteSettings.footer_text }}</p>
     </footer>
 
+    <Teleport to="body">
+      <Transition name="confirm-fade">
+        <section
+          v-if="uiStore.promptDialog"
+          class="confirm-overlay"
+          role="presentation"
+          @click.self="uiStore.promptCancel"
+        >
+          <article class="confirm-card prompt-card" role="dialog" aria-modal="true" aria-labelledby="prompt-title" aria-describedby="prompt-message">
+            <header class="confirm-head">
+              <h3 id="prompt-title">{{ uiStore.promptDialog.title }}</h3>
+            </header>
+            <p id="prompt-message" class="confirm-message">{{ uiStore.promptDialog.message }}</p>
+            <label class="prompt-field">
+              <span v-if="uiStore.promptDialog.inputLabel">{{ uiStore.promptDialog.inputLabel }}</span>
+              <input
+                ref="promptInputRef"
+                v-model="promptInputValue"
+                :placeholder="uiStore.promptDialog.placeholder || undefined"
+                :maxlength="uiStore.promptDialog.maxLength"
+                @keydown.enter.prevent="submitPromptDialog"
+              />
+            </label>
+            <p v-if="promptInputError" class="error prompt-input-error">{{ promptInputError }}</p>
+            <div class="actions-row confirm-actions">
+              <button class="ghost" type="button" @click="uiStore.promptCancel">
+                {{ uiStore.promptDialog.cancelLabel }}
+              </button>
+              <button
+                :class="uiStore.promptDialog.intent === 'danger' ? 'danger' : 'primary'"
+                type="button"
+                @click="submitPromptDialog"
+              >
+                {{ uiStore.promptDialog.confirmLabel }}
+              </button>
+            </div>
+          </article>
+        </section>
+      </Transition>
+    </Teleport>
+
+    <Teleport to="body">
+      <Transition name="confirm-fade">
+        <section
+          v-if="uiStore.confirmDialog"
+          class="confirm-overlay"
+          role="presentation"
+          @click.self="uiStore.confirmCancel"
+        >
+          <article class="confirm-card" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+            <header class="confirm-head">
+              <h3 id="confirm-title">{{ uiStore.confirmDialog.title }}</h3>
+            </header>
+            <p id="confirm-message" class="confirm-message">{{ uiStore.confirmDialog.message }}</p>
+            <div class="actions-row confirm-actions">
+              <button class="ghost" type="button" @click="uiStore.confirmCancel">
+                {{ uiStore.confirmDialog.cancelLabel }}
+              </button>
+              <button
+                :class="uiStore.confirmDialog.intent === 'danger' ? 'danger' : 'primary'"
+                type="button"
+                @click="uiStore.confirmAccept"
+              >
+                {{ uiStore.confirmDialog.confirmLabel }}
+              </button>
+            </div>
+          </article>
+        </section>
+      </Transition>
+    </Teleport>
+
     <TransitionGroup name="toast-anim" tag="section" class="toast-stack" aria-live="polite">
       <article
         v-for="toast in uiStore.toasts"
@@ -120,7 +191,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { useL10n } from "./composables/useL10n";
@@ -134,6 +205,9 @@ const uiStore = useUiStore();
 const router = useRouter();
 const route = useRoute();
 const { tr } = useL10n();
+const promptInputRef = ref<HTMLInputElement | null>(null);
+const promptInputValue = ref("");
+const promptInputError = ref("");
 
 appStore.hydrateFromStorage();
 authStore.hydrateFromStorage();
@@ -171,6 +245,85 @@ const localeSwitchLabel = computed(() => {
 
 const themeSwitchLabel = computed(() => {
   return appStore.theme === "light" ? tr("深色", "Dark") : tr("浅色", "Light");
+});
+
+function onWindowKeydown(event: KeyboardEvent) {
+  if (event.key !== "Escape") {
+    return;
+  }
+  if (uiStore.promptDialog) {
+    uiStore.promptCancel();
+    return;
+  }
+  if (uiStore.confirmDialog) {
+    uiStore.confirmCancel();
+  }
+}
+
+function submitPromptDialog() {
+  const dialog = uiStore.promptDialog;
+  if (!dialog) {
+    return;
+  }
+
+  const input = promptInputValue.value;
+  if (dialog.required && input.trim().length === 0) {
+    promptInputError.value = tr("请输入内容。", "Please enter a value.");
+    return;
+  }
+  if (input.length > dialog.maxLength) {
+    promptInputError.value = tr(
+      `输入长度不能超过 ${dialog.maxLength} 个字符。`,
+      `Input cannot exceed ${dialog.maxLength} characters.`
+    );
+    return;
+  }
+
+  promptInputError.value = "";
+  uiStore.promptAccept(input);
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("keydown", onWindowKeydown);
+}
+
+watch(
+  () => Boolean(uiStore.confirmDialog || uiStore.promptDialog),
+  (isOpen) => {
+    if (typeof document === "undefined") {
+      return;
+    }
+    document.body.classList.toggle("confirm-open", isOpen);
+  },
+  { immediate: true }
+);
+
+watch(
+  () => uiStore.promptDialog,
+  async (dialog) => {
+    promptInputError.value = "";
+    promptInputValue.value = dialog?.defaultValue ?? "";
+    if (!dialog) {
+      return;
+    }
+    await nextTick();
+    promptInputRef.value?.focus();
+    promptInputRef.value?.select();
+  },
+  { immediate: true }
+);
+
+watch(promptInputValue, () => {
+  promptInputError.value = "";
+});
+
+onBeforeUnmount(() => {
+  if (typeof window !== "undefined") {
+    window.removeEventListener("keydown", onWindowKeydown);
+  }
+  if (typeof document !== "undefined") {
+    document.body.classList.remove("confirm-open");
+  }
 });
 
 function logout() {

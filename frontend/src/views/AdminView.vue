@@ -157,16 +157,54 @@
         </div>
 
         <template v-if="challengeSubTab === 'library'">
-          <div class="module-split challenge-split">
-            <div class="module-column module-column-fill">
+          <div class="row-between challenge-library-head">
+            <div class="context-menu challenge-library-mode-switch">
+              <button
+                class="ghost"
+                type="button"
+                :class="{ active: challengeLibraryMode === 'catalog' }"
+                @click="challengeLibraryMode = 'catalog'"
+              >
+                {{ tr("题库列表", "Challenge Library") }}
+              </button>
+              <button
+                class="ghost"
+                type="button"
+                :class="{ active: challengeLibraryMode === 'editor' && !editingChallengeId }"
+                @click="openCreateChallengeEditor"
+              >
+                {{ tr("创建题目", "Create challenge") }}
+              </button>
+              <button
+                v-if="selectedChallengeId"
+                class="ghost"
+                type="button"
+                :class="{ active: challengeLibraryMode === 'editor' && !!editingChallengeId }"
+                @click="openSelectedChallengeEditor"
+              >
+                {{ tr("编辑选中", "Edit selected") }}
+              </button>
+            </div>
+            <span class="muted">
+              {{ challengeLibraryMode === "catalog" ? tr("浏览与筛选", "Browse & filter") : tr("配置与保存", "Configure & save") }}
+            </span>
+          </div>
+
+          <div class="module-split challenge-library-shell">
+            <div v-if="challengeLibraryMode === 'editor'" class="module-column module-column-fill challenge-editor-column">
               <div class="row-between">
                 <h3>{{ challengeFormTitle }}</h3>
-                <button
-                  v-if="editingChallengeId"
-                  class="ghost"
-                  type="button"
-                  @click="handleCancelChallengeEdit"
-                >{{ tl('取消编辑') }}</button>
+                <div class="actions-row compact-actions">
+                  <button class="ghost" type="button" @click="challengeLibraryMode = 'catalog'">
+                    {{ tr("返回题库", "Back to library") }}
+                  </button>
+                  <button
+                    v-if="editingChallengeId"
+                    class="ghost"
+                    type="button"
+                    @click="handleCancelChallengeEdit"
+                  >{{ tl('取消编辑') }}</button>
+                </div>
               </div>
               <details class="action-sheet">
                 <summary>{{ tr("管理题目类别", "Manage challenge categories") }}</summary>
@@ -238,169 +276,197 @@
                   </div>
                 </div>
               </details>
-              <form class="form-grid compact-grid" @submit.prevent="handleCreateChallenge">
-                <label>
-                  <span>{{ tl('标题') }}</span>
-                  <input v-model.trim="newChallenge.title" required />
-                </label>
-                <label>
-                  <span>slug</span>
-                  <input v-model.trim="newChallenge.slug" required />
-                </label>
-                <label>
-                  <span>{{ tl('分类') }}</span>
-                  <select v-model="newChallenge.category" required>
-                    <option value="" disabled>{{ tr("请选择类别", "Select category") }}</option>
-                    <option
-                      v-for="item in challengeCategoryOptions"
-                      :key="item.id"
-                      :value="item.slug"
-                    >
-                      {{ item.display_name }} ({{ item.slug }})
-                    </option>
-                  </select>
-                </label>
-                <label>
-                  <span>{{ tl('难度') }}</span>
-                  <select v-model="newChallenge.difficulty">
-                    <option value="easy">easy</option>
-                    <option value="normal">normal</option>
-                    <option value="hard">hard</option>
-                    <option value="insane">insane</option>
-                  </select>
-                </label>
-                <label>
-                  <span>{{ tl('分值') }}</span>
-                  <input v-model.number="newChallenge.static_score" type="number" min="1" />
-                </label>
-                <label>
-                  <span>{{ tl('状态') }}</span>
-                  <select v-model="newChallenge.status">
-                    <option value="draft">draft</option>
-                    <option value="published">published</option>
-                    <option value="offline">offline</option>
-                  </select>
-                </label>
-                <label>
-                  <span>{{ tl('题型') }}</span>
-                  <select v-model="newChallenge.challenge_type">
-                    <option value="static">static</option>
-                    <option value="dynamic">dynamic</option>
-                    <option value="internal">internal</option>
-                  </select>
-                </label>
-                <label>
-                  <span>{{ tl('flag 模式') }}</span>
-                  <select v-model="newChallenge.flag_mode">
-                    <option value="static">static</option>
-                    <option value="dynamic">dynamic</option>
-                    <option value="script">script</option>
-                  </select>
-                </label>
-                <label>
-                  <span>{{ tl('flag/哈希') }}</span>
-                  <input v-model="newChallenge.flag_hash" />
-                </label>
-                <label>
-                  <span>{{ tl('运行模式') }}</span>
-                  <select v-model="newChallenge.runtime_mode">
-                    <option value="compose">{{ tl('compose（多容器）') }}</option>
-                    <option value="single_image">{{ tl('single_image（单镜像）') }}</option>
-                  </select>
-                </label>
-                <label v-if="newChallenge.runtime_mode === 'compose'">
-                  <span>{{ tl('访问模式') }}</span>
-                  <select v-model="newChallenge.runtime_access_mode">
-                    <option value="ssh_bastion">{{ tl('ssh_bastion（默认）') }}</option>
-                    <option value="wireguard">wireguard（VPN）</option>
-                    <option value="direct">{{ tl('direct（直连入口）') }}</option>
-                  </select>
-                </label>
-                <label v-if="newChallenge.runtime_mode === 'single_image'">
-                  <span>{{ tl('镜像仓库地址') }}</span>
-                  <input v-model.trim="newChallenge.runtime_image" />
-                </label>
-                <label v-if="newChallenge.runtime_mode === 'single_image'">
-                  <span>{{ tl('内部端口') }}</span>
-                  <input v-model.number="newChallenge.runtime_internal_port" type="number" min="1" max="65535" />
-                </label>
-                <label v-if="newChallenge.runtime_mode === 'single_image'">
-                  <span>{{ tl('入口协议') }}</span>
-                  <select v-model="newChallenge.runtime_protocol">
-                    <option value="http">http</option>
-                    <option value="https">https</option>
-                    <option value="tcp">tcp</option>
-                  </select>
-                </label>
-                <div v-if="newChallenge.runtime_mode === 'single_image'" class="image-test-block">
-                  <div class="actions-row compact-actions">
-                    <button
-                      class="ghost"
-                      type="button"
-                      @click="handleTestChallengeRuntimeImage"
-                      :disabled="testingChallengeRuntimeImage || !newChallenge.runtime_image.trim()"
-                    >
-                      {{ testingChallengeRuntimeImage ? tl('测试中...') : tl('测试镜像（拉取+构建探测）') }}
-                    </button>
+              <form class="form-grid challenge-create-form" @submit.prevent="handleCreateChallenge">
+                <section class="challenge-form-block">
+                  <header class="challenge-form-block-head">
+                    <h4>{{ tr("基础信息", "Basics") }}</h4>
+                    <p>{{ tr("定义题目身份、类别与分值。", "Define challenge identity, category, and score.") }}</p>
+                  </header>
+                  <div class="form-grid challenge-form-grid">
+                    <label>
+                      <span>{{ tl('标题') }}</span>
+                      <input v-model.trim="newChallenge.title" required />
+                    </label>
+                    <label>
+                      <span>slug</span>
+                      <input v-model.trim="newChallenge.slug" required />
+                    </label>
+                    <label>
+                      <span>{{ tl('分类') }}</span>
+                      <select v-model="newChallenge.category" required>
+                        <option value="" disabled>{{ tr("请选择类别", "Select category") }}</option>
+                        <option
+                          v-for="item in challengeCategoryOptions"
+                          :key="item.id"
+                          :value="item.slug"
+                        >
+                          {{ item.display_name }} ({{ item.slug }})
+                        </option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>{{ tl('难度') }}</span>
+                      <select v-model="newChallenge.difficulty">
+                        <option value="easy">easy</option>
+                        <option value="normal">normal</option>
+                        <option value="hard">hard</option>
+                        <option value="insane">insane</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>{{ tl('分值') }}</span>
+                      <input v-model.number="newChallenge.static_score" type="number" min="1" />
+                    </label>
+                    <label>
+                      <span>{{ tl('状态') }}</span>
+                      <select v-model="newChallenge.status">
+                        <option value="draft">draft</option>
+                        <option value="published">published</option>
+                        <option value="offline">offline</option>
+                      </select>
+                    </label>
                   </div>
-                  <p v-if="challengeImageTestError" class="error">{{ challengeImageTestError }}</p>
-                  <div
-                    v-if="challengeRuntimeImageTestResult"
-                    class="image-test-result"
-                    :class="{ failed: !challengeRuntimeImageTestResult.succeeded }"
-                  >
-                    <p class="mono">
-                      {{ tl('镜像') }} {{ challengeRuntimeImageTestResult.image }} ·
-                      {{ tl('结果') }} {{ challengeRuntimeImageTestResult.succeeded ? "success" : "failed" }} ·
-                      {{ tl('时间') }} {{ formatTime(challengeRuntimeImageTestResult.generated_at) }}
-                    </p>
-                    <details v-for="step in challengeRuntimeImageTestResult.steps" :key="step.step" class="image-test-step">
-                      <summary>
-                        {{ step.step }} · {{ step.success ? "ok" : "failed" }} · {{ step.duration_ms }}ms · exit={{ step.exit_code ?? "timeout" }}
-                      </summary>
-                      <pre class="mono">{{ step.output || "-" }}</pre>
-                    </details>
-                  </div>
-                </div>
-                <label v-if="newChallenge.runtime_mode === 'compose'">
-                  <span>{{ tl('compose 模板（可选）') }}</span>
-                  <textarea v-model="newChallenge.compose_template" rows="4" />
-                </label>
-                <label>
-                  <span>{{ tl('标签（逗号分隔）') }}</span>
-                  <input v-model="newChallenge.tags_input" />
-                </label>
-                <label>
-                  <span>{{ tl('题解可见策略') }}</span>
-                  <select v-model="newChallenge.writeup_visibility">
-                    <option value="hidden">hidden</option>
-                    <option value="after_solve">after_solve</option>
-                    <option value="after_contest">after_contest</option>
-                    <option value="public">public</option>
-                  </select>
-                </label>
-                <label>
-                  <span>{{ tl('描述（可选）') }}</span>
-                  <textarea v-model="newChallenge.description" rows="3" />
-                </label>
-                <label>
-                  <span>{{ tl('题解内容（可选）') }}</span>
-                  <textarea v-model="newChallenge.writeup_content" rows="4" />
-                </label>
-                <label>
-                  <span>{{ tl('版本备注（可选）') }}</span>
-                  <input v-model="newChallenge.change_note" />
-                </label>
+                </section>
 
-                <button class="primary" type="submit" :disabled="creatingChallenge">
-                  {{ challengeSubmitLabel }}
-                </button>
+                <section class="challenge-form-block">
+                  <header class="challenge-form-block-head">
+                    <h4>{{ tr("判题与部署", "Validation & Runtime") }}</h4>
+                    <p>{{ tr("配置题型、flag 策略和运行环境。", "Configure challenge type, flag strategy, and runtime.") }}</p>
+                  </header>
+                  <div class="form-grid challenge-form-grid">
+                    <label>
+                      <span>{{ tl('题型') }}</span>
+                      <select v-model="newChallenge.challenge_type">
+                        <option value="static">static</option>
+                        <option value="dynamic">dynamic</option>
+                        <option value="internal">internal</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>{{ tl('flag 模式') }}</span>
+                      <select v-model="newChallenge.flag_mode">
+                        <option value="static">static</option>
+                        <option value="dynamic">dynamic</option>
+                        <option value="script">script</option>
+                      </select>
+                    </label>
+                    <label class="field-span-2">
+                      <span>{{ tl('flag/哈希') }}</span>
+                      <input v-model="newChallenge.flag_hash" />
+                    </label>
+                    <label>
+                      <span>{{ tl('运行模式') }}</span>
+                      <select v-model="newChallenge.runtime_mode">
+                        <option value="compose">{{ tl('compose（多容器）') }}</option>
+                        <option value="single_image">{{ tl('single_image（单镜像）') }}</option>
+                      </select>
+                    </label>
+                    <label v-if="newChallenge.runtime_mode === 'compose'">
+                      <span>{{ tl('访问模式') }}</span>
+                      <select v-model="newChallenge.runtime_access_mode">
+                        <option value="ssh_bastion">{{ tl('ssh_bastion（默认）') }}</option>
+                        <option value="wireguard">wireguard（VPN）</option>
+                        <option value="direct">{{ tl('direct（直连入口）') }}</option>
+                      </select>
+                    </label>
+                    <label v-if="newChallenge.runtime_mode === 'single_image'" class="field-span-2">
+                      <span>{{ tl('镜像仓库地址') }}</span>
+                      <input v-model.trim="newChallenge.runtime_image" />
+                    </label>
+                    <label v-if="newChallenge.runtime_mode === 'single_image'">
+                      <span>{{ tl('内部端口') }}</span>
+                      <input v-model.number="newChallenge.runtime_internal_port" type="number" min="1" max="65535" />
+                    </label>
+                    <label v-if="newChallenge.runtime_mode === 'single_image'">
+                      <span>{{ tl('入口协议') }}</span>
+                      <select v-model="newChallenge.runtime_protocol">
+                        <option value="http">http</option>
+                        <option value="https">https</option>
+                        <option value="tcp">tcp</option>
+                      </select>
+                    </label>
+                    <div v-if="newChallenge.runtime_mode === 'single_image'" class="image-test-block">
+                      <div class="actions-row compact-actions">
+                        <button
+                          class="ghost"
+                          type="button"
+                          @click="handleTestChallengeRuntimeImage"
+                          :disabled="testingChallengeRuntimeImage || !newChallenge.runtime_image.trim()"
+                        >
+                          {{ testingChallengeRuntimeImage ? tl('测试中...') : tl('测试镜像（拉取+构建探测）') }}
+                        </button>
+                      </div>
+                      <p v-if="challengeImageTestError" class="error">{{ challengeImageTestError }}</p>
+                      <div
+                        v-if="challengeRuntimeImageTestResult"
+                        class="image-test-result"
+                        :class="{ failed: !challengeRuntimeImageTestResult.succeeded }"
+                      >
+                        <p class="mono">
+                          {{ tl('镜像') }} {{ challengeRuntimeImageTestResult.image }} ·
+                          {{ tl('结果') }} {{ challengeRuntimeImageTestResult.succeeded ? "success" : "failed" }} ·
+                          {{ tl('时间') }} {{ formatTime(challengeRuntimeImageTestResult.generated_at) }}
+                        </p>
+                        <details v-for="step in challengeRuntimeImageTestResult.steps" :key="step.step" class="image-test-step">
+                          <summary>
+                            {{ step.step }} · {{ step.success ? "ok" : "failed" }} · {{ step.duration_ms }}ms · exit={{ step.exit_code ?? "timeout" }}
+                          </summary>
+                          <pre class="mono">{{ step.output || "-" }}</pre>
+                        </details>
+                      </div>
+                    </div>
+                    <label v-if="newChallenge.runtime_mode === 'compose'" class="field-span-2">
+                      <span>{{ tl('compose 模板（可选）') }}</span>
+                      <textarea v-model="newChallenge.compose_template" rows="5" />
+                    </label>
+                  </div>
+                </section>
+
+                <section class="challenge-form-block">
+                  <header class="challenge-form-block-head">
+                    <h4>{{ tr("内容与题解", "Content & Writeup") }}</h4>
+                    <p>{{ tr("配置标签、可见策略和内容文案。", "Configure tags, visibility policy, and writeup content.") }}</p>
+                  </header>
+                  <div class="form-grid challenge-form-grid">
+                    <label>
+                      <span>{{ tl('标签（逗号分隔）') }}</span>
+                      <input v-model="newChallenge.tags_input" />
+                    </label>
+                    <label>
+                      <span>{{ tl('题解可见策略') }}</span>
+                      <select v-model="newChallenge.writeup_visibility">
+                        <option value="hidden">hidden</option>
+                        <option value="after_solve">after_solve</option>
+                        <option value="after_contest">after_contest</option>
+                        <option value="public">public</option>
+                      </select>
+                    </label>
+                    <label class="field-span-2">
+                      <span>{{ tl('描述（可选）') }}</span>
+                      <textarea v-model="newChallenge.description" rows="4" />
+                    </label>
+                    <label class="field-span-2">
+                      <span>{{ tl('题解内容（可选）') }}</span>
+                      <textarea v-model="newChallenge.writeup_content" rows="5" />
+                    </label>
+                    <label class="field-span-2">
+                      <span>{{ tl('版本备注（可选）') }}</span>
+                      <input v-model="newChallenge.change_note" />
+                    </label>
+                  </div>
+                </section>
+
+                <div class="challenge-submit-row">
+                  <button class="primary" type="submit" :disabled="creatingChallenge">
+                    {{ challengeSubmitLabel }}
+                  </button>
+                </div>
               </form>
 
               <p v-if="challengeError" class="error">{{ challengeError }}</p>
             </div>
 
-            <div class="module-column">
+            <div v-else class="module-column challenge-library-column">
               <div class="row-between">
                 <h3>{{ tl('题库概览') }}</h3>
                 <span class="badge">{{ filteredChallenges.length }} / {{ challenges.length }}</span>
@@ -532,7 +598,14 @@
           <form class="form-grid" @submit.prevent="handleUploadChallengeAttachment">
             <label>
               <span>{{ tl('上传附件') }}</span>
-              <input :key="attachmentInputKey" type="file" @change="onAttachmentFileChange" required />
+              <UploadField
+                v-model="selectedAttachmentFile"
+                :input-key="attachmentInputKey"
+                :button-label="tl('选择文件')"
+                :clear-label="tl('清除')"
+                :placeholder="tl('未选择文件')"
+                :hint="tl('支持任意附件格式')"
+              />
             </label>
             <button class="ghost" type="submit" :disabled="uploadingAttachment || !selectedAttachmentFile">
               {{ uploadingAttachment ? tl('上传中...') : tl('上传附件') }}
@@ -692,18 +765,56 @@
           <span class="badge">{{ contests.length }} {{ tl('场') }}</span>
         </div>
 
-        <div class="module-split contest-split">
-          <div class="module-column module-column-fill">
+        <div class="row-between contest-manage-head">
+          <div class="context-menu contest-manage-mode-switch">
+            <button
+              class="ghost"
+              type="button"
+              :class="{ active: contestManageMode === 'catalog' }"
+              @click="contestManageMode = 'catalog'"
+            >
+              {{ tr("赛事列表", "Contest list") }}
+            </button>
+            <button
+              class="ghost"
+              type="button"
+              :class="{ active: contestManageMode === 'editor' && !editingContestId }"
+              @click="openCreateContestEditor"
+            >
+              {{ tr("创建比赛", "Create contest") }}
+            </button>
+            <button
+              v-if="selectedContestId"
+              class="ghost"
+              type="button"
+              :class="{ active: contestManageMode === 'editor' && !!editingContestId }"
+              @click="openSelectedContestEditor"
+            >
+              {{ tr("编辑选中", "Edit selected") }}
+            </button>
+          </div>
+          <span class="muted">
+            {{ contestManageMode === "catalog" ? tr("浏览与运维", "Browse & operate") : tr("配置与保存", "Configure & save") }}
+          </span>
+        </div>
+
+        <div class="module-split contest-management-shell">
+          <div v-if="contestManageMode === 'editor'" class="module-column module-column-fill contest-editor-column">
             <div class="row-between">
               <h3>{{ contestFormTitle }}</h3>
-              <button
-                v-if="editingContestId"
-                class="ghost"
-                type="button"
-                @click="handleCancelContestEdit"
-              >
-                {{ tl('取消编辑') }}
-              </button>
+              <div class="actions-row compact-actions">
+                <button class="ghost" type="button" @click="contestManageMode = 'catalog'">
+                  {{ tr("返回赛事列表", "Back to contest list") }}
+                </button>
+                <button
+                  v-if="editingContestId"
+                  class="ghost"
+                  type="button"
+                  @click="handleCancelContestEdit"
+                >
+                  {{ tl('取消编辑') }}
+                </button>
+              </div>
             </div>
             <form class="form-grid compact-grid" @submit.prevent="handleCreateContest">
               <label>
@@ -790,11 +901,9 @@
                 {{ contestSubmitLabel }}
               </button>
             </form>
-
-            <p v-if="contestError" class="error">{{ contestError }}</p>
           </div>
 
-          <div class="module-column">
+          <div v-else class="module-column contest-catalog-column">
             <div class="row-between">
               <h3>{{ tl('赛事列表') }}</h3>
               <span class="badge">{{ filteredContests.length }} / {{ contests.length }}</span>
@@ -804,8 +913,8 @@
               <input v-model.trim="contestKeyword" :placeholder="tl('按标题、slug、状态筛选')" />
             </label>
 
-            <div class="contest-browser">
-              <aside class="contest-list-pane">
+            <div class="contest-catalog-workspace">
+              <aside class="contest-list-pane contest-catalog-list">
                 <button
                   v-for="contest in filteredContests"
                   :key="contest.id"
@@ -814,14 +923,17 @@
                   type="button"
                   @click="selectContest(contest.id)"
                 >
-                  <strong>{{ contest.title }}</strong>
+                  <div class="row-between">
+                    <strong>{{ contest.title }}</strong>
+                    <span class="badge">{{ contest.status }}</span>
+                  </div>
                   <span class="muted mono">{{ contest.slug }}</span>
-                  <span class="muted">{{ contest.status }} · {{ contest.visibility }}</span>
+                  <span class="muted">{{ contest.visibility }} · {{ contest.scoring_mode }}</span>
                 </button>
                 <p v-if="filteredContests.length === 0" class="muted">{{ tl('没有匹配的比赛。') }}</p>
               </aside>
 
-              <section v-if="selectedContest" class="contest-detail-pane">
+              <section v-if="selectedContest" class="contest-detail-pane contest-catalog-detail">
                 <div class="row-between">
                   <h4>{{ selectedContest.title }}</h4>
                   <span class="badge">{{ selectedContest.status }}</span>
@@ -853,12 +965,14 @@
                 <form class="form-grid" @submit.prevent="handleUploadContestPoster">
                   <label>
                     <span>{{ tl('上传比赛海报') }}</span>
-                    <input
-                      :key="contestPosterInputKey"
-                      type="file"
+                    <UploadField
+                      v-model="selectedContestPosterFile"
+                      :input-key="contestPosterInputKey"
                       accept="image/*"
-                      @change="onContestPosterFileChange"
-                      required
+                      :button-label="tl('选择图片')"
+                      :clear-label="tl('清除')"
+                      :placeholder="tl('未选择图片文件')"
+                      :hint="tl('支持 PNG、JPG、WebP 等格式')"
                     />
                   </label>
                   <div class="actions-row compact-actions">
@@ -922,12 +1036,13 @@
                 </details>
               </section>
 
-              <section v-else class="contest-detail-pane">
+              <section v-else class="contest-detail-pane contest-catalog-detail">
                 <p class="muted">{{ tl('从左侧选择一个比赛查看详情与状态操作。') }}</p>
               </section>
             </div>
           </div>
         </div>
+        <p v-if="contestError" class="error">{{ contestError }}</p>
       </section>
 
       <section v-if="adminModule === 'contests' && contestSubTab === 'bindings'" class="panel">
@@ -1441,31 +1556,37 @@
 
       <p v-if="runtimeAlertError" class="error">{{ runtimeAlertError }}</p>
 
-      <div class="runtime-alert-layout">
-        <div class="runtime-alert-list">
-          <button
-            v-for="item in runtimeAlerts"
-            :key="item.id"
-            class="runtime-alert-item"
-            :class="[
-              { active: selectedRuntimeAlertId === item.id },
-              `severity-${item.severity}`,
-              `status-${item.status}`
-            ]"
-            type="button"
-            @click="selectRuntimeAlert(item.id)"
-          >
-            <div class="row-between">
-              <strong class="runtime-alert-title">{{ item.title }}</strong>
-              <span class="badge">{{ item.severity }}</span>
-            </div>
-            <p class="muted mono runtime-alert-line">{{ item.alert_type }}</p>
-            <p class="muted runtime-alert-line">{{ tl('状态') }} {{ item.status }} {{ tl('· 最近') }} {{ formatTime(item.last_seen_at) }}</p>
-          </button>
-          <p v-if="runtimeAlerts.length === 0" class="muted">{{ tl('暂无运行告警。') }}</p>
-        </div>
+      <div class="runtime-alert-workspace">
+        <aside class="runtime-alert-list-panel">
+          <div class="row-between">
+            <h3>{{ tr("告警列表", "Alert stream") }}</h3>
+            <span class="badge">{{ runtimeAlerts.length }}</span>
+          </div>
+          <div class="runtime-alert-list">
+            <button
+              v-for="item in runtimeAlerts"
+              :key="item.id"
+              class="runtime-alert-item"
+              :class="[
+                { active: selectedRuntimeAlertId === item.id },
+                `severity-${item.severity}`,
+                `status-${item.status}`
+              ]"
+              type="button"
+              @click="selectRuntimeAlert(item.id)"
+            >
+              <div class="row-between">
+                <strong class="runtime-alert-title">{{ item.title }}</strong>
+                <span class="badge">{{ item.severity }}</span>
+              </div>
+              <p class="muted mono runtime-alert-line">{{ item.alert_type }}</p>
+              <p class="muted runtime-alert-line">{{ tl('状态') }} {{ item.status }} {{ tl('· 最近') }} {{ formatTime(item.last_seen_at) }}</p>
+            </button>
+            <p v-if="runtimeAlerts.length === 0" class="muted">{{ tl('暂无运行告警。') }}</p>
+          </div>
+        </aside>
 
-        <div class="runtime-alert-detail">
+        <section class="runtime-alert-detail-panel">
           <template v-if="selectedRuntimeAlert">
             <div class="row-between">
               <h3>{{ selectedRuntimeAlert.title }}</h3>
@@ -1526,7 +1647,7 @@
             </details>
           </template>
           <p v-else class="muted">{{ tl('从左侧选择一个告警查看详情。') }}</p>
-        </div>
+        </section>
       </div>
     </section>
 
@@ -1689,134 +1810,197 @@
     <section v-if="adminModule === 'operations' && operationsSubTab === 'instances'" class="panel">
       <div class="row-between">
         <h2>{{ tl('实例监控') }}</h2>
-        <label class="inline-check">
-          <span>{{ tl('状态过滤') }}</span>
-          <select v-model="instanceFilter" @change="loadInstances">
-            <option value="">all</option>
-            <option value="creating">creating</option>
-            <option value="running">running</option>
-            <option value="stopped">stopped</option>
-            <option value="destroyed">destroyed</option>
-            <option value="failed">failed</option>
-          </select>
-        </label>
+        <div class="actions-row">
+          <label class="inline-check instance-filter-control">
+            <span>{{ tl('状态过滤') }}</span>
+            <select v-model="instanceFilter" :disabled="loadingInstances" @change="loadInstances">
+              <option value="">all</option>
+              <option value="creating">creating</option>
+              <option value="running">running</option>
+              <option value="stopped">stopped</option>
+              <option value="destroyed">destroyed</option>
+              <option value="failed">failed</option>
+            </select>
+          </label>
+          <button class="ghost" type="button" :disabled="loadingInstances" @click="loadInstances">
+            {{ loadingInstances ? tl('加载中...') : tr("刷新实例", "Refresh instances") }}
+          </button>
+        </div>
       </div>
 
       <p v-if="instanceError" class="error">{{ instanceError }}</p>
 
-      <table v-if="instances.length > 0" class="scoreboard-table">
-        <thead>
-          <tr>
-            <th>{{ tl('比赛') }}</th>
-            <th>{{ tl('队伍') }}</th>
-            <th>{{ tl('题目') }}</th>
-            <th>{{ tl('状态') }}</th>
-            <th>{{ tl('子网') }}</th>
-            <th>{{ tl('到期') }}</th>
-            <th>{{ tl('操作') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in instances" :key="item.id">
-            <td>{{ item.contest_title }}</td>
-            <td>{{ item.team_name }}</td>
-            <td>{{ item.challenge_title }}</td>
-            <td>{{ item.status }}</td>
-            <td class="mono">{{ item.subnet }}</td>
-            <td>{{ item.expires_at ? formatTime(item.expires_at) : "-" }}</td>
-            <td>
-              <button
-                class="ghost"
-                type="button"
-                @click="loadInstanceRuntimeMetrics(item.id)"
-                :disabled="loadingInstanceRuntimeMetricsId === item.id"
-              >
-                {{
-                  loadingInstanceRuntimeMetricsId === item.id
-                    ? tl('加载中...')
-                    : selectedInstanceId === item.id
-                      ? tl('刷新指标')
-                      : tl('查看指标')
-                }}
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <p v-else class="muted">{{ tl('暂无实例记录。') }}</p>
+      <div class="instance-workspace">
+        <aside class="instance-list-panel">
+          <div class="row-between">
+            <h3>{{ tr("实例列表", "Instance list") }}</h3>
+            <span class="badge">{{ instances.length }}</span>
+          </div>
+          <div v-if="instances.length > 0" class="instance-list-body stagger-list">
+            <article
+              v-for="item in instances"
+              :key="item.id"
+              class="instance-list-item"
+              :class="{ active: selectedInstanceId === item.id }"
+              @click="loadInstanceRuntimeMetrics(item.id)"
+            >
+              <div class="row-between instance-list-item-head">
+                <strong>{{ item.team_name }}</strong>
+                <span class="badge instance-status-badge" :class="instanceStatusClass(item.status)">
+                  {{ item.status }}
+                </span>
+              </div>
+              <p class="muted">{{ item.contest_title }}</p>
+              <p class="muted">{{ item.challenge_title }}</p>
+              <p class="muted mono">
+                {{ item.subnet }} · {{ tr("到期", "Expires") }} {{ item.expires_at ? formatTime(item.expires_at) : "-" }}
+              </p>
+              <div class="actions-row compact-actions">
+                <button
+                  class="ghost"
+                  type="button"
+                  @click.stop="loadInstanceRuntimeMetrics(item.id)"
+                  :disabled="loadingInstanceRuntimeMetricsId === item.id"
+                >
+                  {{
+                    loadingInstanceRuntimeMetricsId === item.id
+                      ? tl('加载中...')
+                      : selectedInstanceId === item.id
+                        ? tr("刷新指标", "Refresh metrics")
+                        : tr("查看指标", "View metrics")
+                  }}
+                </button>
+                <a
+                  v-if="item.entrypoint_url"
+                  class="instance-entry-link mono"
+                  :href="item.entrypoint_url"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  @click.stop
+                >
+                  {{ tr("入口", "Entry") }}
+                </a>
+              </div>
+            </article>
+          </div>
+          <p v-else class="muted">{{ tl('暂无实例记录。') }}</p>
+        </aside>
 
-      <section v-if="selectedInstanceRuntimeMetrics" class="instance-metrics-panel">
-        <div class="row-between">
-          <h3>{{ tl('实例指标：') }}{{ selectedInstance?.team_name ?? selectedInstanceRuntimeMetrics.instance.team_name }}</h3>
-          <span class="muted">{{ tl('更新于') }} {{ formatTime(selectedInstanceRuntimeMetrics.generated_at) }}</span>
-        </div>
-        <p class="muted mono">
-          project={{ selectedInstanceRuntimeMetrics.instance.compose_project_name }} ·
-          status={{ selectedInstanceRuntimeMetrics.instance.status }}
-        </p>
+        <section class="instance-detail-panel">
+          <template v-if="selectedInstanceRuntimeMetrics">
+            <div class="row-between">
+              <h3>{{ tl('实例指标：') }}{{ selectedInstance?.team_name ?? selectedInstanceRuntimeMetrics.instance.team_name }}</h3>
+              <span class="badge instance-status-badge" :class="instanceStatusClass(selectedInstanceRuntimeMetrics.instance.status)">
+                {{ selectedInstanceRuntimeMetrics.instance.status }}
+              </span>
+            </div>
 
-        <div class="runtime-metrics">
-          <article class="metric-card">
-            <h3>{{ tl('服务状态') }}</h3>
-            <p>{{ tl('总服务') }} {{ selectedInstanceRuntimeMetrics.summary.services_total }}</p>
-            <p>{{ tl('运行中') }} {{ selectedInstanceRuntimeMetrics.summary.running_services }}</p>
-            <p>{{ tl('不健康') }} {{ selectedInstanceRuntimeMetrics.summary.unhealthy_services }}</p>
-          </article>
-          <article class="metric-card">
-            <h3>{{ tl('资源汇总') }}</h3>
-            <p>{{ tl('CPU 总计') }} {{ formatPercentValue(selectedInstanceRuntimeMetrics.summary.cpu_percent_total) }}</p>
-            <p>
-              {{ tl('内存') }} {{ formatResourceBytes(selectedInstanceRuntimeMetrics.summary.memory_usage_bytes_total) }} /
-              {{ formatResourceBytes(selectedInstanceRuntimeMetrics.summary.memory_limit_bytes_total) }}
+            <p class="muted mono">
+              project={{ selectedInstanceRuntimeMetrics.instance.compose_project_name }} ·
+              {{ tr("更新于", "Updated") }} {{ formatTime(selectedInstanceRuntimeMetrics.generated_at) }}
             </p>
-            <p>{{ tl('重启中服务') }} {{ selectedInstanceRuntimeMetrics.summary.restarting_services }}</p>
-          </article>
-        </div>
 
-        <p
-          v-for="warning in selectedInstanceRuntimeMetrics.warnings"
-          :key="warning"
-          class="muted mono"
-        >
-          warning: {{ warning }}
-        </p>
+            <div class="instance-meta-grid">
+              <article class="metric-card">
+                <h4>{{ tr("实例信息", "Instance overview") }}</h4>
+                <p>{{ tr("比赛", "Contest") }} {{ selectedInstanceRuntimeMetrics.instance.contest_title }}</p>
+                <p>{{ tr("队伍", "Team") }} {{ selectedInstanceRuntimeMetrics.instance.team_name }}</p>
+                <p>{{ tr("题目", "Challenge") }} {{ selectedInstanceRuntimeMetrics.instance.challenge_title }}</p>
+                <p class="mono">{{ tr("子网", "Subnet") }} {{ selectedInstanceRuntimeMetrics.instance.subnet }}</p>
+              </article>
+              <article class="metric-card">
+                <h4>{{ tr("时间与入口", "Timing & entrypoint") }}</h4>
+                <p>{{ tr("创建", "Created") }} {{ formatTime(selectedInstanceRuntimeMetrics.instance.created_at) }}</p>
+                <p>
+                  {{ tr("到期", "Expires") }}
+                  {{ selectedInstanceRuntimeMetrics.instance.expires_at ? formatTime(selectedInstanceRuntimeMetrics.instance.expires_at) : "-" }}
+                </p>
+                <p>
+                  {{ tr("心跳", "Heartbeat") }}
+                  {{ selectedInstanceRuntimeMetrics.instance.last_heartbeat_at ? formatTime(selectedInstanceRuntimeMetrics.instance.last_heartbeat_at) : "-" }}
+                </p>
+                <a
+                  v-if="selectedInstanceRuntimeMetrics.instance.entrypoint_url"
+                  class="instance-entry-link mono"
+                  :href="selectedInstanceRuntimeMetrics.instance.entrypoint_url"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  {{ selectedInstanceRuntimeMetrics.instance.entrypoint_url }}
+                </a>
+              </article>
+            </div>
 
-        <table v-if="selectedInstanceRuntimeMetrics.services.length > 0" class="scoreboard-table">
-          <thead>
-            <tr>
-              <th>{{ tl('服务') }}</th>
-              <th>{{ tl('状态') }}</th>
-              <th>CPU</th>
-              <th>{{ tl('内存') }}</th>
-              <th>{{ tl('网络 RX/TX') }}</th>
-              <th>IP</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="service in selectedInstanceRuntimeMetrics.services" :key="service.container_id">
-              <td>
-                <strong>{{ service.service_name ?? service.container_name }}</strong>
-                <p class="muted mono">{{ service.container_name }}</p>
-              </td>
-              <td>
-                <span class="mono">{{ service.state ?? "-" }}</span>
-                <p class="muted">health={{ service.health_status ?? "-" }} · restart={{ service.restart_count ?? 0 }}</p>
-              </td>
-              <td>{{ formatPercentValue(service.cpu_percent) }}</td>
-              <td>
-                {{ formatResourceBytes(service.memory_usage_bytes) }} /
-                {{ formatResourceBytes(service.memory_limit_bytes) }}
-                <p class="muted">{{ formatPercentValue(service.memory_percent) }}</p>
-              </td>
-              <td>
-                {{ formatResourceBytes(service.net_rx_bytes) }} /
-                {{ formatResourceBytes(service.net_tx_bytes) }}
-              </td>
-              <td class="mono">{{ service.ip_addresses.join(", ") || "-" }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
+            <div class="runtime-metrics">
+              <article class="metric-card">
+                <h4>{{ tl('服务状态') }}</h4>
+                <p>{{ tl('总服务') }} {{ selectedInstanceRuntimeMetrics.summary.services_total }}</p>
+                <p>{{ tl('运行中') }} {{ selectedInstanceRuntimeMetrics.summary.running_services }}</p>
+                <p>{{ tl('不健康') }} {{ selectedInstanceRuntimeMetrics.summary.unhealthy_services }}</p>
+              </article>
+              <article class="metric-card">
+                <h4>{{ tl('资源汇总') }}</h4>
+                <p>{{ tl('CPU 总计') }} {{ formatPercentValue(selectedInstanceRuntimeMetrics.summary.cpu_percent_total) }}</p>
+                <p>
+                  {{ tl('内存') }} {{ formatResourceBytes(selectedInstanceRuntimeMetrics.summary.memory_usage_bytes_total) }} /
+                  {{ formatResourceBytes(selectedInstanceRuntimeMetrics.summary.memory_limit_bytes_total) }}
+                </p>
+                <p>{{ tl('重启中服务') }} {{ selectedInstanceRuntimeMetrics.summary.restarting_services }}</p>
+              </article>
+            </div>
+
+            <div v-if="selectedInstanceRuntimeMetrics.warnings.length > 0" class="instance-warnings">
+              <p
+                v-for="warning in selectedInstanceRuntimeMetrics.warnings"
+                :key="warning"
+                class="instance-warning mono"
+              >
+                warning: {{ warning }}
+              </p>
+            </div>
+
+            <div class="table-wrap">
+              <table v-if="selectedInstanceRuntimeMetrics.services.length > 0" class="scoreboard-table instance-services-table">
+                <thead>
+                  <tr>
+                    <th>{{ tl('服务') }}</th>
+                    <th>{{ tl('状态') }}</th>
+                    <th>CPU</th>
+                    <th>{{ tl('内存') }}</th>
+                    <th>{{ tl('网络 RX/TX') }}</th>
+                    <th>IP</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="service in selectedInstanceRuntimeMetrics.services" :key="service.container_id">
+                    <td>
+                      <strong>{{ service.service_name ?? service.container_name }}</strong>
+                      <p class="muted mono">{{ service.container_name }}</p>
+                    </td>
+                    <td>
+                      <span class="mono">{{ service.state ?? "-" }}</span>
+                      <p class="muted">health={{ service.health_status ?? "-" }} · restart={{ service.restart_count ?? 0 }}</p>
+                    </td>
+                    <td>{{ formatPercentValue(service.cpu_percent) }}</td>
+                    <td>
+                      {{ formatResourceBytes(service.memory_usage_bytes) }} /
+                      {{ formatResourceBytes(service.memory_limit_bytes) }}
+                      <p class="muted">{{ formatPercentValue(service.memory_percent) }}</p>
+                    </td>
+                    <td>
+                      {{ formatResourceBytes(service.net_rx_bytes) }} /
+                      {{ formatResourceBytes(service.net_tx_bytes) }}
+                    </td>
+                    <td class="mono">{{ service.ip_addresses.join(", ") || "-" }}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p v-else class="muted">{{ tr("该实例暂无服务指标。", "No service metrics for this instance yet.") }}</p>
+            </div>
+          </template>
+          <p v-else class="muted">{{ tr("从左侧选择一个实例查看运行指标。", "Select an instance from the list to view runtime metrics.") }}</p>
+        </section>
+      </div>
     </section>
 
     <section v-if="adminModule === 'audit'" class="panel">
@@ -1950,6 +2134,7 @@ import {
   updateAdminContestChallenge,
   upsertAdminContestChallenge
 } from "../api/client";
+import UploadField from "../components/UploadField.vue";
 import { useL10n } from "../composables/useL10n";
 import { renderMarkdownToHtml } from "../composables/useMarkdown";
 import { useAuthStore } from "../stores/auth";
@@ -2424,7 +2609,9 @@ const editingChallengeCategoryId = ref("");
 const editingContestId = ref("");
 const adminModule = ref<"challenges" | "contests" | "operations" | "users" | "audit">("challenges");
 const challengeSubTab = ref<"library" | "versions" | "lint">("library");
+const challengeLibraryMode = ref<"catalog" | "editor">("catalog");
 const contestSubTab = ref<"contests" | "bindings" | "announcements">("contests");
+const contestManageMode = ref<"catalog" | "editor">("catalog");
 const operationsSubTab = ref<"runtime" | "alerts" | "instances">("runtime");
 
 const pageError = ref("");
@@ -2456,6 +2643,7 @@ const uploadingAttachment = ref(false);
 const deletingAttachmentId = ref("");
 const loadingChallengeRuntimeLint = ref(false);
 const testingChallengeRuntimeImage = ref(false);
+const loadingInstances = ref(false);
 const updatingContestId = ref("");
 const destroyingContestId = ref("");
 const uploadingContestPoster = ref(false);
@@ -3010,14 +3198,24 @@ function formatPercentValue(value: number | null | undefined): string {
   return `${value.toFixed(2)}%`;
 }
 
-function onAttachmentFileChange(event: Event) {
-  const target = event.target as HTMLInputElement | null;
-  selectedAttachmentFile.value = target?.files?.[0] ?? null;
-}
-
-function onContestPosterFileChange(event: Event) {
-  const target = event.target as HTMLInputElement | null;
-  selectedContestPosterFile.value = target?.files?.[0] ?? null;
+function instanceStatusClass(status: string): string {
+  const normalized = status.trim().toLowerCase();
+  if (normalized === "running") {
+    return "status-running";
+  }
+  if (normalized === "creating") {
+    return "status-creating";
+  }
+  if (normalized === "failed") {
+    return "status-failed";
+  }
+  if (normalized === "stopped") {
+    return "status-stopped";
+  }
+  if (normalized === "destroyed") {
+    return "status-destroyed";
+  }
+  return "status-default";
 }
 
 function canPreviewContestPoster(item: AdminContestItem) {
@@ -3160,14 +3358,17 @@ async function handleSaveChallengeCategory() {
 }
 
 async function handleDeleteChallengeCategory(item: AdminChallengeCategoryItem) {
-  if (
-    !window.confirm(
-      tr(
-        `确认删除题目类别「${item.display_name}」？`,
-        `Delete challenge category "${item.display_name}"?`
-      )
-    )
-  ) {
+  const confirmed = await uiStore.confirm({
+    title: tr("删除题目类别", "Delete challenge category"),
+    message: tr(
+      `确认删除题目类别「${item.display_name}」？`,
+      `Delete challenge category "${item.display_name}"?`
+    ),
+    confirmLabel: tr("删除", "Delete"),
+    cancelLabel: tr("取消", "Cancel"),
+    intent: "danger"
+  });
+  if (!confirmed) {
     return;
   }
 
@@ -3429,6 +3630,7 @@ async function loadContestAnnouncements() {
 }
 
 async function loadInstances() {
+  loadingInstances.value = true;
   instanceError.value = "";
   try {
     instances.value = await listAdminInstances(accessTokenOrThrow(), {
@@ -3449,10 +3651,14 @@ async function loadInstances() {
       instances.value.some((item) => item.id === selectedInstanceId.value)
     ) {
       await loadInstanceRuntimeMetrics(selectedInstanceId.value, { silentError: true });
+    } else if (!selectedInstanceId.value && instances.value.length > 0) {
+      await loadInstanceRuntimeMetrics(instances.value[0].id, { silentError: true });
     }
   } catch (err) {
     instanceError.value = err instanceof ApiClientError ? err.message : tl("加载实例失败");
     notify.error("加载实例失败", instanceError.value);
+  } finally {
+    loadingInstances.value = false;
   }
 }
 
@@ -3745,6 +3951,8 @@ async function handleLoadChallengeForEdit(challengeId: string) {
   try {
     const detail = await getAdminChallengeDetail(challengeId, accessTokenOrThrow());
     applyChallengeDetailToForm(detail);
+    selectedChallengeId.value = detail.id;
+    challengeLibraryMode.value = "editor";
     challengeRuntimeImageTestResult.value = null;
     notify.info("已载入题目配置", `正在编辑：${detail.title}`);
   } catch (err) {
@@ -3755,6 +3963,19 @@ async function handleLoadChallengeForEdit(challengeId: string) {
 
 function handleCancelChallengeEdit() {
   resetChallengeForm();
+}
+
+function openCreateChallengeEditor() {
+  resetChallengeForm();
+  challengeLibraryMode.value = "editor";
+}
+
+function openSelectedChallengeEditor() {
+  if (!selectedChallengeId.value) {
+    openCreateChallengeEditor();
+    return;
+  }
+  void handleLoadChallengeForEdit(selectedChallengeId.value);
 }
 
 async function handleTestChallengeRuntimeImage() {
@@ -3867,6 +4088,7 @@ async function handleCreateChallenge() {
     }
 
     resetChallengeForm();
+    challengeLibraryMode.value = "catalog";
 
     await loadChallenges();
     notify.success(
@@ -3911,7 +4133,17 @@ async function updateChallengeStatus(challengeId: string, status: "draft" | "pub
 }
 
 async function handleDestroyChallenge(item: AdminChallengeItem) {
-  if (!window.confirm(tl(`确认销毁题目「${item.title}」？该操作会删除题目、挂载关系、提交记录与运行实例。`))) {
+  const confirmed = await uiStore.confirm({
+    title: tr("销毁题目", "Destroy challenge"),
+    message: tr(
+      `确认销毁题目「${item.title}」？该操作会删除题目、挂载关系、提交记录与运行实例。`,
+      `Destroy challenge "${item.title}"? This will remove challenge data, bindings, submissions, and instances.`
+    ),
+    confirmLabel: tr("销毁", "Destroy"),
+    cancelLabel: tr("取消", "Cancel"),
+    intent: "danger"
+  });
+  if (!confirmed) {
     return;
   }
 
@@ -4044,12 +4276,29 @@ async function deleteChallengeAttachment(attachmentId: string) {
 
 function handleLoadContestForEdit(item: AdminContestItem) {
   applyContestToForm(item);
+  selectedContestId.value = item.id;
+  contestManageMode.value = "editor";
   contestError.value = "";
   notify.info("已载入比赛配置", `正在编辑：${item.title}`);
 }
 
 function handleCancelContestEdit() {
   resetContestForm();
+  contestManageMode.value = "catalog";
+}
+
+function openCreateContestEditor() {
+  resetContestForm();
+  contestManageMode.value = "editor";
+}
+
+function openSelectedContestEditor() {
+  const item = selectedContest.value;
+  if (!item) {
+    openCreateContestEditor();
+    return;
+  }
+  handleLoadContestForEdit(item);
 }
 
 async function handleCreateContest() {
@@ -4117,6 +4366,7 @@ async function handleCreateContest() {
     }
 
     resetContestForm();
+    contestManageMode.value = "catalog";
 
     await loadContests();
     selectedContestId.value = targetContestId;
@@ -4194,7 +4444,17 @@ async function handleDeleteContestPoster(item: AdminContestItem) {
     return;
   }
 
-  if (!window.confirm(tl(`确认删除比赛「${item.title}」的海报？`))) {
+  const confirmed = await uiStore.confirm({
+    title: tr("删除比赛海报", "Delete contest poster"),
+    message: tr(
+      `确认删除比赛「${item.title}」的海报？`,
+      `Delete poster for contest "${item.title}"?`
+    ),
+    confirmLabel: tr("删除", "Delete"),
+    cancelLabel: tr("取消", "Cancel"),
+    intent: "danger"
+  });
+  if (!confirmed) {
     return;
   }
 
@@ -4214,7 +4474,17 @@ async function handleDeleteContestPoster(item: AdminContestItem) {
 }
 
 async function handleDestroyContest(item: AdminContestItem) {
-  if (!window.confirm(tl(`确认销毁比赛「${item.title}」？该操作将删除比赛、公告、挂载、提交与实例数据。`))) {
+  const confirmed = await uiStore.confirm({
+    title: tr("销毁比赛", "Destroy contest"),
+    message: tr(
+      `确认销毁比赛「${item.title}」？该操作将删除比赛、公告、挂载、提交与实例数据。`,
+      `Destroy contest "${item.title}"? This will remove contest data, announcements, bindings, submissions, and instances.`
+    ),
+    confirmLabel: tr("销毁", "Destroy"),
+    cancelLabel: tr("取消", "Cancel"),
+    intent: "danger"
+  });
+  if (!confirmed) {
     return;
   }
 
@@ -4223,6 +4493,10 @@ async function handleDestroyContest(item: AdminContestItem) {
 
   try {
     await deleteAdminContest(item.id, accessTokenOrThrow());
+    if (editingContestId.value === item.id) {
+      resetContestForm();
+      contestManageMode.value = "catalog";
+    }
     if (selectedContestId.value === item.id) {
       selectedContestId.value = "";
       contestBindings.value = [];
@@ -4314,7 +4588,17 @@ async function handleUpdateUserRole(item: AdminUserItem) {
 }
 
 async function handleDeleteUserAccount(item: AdminUserItem) {
-  if (!window.confirm(tl(`确认删除账号「${item.username}」？该操作会禁用并匿名化该账号。`))) {
+  const confirmed = await uiStore.confirm({
+    title: tr("删除账号", "Delete account"),
+    message: tr(
+      `确认删除账号「${item.username}」？该操作会禁用并匿名化该账号。`,
+      `Delete account "${item.username}"? This operation will disable and anonymize the account.`
+    ),
+    confirmLabel: tr("删除", "Delete"),
+    cancelLabel: tr("取消", "Cancel"),
+    intent: "danger"
+  });
+  if (!confirmed) {
     return;
   }
 
@@ -4807,6 +5091,158 @@ onUnmounted(() => {
   grid-column: 1 / -1;
 }
 
+.challenge-library-head {
+  margin-top: 0.7rem;
+  margin-bottom: 0.12rem;
+}
+
+.challenge-library-mode-switch {
+  gap: 0.18rem;
+  padding: 0.2rem;
+}
+
+.challenge-library-mode-switch .ghost {
+  min-height: 1.78rem;
+  padding-inline: 0.62rem;
+}
+
+.challenge-library-mode-switch .ghost.active {
+  background: rgba(18, 18, 18, 0.86);
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.challenge-library-shell {
+  margin-top: 0.3rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.challenge-editor-column {
+  width: min(100%, 980px);
+  justify-self: center;
+}
+
+.challenge-library-column .challenge-card-grid {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  min-height: 560px;
+  max-height: none;
+}
+
+.contest-manage-head {
+  margin-top: 0.7rem;
+  margin-bottom: 0.12rem;
+}
+
+.contest-manage-mode-switch {
+  gap: 0.18rem;
+  padding: 0.2rem;
+}
+
+.contest-manage-mode-switch .ghost {
+  min-height: 1.78rem;
+  padding-inline: 0.62rem;
+}
+
+.contest-manage-mode-switch .ghost.active {
+  background: rgba(18, 18, 18, 0.86);
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.contest-management-shell {
+  margin-top: 0.3rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.contest-editor-column {
+  width: min(100%, 980px);
+  justify-self: center;
+}
+
+.contest-catalog-column {
+  min-height: 0;
+}
+
+.contest-catalog-workspace {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.92fr) minmax(0, 1.5fr);
+  gap: 0.88rem;
+  min-height: 620px;
+}
+
+.contest-catalog-list {
+  max-height: 72vh;
+}
+
+.contest-catalog-detail {
+  min-height: 0;
+}
+
+.challenge-create-form {
+  margin-top: 0.7rem;
+  gap: 0.68rem;
+}
+
+.challenge-form-block {
+  position: relative;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.44);
+  padding: 0.64rem;
+  display: grid;
+  gap: 0.52rem;
+}
+
+.challenge-form-block::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(rgba(12, 12, 12, 0.14), rgba(12, 12, 12, 0.14)) top / 100% 1px no-repeat,
+    linear-gradient(rgba(12, 12, 12, 0.14), rgba(12, 12, 12, 0.14)) left / 1px 100% no-repeat;
+}
+
+.challenge-form-block-head {
+  display: grid;
+  gap: 0.1rem;
+  padding-bottom: 0.44rem;
+  border-bottom: 1px dashed rgba(12, 12, 12, 0.24);
+}
+
+.challenge-form-block-head h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.challenge-form-block-head p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(18, 18, 18, 0.58);
+}
+
+.challenge-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.58rem 0.62rem;
+}
+
+.challenge-form-grid .field-span-2,
+.challenge-form-grid .image-test-block {
+  grid-column: 1 / -1;
+}
+
+.challenge-form-grid textarea {
+  min-height: 7.1rem;
+}
+
+.challenge-submit-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.1rem;
+}
+
+.challenge-submit-row .primary {
+  min-width: min(100%, 220px);
+}
+
 .search-field {
   display: grid;
   gap: 0.35rem;
@@ -5208,24 +5644,27 @@ onUnmounted(() => {
   color: rgba(255, 255, 255, 0.94);
 }
 
-.runtime-alert-layout {
+.runtime-alert-layout,
+.runtime-alert-workspace {
   display: grid;
   grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.5fr);
   gap: 0.8rem;
   min-height: 420px;
 }
 
-.instance-metrics-panel {
-  margin-top: 0.8rem;
+.runtime-alert-list-panel,
+.runtime-alert-detail-panel {
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.44);
   padding: 0.75rem;
   display: grid;
-  gap: 0.65rem;
+  gap: 0.62rem;
+  min-height: 0;
   position: relative;
 }
 
-.instance-metrics-panel::before {
+.runtime-alert-list-panel::before,
+.runtime-alert-detail-panel::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -5236,15 +5675,170 @@ onUnmounted(() => {
     linear-gradient(rgba(12, 12, 12, 0.16), rgba(12, 12, 12, 0.16)) left / 1px 100% no-repeat;
 }
 
-.runtime-alert-list {
+.instance-filter-control {
+  min-width: 220px;
+}
+
+.instance-workspace {
+  margin-top: 0.72rem;
+  display: grid;
+  grid-template-columns: minmax(320px, 0.92fr) minmax(0, 1.5fr);
+  gap: 0.8rem;
+  min-height: 560px;
+}
+
+.instance-list-panel,
+.instance-detail-panel {
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.4);
-  padding: 0.6rem;
+  background: rgba(255, 255, 255, 0.44);
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.65rem;
+  min-height: 0;
+  position: relative;
+}
+
+.instance-list-panel::before,
+.instance-detail-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(12, 12, 12, 0.16), rgba(12, 12, 12, 0.16)) top / 100% 1px no-repeat,
+    linear-gradient(rgba(12, 12, 12, 0.16), rgba(12, 12, 12, 0.16)) left / 1px 100% no-repeat;
+}
+
+.instance-list-body {
+  display: grid;
+  gap: 0.45rem;
+  align-content: start;
+  overflow: auto;
+  min-height: 0;
+  max-height: 72vh;
+  padding-right: 0.1rem;
+}
+
+.instance-list-item {
+  text-align: left;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 0.55rem 0.58rem;
+  display: grid;
+  gap: 0.18rem;
+  cursor: pointer;
+  transition: transform 130ms ease, background-color 130ms ease;
+}
+
+.instance-list-item:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.instance-list-item.active {
+  background: rgba(18, 18, 18, 0.84);
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.instance-list-item.active .muted {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.instance-list-item.active .instance-entry-link {
+  background: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.instance-list-item-head {
+  align-items: flex-start;
+}
+
+.instance-status-badge {
+  min-height: 1.32rem;
+  padding: 0.1rem 0.48rem;
+  font-size: 0.66rem;
+}
+
+.instance-status-badge.status-running {
+  background: rgba(18, 18, 18, 0.9);
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.instance-status-badge.status-creating {
+  background: rgba(58, 58, 58, 0.88);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.instance-status-badge.status-stopped,
+.instance-status-badge.status-destroyed {
+  background: rgba(92, 92, 92, 0.84);
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.instance-status-badge.status-failed {
+  background: rgba(120, 24, 24, 0.82);
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.instance-status-badge.status-default {
+  background: rgba(62, 62, 62, 0.82);
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.instance-entry-link {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  min-height: 1.78rem;
+  padding: 0.24rem 0.62rem;
+  background: rgba(255, 255, 255, 0.52);
+  color: rgba(18, 18, 18, 0.9);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.instance-entry-link:hover {
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.instance-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.62rem;
+}
+
+.instance-meta-grid .metric-card p {
+  margin: 0.2rem 0;
+}
+
+.instance-warnings {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.instance-warning {
+  margin: 0;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 0.48rem 0.55rem;
+}
+
+.instance-services-table td p {
+  margin: 0.12rem 0 0;
+}
+
+.runtime-alert-list {
   display: grid;
   gap: 0.45rem;
   overflow: auto;
   min-height: 0;
+  max-height: 72vh;
   align-content: start;
+  padding-right: 0.1rem;
 }
 
 .runtime-alert-item {
@@ -5297,30 +5891,17 @@ onUnmounted(() => {
   margin: 0;
 }
 
-.runtime-alert-detail {
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.44);
-  padding: 0.8rem;
+.runtime-alert-detail,
+.runtime-alert-detail-panel {
   min-height: 0;
   overflow: auto;
   display: grid;
   gap: 0.65rem;
   align-content: start;
-  position: relative;
 }
 
-.runtime-alert-detail::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background:
-    linear-gradient(rgba(12, 12, 12, 0.16), rgba(12, 12, 12, 0.16)) top / 100% 1px no-repeat,
-    linear-gradient(rgba(12, 12, 12, 0.16), rgba(12, 12, 12, 0.16)) right / 1px 100% no-repeat;
-}
-
-.runtime-alert-detail h3 {
+.runtime-alert-detail h3,
+.runtime-alert-detail-panel h3 {
   margin: 0;
 }
 
@@ -5385,9 +5966,27 @@ onUnmounted(() => {
   color: var(--bg-0);
 }
 
+:root[data-theme="dark"] .challenge-library-mode-switch .ghost.active {
+  background: var(--fg-0);
+  color: var(--bg-0);
+}
+
+:root[data-theme="dark"] .contest-manage-mode-switch .ghost.active {
+  background: var(--fg-0);
+  color: var(--bg-0);
+}
+
 :root[data-theme="dark"] .module-column,
 :root[data-theme="dark"] .action-sheet,
 :root[data-theme="dark"] .filter-sheet,
+:root[data-theme="dark"] .challenge-form-block,
+:root[data-theme="dark"] .runtime-alert-list-panel,
+:root[data-theme="dark"] .runtime-alert-detail-panel,
+:root[data-theme="dark"] .instance-list-panel,
+:root[data-theme="dark"] .instance-detail-panel,
+:root[data-theme="dark"] .instance-list-item,
+:root[data-theme="dark"] .instance-entry-link,
+:root[data-theme="dark"] .instance-warning,
 :root[data-theme="dark"] .announcement-block,
 :root[data-theme="dark"] .announcement-editor-shell,
 :root[data-theme="dark"] .announcement-editor-textarea,
@@ -5408,6 +6007,11 @@ onUnmounted(() => {
 :root[data-theme="dark"] .module-column::before,
 :root[data-theme="dark"] .action-sheet::before,
 :root[data-theme="dark"] .filter-sheet::before,
+:root[data-theme="dark"] .challenge-form-block::before,
+:root[data-theme="dark"] .runtime-alert-list-panel::before,
+:root[data-theme="dark"] .runtime-alert-detail-panel::before,
+:root[data-theme="dark"] .instance-list-panel::before,
+:root[data-theme="dark"] .instance-detail-panel::before,
 :root[data-theme="dark"] .announcement-block::before,
 :root[data-theme="dark"] .contest-detail-pane::before,
 :root[data-theme="dark"] .runtime-alert-detail::before {
@@ -5433,6 +6037,22 @@ onUnmounted(() => {
 :root[data-theme="dark"] .announcement-editor-title,
 :root[data-theme="dark"] .announcement-markdown-hint {
   color: rgba(228, 228, 228, 0.72);
+}
+
+:root[data-theme="dark"] .instance-entry-link {
+  color: rgba(244, 244, 244, 0.9);
+}
+
+:root[data-theme="dark"] .instance-list-item.active .instance-entry-link {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+:root[data-theme="dark"] .challenge-form-block-head p {
+  color: rgba(228, 228, 228, 0.7);
+}
+
+:root[data-theme="dark"] .challenge-form-block-head {
+  border-bottom-color: var(--line-mid);
 }
 
 :root[data-theme="dark"] .runtime-alert-item.status-open {
@@ -5462,18 +6082,63 @@ onUnmounted(() => {
     grid-template-columns: 1fr;
   }
 
+  .challenge-editor-column {
+    max-width: none;
+  }
+
+  .contest-editor-column {
+    max-width: none;
+  }
+
   .contest-browser {
     grid-template-columns: 1fr;
   }
 
-  .runtime-alert-layout {
+  .contest-catalog-workspace {
     grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .contest-catalog-list {
+    max-height: 340px;
+  }
+
+  .runtime-alert-layout,
+  .runtime-alert-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .instance-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .instance-list-body {
+    max-height: 340px;
   }
 }
 
 @media (max-width: 860px) {
   .compact-grid {
     grid-template-columns: 1fr;
+  }
+
+  .challenge-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .instance-meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .instance-filter-control {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .contest-manage-head,
+  .challenge-library-head {
+    align-items: flex-start;
+    gap: 0.42rem;
   }
 }
 </style>

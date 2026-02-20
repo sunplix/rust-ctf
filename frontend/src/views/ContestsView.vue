@@ -12,141 +12,143 @@
       <p v-if="error" class="error">{{ error }}</p>
     </article>
 
-    <div class="cols-2 contests-layout">
-      <aside class="surface stack">
-        <div class="row-between">
-          <h2>{{ tr("比赛列表", "Contests") }}</h2>
-          <span class="badge">{{ contests.length }}</span>
+    <article class="surface stack contests-shell">
+      <header class="section-head">
+        <div class="section-title">
+          <h2>{{ tr("比赛列表", "Contest Directory") }}</h2>
+          <p>{{ tr("筛选比赛并查看详情、公告和入口。", "Filter contests and inspect details, announcements, and entry actions.") }}</p>
         </div>
-
-        <div v-if="loading && contests.length === 0" class="muted">
-          {{ tr("正在加载比赛数据...", "Loading contests...") }}
-        </div>
-
-        <template v-else>
-          <section class="stack">
-            <div class="row-between">
-              <h3>{{ tr("进行中", "Running") }}</h3>
-              <span class="soft mono">{{ running.length }}</span>
-            </div>
-            <div class="list-board">
-              <button
-                v-for="contest in running"
-                :key="contest.id"
-                class="select-item"
-                :class="{ active: contest.id === selectedContestId }"
-                type="button"
-                @click="selectedContestId = contest.id"
-              >
-                <div class="row-between">
-                  <strong>{{ contest.title }}</strong>
-                  <span class="badge">{{ tr("进行中", "running") }}</span>
-                </div>
-                <p class="soft mono">{{ formatRange(contest.start_at, contest.end_at) }}</p>
-              </button>
-              <p v-if="running.length === 0" class="soft">{{ tr("暂无进行中比赛。", "No running contests.") }}</p>
-            </div>
-          </section>
-
-          <div class="split-line"></div>
-
-          <section class="stack">
-            <div class="row-between">
-              <h3>{{ tr("即将开始", "Scheduled") }}</h3>
-              <span class="soft mono">{{ scheduled.length }}</span>
-            </div>
-            <div class="list-board">
-              <button
-                v-for="contest in scheduled"
-                :key="contest.id"
-                class="select-item"
-                :class="{ active: contest.id === selectedContestId }"
-                type="button"
-                @click="selectedContestId = contest.id"
-              >
-                <div class="row-between">
-                  <strong>{{ contest.title }}</strong>
-                  <span class="badge">{{ tr("待开始", "scheduled") }}</span>
-                </div>
-                <p class="soft mono">{{ formatRange(contest.start_at, contest.end_at) }}</p>
-              </button>
-              <p v-if="scheduled.length === 0" class="soft">{{ tr("暂无即将开始比赛。", "No scheduled contests.") }}</p>
-            </div>
-          </section>
-
-          <div class="split-line"></div>
-
-          <section class="stack">
-            <div class="row-between">
-              <h3>{{ tr("已结束", "Ended") }}</h3>
-              <span class="soft mono">{{ ended.length }}</span>
-            </div>
-            <div class="list-board">
-              <button
-                v-for="contest in ended"
-                :key="contest.id"
-                class="select-item"
-                :class="{ active: contest.id === selectedContestId }"
-                type="button"
-                @click="selectedContestId = contest.id"
-              >
-                <div class="row-between">
-                  <strong>{{ contest.title }}</strong>
-                  <span class="badge">{{ tr("已结束", "ended") }}</span>
-                </div>
-                <p class="soft mono">{{ formatRange(contest.start_at, contest.end_at) }}</p>
-              </button>
-              <p v-if="ended.length === 0" class="soft">{{ tr("暂无已结束比赛。", "No ended contests.") }}</p>
-            </div>
-          </section>
-        </template>
-      </aside>
-
-      <main class="surface stack">
-        <template v-if="selectedContest">
-          <header class="section-head">
-            <div class="section-title">
-              <h2>{{ selectedContest.title }}</h2>
-            </div>
-            <span class="badge">{{ selectedContest.status }}</span>
-          </header>
-
-          <div v-if="selectedContest.poster_url" class="poster-wrap">
-            <img :src="posterUrl(selectedContest)" :alt="`${selectedContest.title} poster`" />
-          </div>
-          <div v-else class="poster-fallback mono">-</div>
-
-          <p class="muted">{{ selectedContest.description || tr("暂无比赛描述。", "No contest description.") }}</p>
-          <p class="soft mono">{{ formatRange(selectedContest.start_at, selectedContest.end_at) }}</p>
-          <p
-            v-if="selectedContest.latest_announcement_title || selectedContest.latest_announcement_content"
-            class="muted"
+        <div class="context-menu contest-status-switch">
+          <button
+            class="btn-line btn-compact"
+            :class="{ active: contestStatusFilter === 'all' }"
+            type="button"
+            @click="contestStatusFilter = 'all'"
           >
-            <strong>{{ selectedContest.latest_announcement_title || tr("最新公告", "Latest announcement") }}：</strong>
-            {{ summarize(selectedContest.latest_announcement_content) }}
-          </p>
+            {{ tr("全部", "All") }}
+            <span class="status-count">{{ contests.length }}</span>
+          </button>
+          <button
+            class="btn-line btn-compact"
+            :class="{ active: contestStatusFilter === 'running' }"
+            type="button"
+            @click="contestStatusFilter = 'running'"
+          >
+            {{ tr("进行中", "Running") }}
+            <span class="status-count">{{ running.length }}</span>
+          </button>
+          <button
+            class="btn-line btn-compact"
+            :class="{ active: contestStatusFilter === 'scheduled' }"
+            type="button"
+            @click="contestStatusFilter = 'scheduled'"
+          >
+            {{ tr("即将开始", "Scheduled") }}
+            <span class="status-count">{{ scheduled.length }}</span>
+          </button>
+          <button
+            class="btn-line btn-compact"
+            :class="{ active: contestStatusFilter === 'ended' }"
+            type="button"
+            @click="contestStatusFilter = 'ended'"
+          >
+            {{ tr("已结束", "Ended") }}
+            <span class="status-count">{{ ended.length }}</span>
+          </button>
+        </div>
+      </header>
 
-          <div class="split-line"></div>
+      <label class="search-field contest-search">
+        <span>{{ tr("快速筛选", "Quick Filter") }}</span>
+        <input
+          v-model.trim="contestKeyword"
+          :placeholder="tr('按标题、slug、状态检索', 'Filter by title, slug, or status')"
+        />
+      </label>
 
-          <section class="stack">
-            <h3>{{ tr("比赛操作", "Actions") }}</h3>
-            <div class="context-menu" v-if="selectedContestId">
-              <RouterLink class="btn-solid" :to="`/contests/${selectedContest.id}`">
-                {{ tr("进入比赛空间", "Open contest workspace") }}
-              </RouterLink>
-              <button class="btn-line" type="button" @click="copyContestId(selectedContest.id)">
-                {{ tr("复制比赛 ID", "Copy contest ID") }}
-              </button>
-              <button class="btn-line" type="button" @click="loadContests" :disabled="loading">
-                {{ tr("同步最新数据", "Sync latest data") }}
-              </button>
+      <div v-if="loading && contests.length === 0" class="muted">
+        {{ tr("正在加载比赛数据...", "Loading contests...") }}
+      </div>
+
+      <div v-else class="contest-workspace">
+        <aside class="contest-rail">
+          <div class="contest-rail-scroll list-board">
+            <button
+              v-for="contest in filteredContests"
+              :key="contest.id"
+              class="select-item contest-row"
+              :class="{ active: contest.id === selectedContestId }"
+              type="button"
+              @click="selectedContestId = contest.id"
+            >
+              <div class="row-between">
+                <strong>{{ contest.title }}</strong>
+                <span class="badge">{{ statusLabel(contest.status) }}</span>
+              </div>
+              <p class="soft mono">{{ formatRange(contest.start_at, contest.end_at) }}</p>
+              <p class="soft mono contest-row-meta">{{ contest.slug }} · {{ contest.scoring_mode }}</p>
+            </button>
+            <p v-if="filteredContests.length === 0" class="soft">
+              {{ tr("没有匹配的比赛。", "No contests matched the current filter.") }}
+            </p>
+          </div>
+        </aside>
+
+        <main class="contest-focus stack">
+          <template v-if="selectedContest">
+            <header class="section-head contest-focus-head">
+              <div class="section-title">
+                <h2>{{ selectedContest.title }}</h2>
+              </div>
+              <span class="badge">{{ statusLabel(selectedContest.status) }}</span>
+            </header>
+
+            <div class="contest-focus-body">
+              <div v-if="selectedContest.poster_url" class="poster-wrap contest-poster">
+                <img :src="posterUrl(selectedContest)" :alt="`${selectedContest.title} poster`" />
+              </div>
+              <div v-else class="poster-fallback contest-poster mono">-</div>
+
+              <div class="stack contest-meta">
+                <p class="muted">{{ selectedContest.description || tr("暂无比赛描述。", "No contest description.") }}</p>
+                <div class="contest-meta-grid">
+                  <p class="soft mono">{{ formatRange(selectedContest.start_at, selectedContest.end_at) }}</p>
+                  <p class="soft mono">ID · {{ selectedContest.id }}</p>
+                  <p class="soft">{{ tr("计分模式", "Scoring") }} · {{ selectedContest.scoring_mode }}</p>
+                  <p class="soft">{{ tr("动态衰减", "Dynamic Decay") }} · {{ selectedContest.dynamic_decay }}</p>
+                </div>
+                <article
+                  v-if="selectedContest.latest_announcement_title || selectedContest.latest_announcement_content"
+                  class="contest-announcement"
+                >
+                  <h3>{{ selectedContest.latest_announcement_title || tr("最新公告", "Latest Announcement") }}</h3>
+                  <p class="muted">{{ summarize(selectedContest.latest_announcement_content) }}</p>
+                </article>
+              </div>
             </div>
-          </section>
-        </template>
 
-        <p v-else class="muted">{{ tr("请选择一个比赛查看详情。", "Select a contest to view details.") }}</p>
-      </main>
-    </div>
+            <div class="split-line"></div>
+
+            <section class="stack">
+              <h3>{{ tr("比赛操作", "Actions") }}</h3>
+              <div class="context-menu contest-action-menu" v-if="selectedContestId">
+                <RouterLink class="btn-solid" :to="`/contests/${selectedContest.id}`">
+                  {{ tr("进入比赛空间", "Open Contest Workspace") }}
+                </RouterLink>
+                <button class="btn-line" type="button" @click="copyContestId(selectedContest.id)">
+                  {{ tr("复制比赛 ID", "Copy Contest ID") }}
+                </button>
+                <button class="btn-line" type="button" @click="loadContests" :disabled="loading">
+                  {{ tr("同步最新数据", "Sync Latest Data") }}
+                </button>
+              </div>
+            </section>
+          </template>
+
+          <p v-else class="muted">{{ tr("请选择一个比赛查看详情。", "Select a contest to view details.") }}</p>
+        </main>
+      </div>
+    </article>
   </section>
 </template>
 
@@ -171,6 +173,8 @@ const selectedContestId = ref("");
 const loading = ref(false);
 const error = ref("");
 const cacheVersion = ref(`${Date.now()}`);
+const contestKeyword = ref("");
+const contestStatusFilter = ref<"all" | "running" | "scheduled" | "ended">("all");
 
 const sortedContests = computed(() => {
   return [...contests.value].sort((a, b) => {
@@ -201,6 +205,25 @@ const running = computed(() => sortedContests.value.filter((item) => item.status
 const scheduled = computed(() => sortedContests.value.filter((item) => item.status === "scheduled"));
 const ended = computed(() => sortedContests.value.filter((item) => item.status === "ended"));
 
+const filteredContests = computed(() => {
+  const byStatus =
+    contestStatusFilter.value === "all"
+      ? sortedContests.value
+      : sortedContests.value.filter((item) => item.status === contestStatusFilter.value);
+  const keyword = contestKeyword.value.trim().toLowerCase();
+  if (!keyword) {
+    return byStatus;
+  }
+  return byStatus.filter((item) => {
+    return (
+      item.title.toLowerCase().includes(keyword) ||
+      item.slug.toLowerCase().includes(keyword) ||
+      item.status.toLowerCase().includes(keyword) ||
+      item.scoring_mode.toLowerCase().includes(keyword)
+    );
+  });
+});
+
 const selectedContest = computed(() => {
   if (!selectedContestId.value) {
     return null;
@@ -209,7 +232,7 @@ const selectedContest = computed(() => {
 });
 
 watch(
-  () => contests.value,
+  () => filteredContests.value,
   (next) => {
     if (next.length === 0) {
       selectedContestId.value = "";
@@ -217,7 +240,7 @@ watch(
     }
 
     if (!selectedContestId.value || !next.some((contest) => contest.id === selectedContestId.value)) {
-      selectedContestId.value = sortedContests.value[0]?.id ?? "";
+      selectedContestId.value = next[0]?.id ?? "";
     }
   },
   { immediate: true }
@@ -230,6 +253,19 @@ function formatTime(input: string) {
 
 function formatRange(startAt: string, endAt: string) {
   return `${formatTime(startAt)} ~ ${formatTime(endAt)}`;
+}
+
+function statusLabel(status: string) {
+  if (status === "running") {
+    return tr("进行中", "Running");
+  }
+  if (status === "scheduled") {
+    return tr("即将开始", "Scheduled");
+  }
+  if (status === "ended") {
+    return tr("已结束", "Ended");
+  }
+  return status;
 }
 
 function posterUrl(contest: ContestListItem) {
@@ -289,37 +325,189 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.contests-shell {
+  gap: 0.8rem;
+}
+
+.contest-status-switch {
+  row-gap: 0.36rem;
+}
+
+.contest-status-switch .btn-line.active {
+  background: var(--fg-0);
+  color: var(--bg-0);
+}
+
+.status-count {
+  min-width: 1.5rem;
+  padding: 0.08rem 0.32rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--glass-mid) 82%, transparent 18%);
+  font-size: 0.7rem;
+  line-height: 1.2;
+}
+
+.contest-status-switch .btn-line.active .status-count {
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.contest-search {
+  max-width: 560px;
+}
+
+.contest-workspace {
+  display: grid;
+  grid-template-columns: minmax(300px, 36%) minmax(0, 1fr);
+  gap: 0.8rem;
+  height: clamp(520px, 74vh, 860px);
+  max-height: clamp(520px, 74vh, 860px);
+}
+
+.contest-rail,
+.contest-focus {
+  min-height: 0;
+  border-radius: var(--radius-md);
+  background: var(--glass-mid);
+  box-shadow: inset 0 -1px 0 var(--line-soft);
+}
+
+.contest-rail {
+  padding: 0.48rem;
+  overflow: hidden;
+}
+
+.contest-rail-scroll {
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 0.18rem;
+}
+
+.contest-row {
+  gap: 0.28rem;
+}
+
+.contest-row-meta {
+  font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contest-focus {
+  padding: 0.78rem;
+  overflow-y: auto;
+  align-content: start;
+}
+
+.contest-focus-head {
+  padding-bottom: 0.68rem;
+}
+
+.contest-focus-body {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.82fr) minmax(0, 1fr);
+  gap: 0.78rem;
+  align-items: start;
+}
+
+.contest-poster {
+  min-height: 220px;
+  max-height: 340px;
+}
+
 .poster-wrap {
   border-radius: var(--radius-md);
   overflow: hidden;
   background: rgba(255, 255, 255, 0.28);
-  max-height: 280px;
+  box-shadow: inset 0 -1px 0 var(--line-soft);
 }
 
 .poster-wrap img {
   display: block;
   width: 100%;
   height: 100%;
-  max-height: 280px;
+  max-height: 340px;
   object-fit: cover;
 }
 
 .poster-fallback {
-  min-height: 160px;
+  min-height: 220px;
   border-radius: var(--radius-md);
   display: grid;
   place-items: center;
   background: rgba(255, 255, 255, 0.24);
   color: var(--ink-2);
+  box-shadow: inset 0 -1px 0 var(--line-soft);
 }
 
-.contests-layout {
-  align-items: start;
+.contest-meta {
+  align-content: start;
+}
+
+.contest-meta-grid {
+  display: grid;
+  gap: 0.26rem;
+}
+
+.contest-meta-grid p {
+  margin: 0;
+}
+
+.contest-announcement {
+  display: grid;
+  gap: 0.32rem;
+  padding: 0.62rem 0.68rem;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--glass-soft) 86%, transparent 14%);
+  box-shadow: inset 0 -1px 0 var(--line-soft);
+}
+
+.contest-announcement h3,
+.contest-announcement p {
+  margin: 0;
+}
+
+.contest-announcement h3 {
+  font-size: 0.92rem;
+}
+
+.contest-action-menu {
+  width: fit-content;
 }
 
 @media (max-width: 1180px) {
-  .contests-layout {
+  .contest-workspace {
     grid-template-columns: 1fr;
+    height: auto;
+    max-height: none;
+  }
+
+  .contest-rail {
+    max-height: 46vh;
+  }
+
+  .contest-focus {
+    min-height: 420px;
+  }
+}
+
+@media (max-width: 760px) {
+  .contest-focus-body {
+    grid-template-columns: 1fr;
+  }
+
+  .contest-poster {
+    min-height: 180px;
+    max-height: 240px;
+  }
+
+  .contest-rail {
+    max-height: 52vh;
+  }
+
+  .contest-action-menu {
+    width: 100%;
   }
 }
 </style>
