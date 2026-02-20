@@ -104,6 +104,7 @@ POSTGRES_USER=ctf
 POSTGRES_PASSWORD=replace_with_strong_db_password
 POSTGRES_DB=rust_ctf
 CTF_DOMAIN=ctf.example.com
+VITE_ALLOWED_HOSTS=ctf.example.com
 ```
 
 ### 5.3 生产编排文件（`deploy/docker-compose.prod.yml`）
@@ -179,6 +180,7 @@ services:
     restart: unless-stopped
     environment:
       VITE_API_BASE_URL: https://${CTF_DOMAIN}/api/v1
+      VITE_ALLOWED_HOSTS: ${VITE_ALLOWED_HOSTS}
     ports:
       - "127.0.0.1:5173:5173"
     depends_on:
@@ -364,3 +366,24 @@ cat /opt/rust-ctf/backups/rust_ctf_xxx.sql | \
 - `frontend/Dockerfile.prod`
 - `deploy/docker-compose.prod.yml`（正式入库）
 - CI/CD 部署脚本（发布分支自动构建与滚动更新）
+
+## 13. 常见问题（FAQ）
+
+### 13.1 `Blocked request. This host (...) is not allowed`
+
+原因：前端容器在运行 Vite dev server，访问域名未在 `server.allowedHosts` 白名单内。  
+处理：
+
+1. 在 `deploy/.env.prod.stack` 设置：
+   - `VITE_ALLOWED_HOSTS=ctf.sunplix.io`
+   - 多域名可逗号分隔：`VITE_ALLOWED_HOSTS=ctf.sunplix.io,www.ctf.sunplix.io`
+2. 确认 `deploy/docker-compose.prod.yml` 前端服务包含：
+   - `VITE_ALLOWED_HOSTS: ${VITE_ALLOWED_HOSTS}`
+3. 重建前端容器：
+
+```bash
+sudo docker compose \
+  --env-file deploy/.env.prod.stack \
+  -f deploy/docker-compose.prod.yml \
+  up -d --build frontend
+```
