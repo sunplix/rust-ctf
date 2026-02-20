@@ -5104,6 +5104,7 @@ onUnmounted(() => {
 .challenge-library-mode-switch .ghost {
   min-height: 1.78rem;
   padding-inline: 0.62rem;
+  min-width: 8.8rem;
 }
 
 .challenge-library-mode-switch .ghost.active {
