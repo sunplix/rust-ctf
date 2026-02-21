@@ -23,6 +23,7 @@ use uuid::Uuid;
 use crate::{
     auth::{self, AuthenticatedUser},
     error::{AppError, AppResult},
+    routes::contest_access::ensure_user_contest_workspace_access,
     state::AppState,
 };
 
@@ -147,12 +148,6 @@ struct ContestChallengeCatalogRow {
     challenge_title: String,
     challenge_slug: String,
     challenge_category: String,
-}
-
-#[derive(Debug, FromRow)]
-struct ContestAccessRow {
-    visibility: String,
-    status: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -393,28 +388,7 @@ async fn ensure_scoreboard_access(
     contest_id: Uuid,
     current_user: &AuthenticatedUser,
 ) -> AppResult<()> {
-    let contest = sqlx::query_as::<_, ContestAccessRow>(
-        "SELECT visibility, status
-         FROM contests
-         WHERE id = $1
-         LIMIT 1",
-    )
-    .bind(contest_id)
-    .fetch_optional(&state.db)
-    .await
-    .map_err(AppError::internal)?
-    .ok_or(AppError::BadRequest("contest not found".to_string()))?;
-
-    let is_privileged = current_user.role == "admin" || current_user.role == "judge";
-
-    if contest.visibility == "private" && !is_privileged {
-        return Err(AppError::Forbidden);
-    }
-
-    if (contest.status == "draft" || contest.status == "archived") && !is_privileged {
-        return Err(AppError::Forbidden);
-    }
-
+    ensure_user_contest_workspace_access(state, contest_id, current_user).await?;
     Ok(())
 }
 

@@ -220,6 +220,7 @@ import {
   type ScoreboardPushPayload
 } from "../api/client";
 import { useL10n } from "../composables/useL10n";
+import { useTimeFormat } from "../composables/useTimeFormat";
 import { useAuthStore } from "../stores/auth";
 
 const props = defineProps<{
@@ -227,7 +228,8 @@ const props = defineProps<{
 }>();
 
 const authStore = useAuthStore();
-const { locale, tr } = useL10n();
+const { tr } = useL10n();
+const { formatTimeOnly } = useTimeFormat();
 const route = useRoute();
 const router = useRouter();
 
@@ -511,8 +513,7 @@ function markerClass(marker: string) {
 }
 
 function formatTimeLabel(input: string) {
-  const localeTag = locale.value === "en" ? "en-US" : "zh-CN";
-  return new Date(input).toLocaleTimeString(localeTag, {
+  return formatTimeOnly(input, {
     hour: "2-digit",
     minute: "2-digit"
   });

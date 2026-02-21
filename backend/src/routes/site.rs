@@ -17,6 +17,7 @@ struct PublicSiteSettings {
     home_tagline: String,
     home_signature: String,
     footer_text: String,
+    time_display_mode: String,
 }
 
 pub fn router() -> Router<Arc<AppState>> {
@@ -32,7 +33,8 @@ async fn get_site_settings(
                 home_title,
                 home_tagline,
                 home_signature,
-                footer_text
+                footer_text,
+                time_display_mode
          FROM site_settings
          WHERE id = TRUE
          LIMIT 1",

@@ -67,6 +67,10 @@
             {{ tr("难度", "Difficulty") }} {{ selectedChallenge.difficulty }} ·
             {{ tr("分值", "Score") }} {{ selectedChallenge.static_score }}
           </p>
+          <div
+            class="muted markdown-body challenge-description"
+            v-html="renderChallengeDescription(selectedChallenge.description || tr('暂无题目描述。', 'No challenge description.'))"
+          ></div>
 
           <section class="stack">
             <header class="row-between challenge-attachments-head">
@@ -124,6 +128,14 @@
               <button class="btn-line" type="button" @click="loadScoreboard" :disabled="loadingScoreboard">
                 {{ tr("刷新榜单", "Refresh scoreboard") }}
               </button>
+              <button
+                v-if="selectedChallenge.hints.length > 0"
+                class="btn-line"
+                type="button"
+                @click="openHintModal"
+              >
+                {{ tr("查看提示", "Show hints") }} ({{ selectedChallenge.hints.length }})
+              </button>
             </div>
           </section>
 
@@ -172,7 +184,9 @@
               <p class="mono">{{ tr("状态", "Status") }}: {{ instance.status }}</p>
               <p class="soft mono">{{ tr("子网", "Subnet") }}: {{ instance.subnet }}</p>
               <p class="soft mono">{{ tr("入口", "Entrypoint") }}: {{ instance.entrypoint_url || "-" }}</p>
-              <p class="soft mono">{{ tr("到期时间", "Expires at") }}: {{ instance.expires_at || "-" }}</p>
+              <p class="soft mono">
+                {{ tr("到期时间", "Expires at") }}: {{ instance.expires_at ? formatTime(instance.expires_at) : "-" }}
+              </p>
               <p class="soft mono">{{ tr("消息", "Message") }}: {{ instance.message }}</p>
 
               <template v-if="instance.network_access?.mode === 'ssh_bastion'">
@@ -389,6 +403,32 @@
         ></div>
       </article>
     </div>
+
+    <div
+      v-if="activeHintChallenge"
+      class="announcement-modal"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="tr('题目提示', 'Challenge hints')"
+      @click.self="closeHintModal"
+    >
+      <article class="announcement-modal-card stack">
+        <header class="row-between announcement-modal-head">
+          <div class="stack gap-xs">
+            <strong>{{ tr("题目提示", "Challenge hints") }}</strong>
+            <p class="soft mono announcement-modal-meta">{{ activeHintChallenge.title }}</p>
+          </div>
+          <button class="btn-line" type="button" @click="closeHintModal">
+            {{ tr("关闭", "Close") }}
+          </button>
+        </header>
+        <ol class="hint-list">
+          <li v-for="(hint, index) in activeHintChallenge.hints" :key="`${activeHintChallenge.id}-${index}`">
+            {{ hint }}
+          </li>
+        </ol>
+      </article>
+    </div>
   </section>
 </template>
 
@@ -423,6 +463,7 @@ import {
 } from "../api/client";
 import { useL10n } from "../composables/useL10n";
 import { renderMarkdownToHtml } from "../composables/useMarkdown";
+import { useTimeFormat } from "../composables/useTimeFormat";
 import { useAuthStore } from "../stores/auth";
 import { useUiStore } from "../stores/ui";
 
@@ -432,7 +473,8 @@ const props = defineProps<{
 
 const authStore = useAuthStore();
 const uiStore = useUiStore();
-const { locale, tr } = useL10n();
+const { tr } = useL10n();
+const { formatTime, formatTimeOnly } = useTimeFormat();
 const router = useRouter();
 
 const challenges = ref<ContestChallengeItem[]>([]);
@@ -468,6 +510,7 @@ const challengeAttachments = ref<ContestChallengeAttachmentItem[]>([]);
 const loadingChallengeAttachments = ref(false);
 const challengeAttachmentError = ref("");
 const downloadingChallengeAttachmentId = ref("");
+const activeHintChallengeId = ref("");
 
 const wsState = ref("closed");
 let scoreboardSocket: WebSocket | null = null;
@@ -475,6 +518,7 @@ let reconnectTimer: number | null = null;
 let shouldReconnectScoreboard = true;
 let trendRenderFrame: number | null = null;
 let themeObserver: MutationObserver | null = null;
+const HINT_DISMISSED_STORAGE_KEY = "rust-ctf.dismissed-hints";
 
 const SCOREBOARD_TREND_MAX_SNAPSHOTS = 1200;
 const SCOREBOARD_TREND_TOP_N = 12;
@@ -484,6 +528,13 @@ const selectedChallenge = computed(() => {
     return null;
   }
   return challenges.value.find((item) => item.id === selectedChallengeId.value) ?? null;
+});
+
+const activeHintChallenge = computed(() => {
+  if (!activeHintChallengeId.value) {
+    return null;
+  }
+  return challenges.value.find((item) => item.id === activeHintChallengeId.value) ?? null;
 });
 
 const challengeGroups = computed(() => {
@@ -557,10 +608,12 @@ watch(
     challengeAttachmentError.value = "";
 
     if (!selectedChallenge.value) {
+      activeHintChallengeId.value = "";
       return;
     }
 
     await loadChallengeAttachments();
+    maybeShowHintModal(selectedChallenge.value);
     if (canManageInstance.value) {
       await loadInstance();
     }
@@ -582,11 +635,6 @@ watch(
   { deep: true }
 );
 
-function formatTime(input: string) {
-  const localeTag = locale.value === "en" ? "en-US" : "zh-CN";
-  return new Date(input).toLocaleString(localeTag);
-}
-
 function formatSize(bytes: number) {
   const size = Number(bytes);
   if (!Number.isFinite(size) || size <= 0) {
@@ -606,6 +654,64 @@ function renderAnnouncementContent(markdown: string) {
   return renderMarkdownToHtml(markdown);
 }
 
+function renderChallengeDescription(markdown: string) {
+  return renderMarkdownToHtml(markdown || "");
+}
+
+function hintDismissKey(challengeId: string) {
+  return `${props.contestId}:${challengeId}`;
+}
+
+function loadDismissedHints(): Record<string, boolean> {
+  try {
+    const raw = localStorage.getItem(HINT_DISMISSED_STORAGE_KEY);
+    if (!raw) {
+      return {};
+    }
+    const parsed = JSON.parse(raw) as Record<string, boolean>;
+    if (parsed && typeof parsed === "object") {
+      return parsed;
+    }
+  } catch {
+    // Ignore storage parse failures.
+  }
+  return {};
+}
+
+function saveDismissedHints(next: Record<string, boolean>) {
+  localStorage.setItem(HINT_DISMISSED_STORAGE_KEY, JSON.stringify(next));
+}
+
+function maybeShowHintModal(challenge: ContestChallengeItem) {
+  if (!Array.isArray(challenge.hints) || challenge.hints.length === 0) {
+    activeHintChallengeId.value = "";
+    return;
+  }
+
+  const dismissed = loadDismissedHints();
+  if (dismissed[hintDismissKey(challenge.id)]) {
+    return;
+  }
+  activeHintChallengeId.value = challenge.id;
+}
+
+function openHintModal() {
+  if (!selectedChallenge.value || selectedChallenge.value.hints.length === 0) {
+    return;
+  }
+  activeHintChallengeId.value = selectedChallenge.value.id;
+}
+
+function closeHintModal() {
+  const challenge = activeHintChallenge.value;
+  if (challenge) {
+    const dismissed = loadDismissedHints();
+    dismissed[hintDismissKey(challenge.id)] = true;
+    saveDismissedHints(dismissed);
+  }
+  activeHintChallengeId.value = "";
+}
+
 function openAnnouncementModal(announcement: ContestAnnouncementItem) {
   activeAnnouncement.value = announcement;
 }
@@ -615,7 +721,16 @@ function closeAnnouncementModal() {
 }
 
 function handleWindowKeydown(event: KeyboardEvent) {
-  if (event.key === "Escape" && activeAnnouncement.value) {
+  if (event.key !== "Escape") {
+    return;
+  }
+
+  if (activeHintChallenge.value) {
+    closeHintModal();
+    return;
+  }
+
+  if (activeAnnouncement.value) {
     closeAnnouncementModal();
   }
 }
@@ -722,8 +837,7 @@ function appendLiveTimelineSnapshot(entries: ScoreboardEntry[]) {
 }
 
 function formatTrendTimestamp(input: string) {
-  const localeTag = locale.value === "en" ? "en-US" : "zh-CN";
-  return new Date(input).toLocaleTimeString(localeTag, {
+  return formatTimeOnly(input, {
     hour: "2-digit",
     minute: "2-digit"
   });
@@ -1478,6 +1592,13 @@ onUnmounted(() => {
   align-items: center;
 }
 
+.challenge-description {
+  margin: 0;
+  padding: 0.62rem 0.68rem;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.22);
+}
+
 .challenge-attachments-head h3 {
   margin: 0;
 }
@@ -1506,6 +1627,9 @@ onUnmounted(() => {
 .scoreboard-actions {
   margin-left: auto;
   max-width: 100%;
+  justify-content: flex-end;
+  row-gap: 0.35rem;
+  flex-wrap: wrap;
 }
 
 .instance-panel {
@@ -1600,6 +1724,13 @@ onUnmounted(() => {
 .announcement-modal-content {
   overflow: auto;
   padding-right: 0.18rem;
+}
+
+.hint-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.42rem;
 }
 
 .trend-toolbar {

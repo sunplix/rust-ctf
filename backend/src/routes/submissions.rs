@@ -17,6 +17,7 @@ use uuid::Uuid;
 use crate::{
     auth::AuthenticatedUser,
     error::{AppError, AppResult},
+    routes::contest_access::ensure_team_contest_workspace_access,
     state::AppState,
 };
 
@@ -115,7 +116,9 @@ async fn submit_flag(
                 challenge_id = %req.challenge_id,
                 "submission denied: user has no team membership"
             );
-            return Err(AppError::Forbidden);
+            return Err(AppError::BadRequest(
+                "join or create a team before entering the contest".to_string(),
+            ));
         }
     };
 
@@ -126,6 +129,14 @@ async fn submit_flag(
         challenge_id = %req.challenge_id,
         "submission team membership resolved"
     );
+
+    ensure_team_contest_workspace_access(
+        state.as_ref(),
+        req.contest_id,
+        membership.team_id,
+        &current_user,
+    )
+    .await?;
 
     let judge_ctx = sqlx::query_as::<_, JudgeContextRow>(
         "SELECT ct.status AS contest_status,

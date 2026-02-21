@@ -49,6 +49,20 @@
             required
           />
         </label>
+        <label>
+          <span>{{ tr("时间显示模式", "Time display mode") }}</span>
+          <select v-model="form.time_display_mode">
+            <option value="utc">UTC</option>
+            <option value="local">{{ tr("本地时区", "Local timezone") }}</option>
+          </select>
+        </label>
+        <div class="stack">
+          <p class="soft mono">UTC: {{ currentUtcTime }}</p>
+          <p class="soft mono">{{ tr("本地时间", "Local time") }}: {{ currentLocalTime }}</p>
+          <button class="btn-line" type="button" @click="applyUtcCalibration">
+            {{ tr("使用 UTC 校准显示", "Use UTC display calibration") }}
+          </button>
+        </div>
 
         <button class="btn-solid" type="submit" :disabled="submitting">
           {{ submitting ? tr("保存中...", "Saving...") : tr("保存设置", "Save") }}
@@ -64,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
+import { computed, onMounted, onUnmounted, reactive, ref } from "vue";
 
 import { ApiClientError, getAdminSiteSettings, updateAdminSiteSettings } from "../api/client";
 import { useL10n } from "../composables/useL10n";
@@ -81,6 +95,8 @@ const loading = ref(false);
 const submitting = ref(false);
 const error = ref("");
 const updatedAt = ref("");
+const nowTick = ref(Date.now());
+let nowTimer: number | null = null;
 
 const form = reactive({
   site_name: "",
@@ -89,7 +105,8 @@ const form = reactive({
   home_tagline: "",
   home_signature: "",
   footer_text: "",
-  challenge_attachment_max_mb: 20
+  challenge_attachment_max_mb: 20,
+  time_display_mode: "utc" as "local" | "utc"
 });
 
 function accessTokenOrThrow() {
@@ -108,6 +125,23 @@ function formatTime(value: string) {
   return date.toLocaleString();
 }
 
+const currentUtcTime = computed(() => {
+  return new Date(nowTick.value).toLocaleString(undefined, { timeZone: "UTC" }) + " UTC";
+});
+
+const currentLocalTime = computed(() => {
+  return new Date(nowTick.value).toLocaleString();
+});
+
+function applyUtcCalibration() {
+  form.time_display_mode = "utc";
+  uiStore.info(
+    tr("已切换为 UTC", "Switched to UTC"),
+    tr("保存后，前台时间将统一按 UTC 展示。", "Save to apply UTC display mode in player views."),
+    2200
+  );
+}
+
 function applyForm(payload: {
   site_name: string;
   site_subtitle: string;
@@ -116,6 +150,7 @@ function applyForm(payload: {
   home_signature: string;
   footer_text: string;
   challenge_attachment_max_bytes: number;
+  time_display_mode: "local" | "utc";
 }) {
   form.site_name = payload.site_name;
   form.site_subtitle = payload.site_subtitle;
@@ -123,6 +158,7 @@ function applyForm(payload: {
   form.home_tagline = payload.home_tagline;
   form.home_signature = payload.home_signature;
   form.footer_text = payload.footer_text;
+  form.time_display_mode = payload.time_display_mode;
   form.challenge_attachment_max_mb = Math.max(
     1,
     Math.min(256, Math.round(payload.challenge_attachment_max_bytes / (1024 * 1024)))
@@ -158,7 +194,8 @@ async function handleSubmit() {
         home_tagline: form.home_tagline,
         home_signature: form.home_signature,
         footer_text: form.footer_text,
-        challenge_attachment_max_bytes: attachmentLimitMb * 1024 * 1024
+        challenge_attachment_max_bytes: attachmentLimitMb * 1024 * 1024,
+        time_display_mode: form.time_display_mode
       },
       accessTokenOrThrow()
     );
@@ -175,6 +212,16 @@ async function handleSubmit() {
 }
 
 onMounted(async () => {
+  nowTimer = window.setInterval(() => {
+    nowTick.value = Date.now();
+  }, 1000);
   await loadSettings();
+});
+
+onUnmounted(() => {
+  if (nowTimer !== null) {
+    window.clearInterval(nowTimer);
+    nowTimer = null;
+  }
 });
 </script>

@@ -110,6 +110,7 @@ export type SiteSettings = {
   home_tagline: string;
   home_signature: string;
   footer_text: string;
+  time_display_mode: "local" | "utc";
 };
 
 export type AdminSiteSettings = SiteSettings & {
@@ -146,6 +147,8 @@ export type ContestChallengeItem = {
   title: string;
   category: string;
   difficulty: string;
+  description: string;
+  hints: string[];
   challenge_type: string;
   static_score: number;
   release_at: string | null;
@@ -168,6 +171,17 @@ export type ContestAnnouncementItem = {
   is_pinned: boolean;
   published_at: string | null;
   created_at: string;
+};
+
+export type ContestRegistrationStatusResponse = {
+  contest_id: string;
+  team_id: string | null;
+  registration_requires_approval: boolean;
+  registration_status: "no_team" | "not_registered" | "pending" | "approved" | "rejected" | string;
+  review_note: string;
+  requested_at: string | null;
+  reviewed_at: string | null;
+  can_enter_workspace: boolean;
 };
 
 export type TeamListItem = {
@@ -372,6 +386,7 @@ export type AdminChallengeDetailItem = {
   metadata: Record<string, unknown>;
   is_visible: boolean;
   tags: string[];
+  hints: string[];
   writeup_visibility: string;
   writeup_content: string;
   current_version: number;
@@ -424,9 +439,28 @@ export type AdminContestItem = {
   first_blood_bonus_percent: number;
   second_blood_bonus_percent: number;
   third_blood_bonus_percent: number;
+  registration_requires_approval: boolean;
   start_at: string;
   end_at: string;
   freeze_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdminContestRegistrationItem = {
+  id: string;
+  contest_id: string;
+  contest_title: string;
+  team_id: string;
+  team_name: string;
+  status: "pending" | "approved" | "rejected" | string;
+  requested_by: string | null;
+  requested_by_username: string | null;
+  requested_at: string;
+  reviewed_by: string | null;
+  reviewed_by_username: string | null;
+  reviewed_at: string | null;
+  review_note: string;
   created_at: string;
   updated_at: string;
 };
@@ -869,6 +903,37 @@ export async function deleteAccount(accessToken: string): Promise<void> {
 export async function listContests(): Promise<ContestListItem[]> {
   try {
     const { data } = await api.get<ContestListItem[]>("/contests");
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function getContestRegistrationStatus(
+  contestId: string,
+  accessToken: string
+): Promise<ContestRegistrationStatusResponse> {
+  try {
+    const { data } = await api.get<ContestRegistrationStatusResponse>(
+      `/contests/${contestId}/registration`,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function applyContestRegistration(
+  contestId: string,
+  accessToken: string
+): Promise<ContestRegistrationStatusResponse> {
+  try {
+    const { data } = await api.post<ContestRegistrationStatusResponse>(
+      `/contests/${contestId}/registration`,
+      {},
+      authHeaders(accessToken)
+    );
     return data;
   } catch (error) {
     throw toApiClientError(error);
@@ -1389,6 +1454,7 @@ export async function createAdminChallenge(
     is_visible?: boolean;
     compose_template?: string;
     tags?: string[];
+    hints?: string[];
     writeup_visibility?: string;
     writeup_content?: string;
     change_note?: string;
@@ -1420,6 +1486,7 @@ export async function updateAdminChallenge(
     is_visible?: boolean;
     compose_template?: string;
     tags?: string[];
+    hints?: string[];
     writeup_visibility?: string;
     writeup_content?: string;
     change_note?: string;
@@ -1584,6 +1651,7 @@ export async function updateAdminSiteSettings(
     home_signature?: string;
     footer_text?: string;
     challenge_attachment_max_bytes?: number;
+    time_display_mode?: "local" | "utc";
   },
   accessToken: string
 ): Promise<AdminSiteSettings> {
@@ -1673,6 +1741,7 @@ export async function createAdminContest(
     first_blood_bonus_percent?: number;
     second_blood_bonus_percent?: number;
     third_blood_bonus_percent?: number;
+    registration_requires_approval?: boolean;
     start_at: string;
     end_at: string;
     freeze_at?: string | null;
@@ -1700,6 +1769,7 @@ export async function updateAdminContest(
     first_blood_bonus_percent?: number;
     second_blood_bonus_percent?: number;
     third_blood_bonus_percent?: number;
+    registration_requires_approval?: boolean;
     start_at?: string;
     end_at?: string;
     freeze_at?: string | null;
@@ -1849,6 +1919,43 @@ export async function deleteAdminContestAnnouncement(
       `/admin/contests/${contestId}/announcements/${announcementId}`,
       authHeaders(accessToken)
     );
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function listAdminContestRegistrations(
+  contestId: string,
+  accessToken: string,
+  query?: { status?: string; limit?: number }
+): Promise<AdminContestRegistrationItem[]> {
+  try {
+    const { data } = await api.get<AdminContestRegistrationItem[]>(
+      `/admin/contests/${contestId}/registrations`,
+      {
+        ...authHeaders(accessToken),
+        params: query
+      }
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function updateAdminContestRegistration(
+  contestId: string,
+  registrationId: string,
+  payload: { status: "pending" | "approved" | "rejected"; review_note?: string },
+  accessToken: string
+): Promise<AdminContestRegistrationItem> {
+  try {
+    const { data } = await api.patch<AdminContestRegistrationItem>(
+      `/admin/contests/${contestId}/registrations/${registrationId}`,
+      payload,
+      authHeaders(accessToken)
+    );
+    return data;
   } catch (error) {
     throw toApiClientError(error);
   }

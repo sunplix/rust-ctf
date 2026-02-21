@@ -117,6 +117,14 @@
           >
             {{ tr("公告管理", "Announcements") }}
           </button>
+          <button
+            class="side-nav-btn side-sub-btn"
+            type="button"
+            :class="{ active: contestSubTab === 'registrations' }"
+            @click="contestSubTab = 'registrations'"
+          >
+            {{ tr("报名审核", "Registrations") }}
+          </button>
         </div>
 
         <div v-if="adminModule === 'operations'" class="admin-side-group">
@@ -466,6 +474,10 @@
                     <label class="field-span-2">
                       <span>{{ tl('描述（可选）') }}</span>
                       <textarea v-model="newChallenge.description" rows="4" />
+                    </label>
+                    <label class="field-span-2">
+                      <span>{{ tr("提示（每行一条）", "Hints (one per line)") }}</span>
+                      <textarea v-model="newChallenge.hints_input" rows="4" />
                     </label>
                     <label class="field-span-2">
                       <span>{{ tl('题解内容（可选）') }}</span>
@@ -978,6 +990,10 @@
                   max="500"
                 />
               </label>
+              <label class="inline-check">
+                <input v-model="newContest.registration_requires_approval" type="checkbox" />
+                <span>{{ tr("报名需管理员审批", "Registration requires admin approval") }}</span>
+              </label>
               <label>
                 <span>{{ tl('开始时间') }}</span>
                 <input v-model="newContest.start_at" type="datetime-local" required />
@@ -1034,12 +1050,21 @@
                 </div>
                 <p class="muted mono">{{ selectedContest.slug }} · {{ selectedContest.visibility }}</p>
                 <p class="muted">
-                  scoring={{ selectedContest.scoring_mode }} · dynamic_decay={{ selectedContest.dynamic_decay }}
+                  {{ tr("计分模式", "Scoring") }} {{ selectedContest.scoring_mode }} ·
+                  {{ tr("动态衰减", "Dynamic decay") }} {{ selectedContest.dynamic_decay }}
                 </p>
                 <p class="muted">
-                  bonus={{ selectedContest.first_blood_bonus_percent }}% /
+                  {{ tr("一二三血加成", "Blood bonuses") }}
+                  {{ selectedContest.first_blood_bonus_percent }}% /
                   {{ selectedContest.second_blood_bonus_percent }}% /
                   {{ selectedContest.third_blood_bonus_percent }}%
+                </p>
+                <p class="muted">
+                  {{
+                    selectedContest.registration_requires_approval
+                      ? tr("报名模式：需管理员审批", "Registration: admin approval required")
+                      : tr("报名模式：自动通过", "Registration: auto-approved")
+                  }}
                 </p>
                 <p class="muted">
                   {{ formatTime(selectedContest.start_at) }} ~ {{ formatTime(selectedContest.end_at) }}
@@ -1116,6 +1141,9 @@
                       </button>
                       <button class="ghost" type="button" @click="contestSubTab = 'announcements'">
                         {{ tl('管理公告') }}
+                      </button>
+                      <button class="ghost" type="button" @click="contestSubTab = 'registrations'">
+                        {{ tr("管理报名审核", "Manage registrations") }}
                       </button>
                       <button
                         class="danger"
@@ -1202,7 +1230,8 @@
                   {{ selectedBinding.challenge_category }} · {{ selectedBinding.challenge_difficulty }}
                 </p>
                 <p class="muted">
-                  release_at={{ selectedBinding.release_at ? formatTime(selectedBinding.release_at) : "-" }}
+                  {{ tr("发布时间", "Release at") }}:
+                  {{ selectedBinding.release_at ? formatTime(selectedBinding.release_at) : "-" }}
                 </p>
                 <details class="action-sheet">
                   <summary>{{ tl('显示挂载操作菜单') }}</summary>
@@ -1519,6 +1548,86 @@
               <p v-else class="muted">{{ tl('从左侧选择一个公告查看详情。') }}</p>
             </section>
           </div>
+        </template>
+      </section>
+
+      <section v-if="adminModule === 'contests' && contestSubTab === 'registrations'" class="panel">
+        <div class="row-between">
+          <h2>{{ tr("报名审核", "Registration Review") }}</h2>
+          <span class="badge" v-if="selectedContest">{{ selectedContest.title }}</span>
+        </div>
+        <p class="muted" v-if="!selectedContest">{{ tr("请先在“赛事配置”中选择一个比赛。", "Select a contest in config tab first.") }}</p>
+
+        <template v-else>
+          <div class="row compact-actions">
+            <label>
+              <span>{{ tr("状态筛选", "Status filter") }}</span>
+              <select v-model="contestRegistrationStatusFilter">
+                <option value="">{{ tr("全部", "All") }}</option>
+                <option value="pending">pending</option>
+                <option value="approved">approved</option>
+                <option value="rejected">rejected</option>
+              </select>
+            </label>
+            <button class="ghost" type="button" @click="loadContestRegistrations()" :disabled="updatingContestRegistrationId !== ''">
+              {{ tr("刷新", "Refresh") }}
+            </button>
+          </div>
+
+          <p v-if="contestRegistrationError" class="error">{{ contestRegistrationError }}</p>
+
+          <table v-if="contestRegistrations.length > 0" class="scoreboard-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>{{ tr("队伍", "Team") }}</th>
+                <th>{{ tr("状态", "Status") }}</th>
+                <th>{{ tr("申请时间", "Requested at") }}</th>
+                <th>{{ tr("审核时间", "Reviewed at") }}</th>
+                <th>{{ tr("备注", "Note") }}</th>
+                <th>{{ tr("操作", "Actions") }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, index) in contestRegistrations" :key="item.id">
+                <td>{{ index + 1 }}</td>
+                <td>{{ item.team_name }}</td>
+                <td class="mono">{{ item.status }}</td>
+                <td class="mono">{{ formatTime(item.requested_at) }}</td>
+                <td class="mono">{{ item.reviewed_at ? formatTime(item.reviewed_at) : "-" }}</td>
+                <td class="mono">{{ item.review_note || "-" }}</td>
+                <td>
+                  <div class="actions-row compact-actions">
+                    <button
+                      class="ghost"
+                      type="button"
+                      :disabled="updatingContestRegistrationId === item.id || item.status === 'approved'"
+                      @click="updateContestRegistrationStatus(item, 'approved')"
+                    >
+                      {{ tr("批准", "Approve") }}
+                    </button>
+                    <button
+                      class="ghost"
+                      type="button"
+                      :disabled="updatingContestRegistrationId === item.id || item.status === 'pending'"
+                      @click="updateContestRegistrationStatus(item, 'pending')"
+                    >
+                      {{ tr("置为待审", "Set pending") }}
+                    </button>
+                    <button
+                      class="danger"
+                      type="button"
+                      :disabled="updatingContestRegistrationId === item.id || item.status === 'rejected'"
+                      @click="updateContestRegistrationStatus(item, 'rejected')"
+                    >
+                      {{ tr("拒绝", "Reject") }}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p v-else class="muted">{{ tr("当前没有报名记录。", "No registration records yet.") }}</p>
         </template>
       </section>
     </div>
@@ -2186,6 +2295,7 @@ import {
   listAdminChallengeAttachments,
   listAdminChallengeVersions,
   listAdminContestAnnouncements,
+  listAdminContestRegistrations,
   listAdminUsers,
   listAdminAuditLogs,
   listAdminChallenges,
@@ -2202,6 +2312,7 @@ import {
   uploadAdminContestPoster,
   uploadAdminChallengeAttachment,
   updateAdminContestAnnouncement,
+  updateAdminContestRegistration,
   updateAdminUserRole,
   updateAdminUserStatus,
   type AdminChallengeAttachmentItem,
@@ -2216,6 +2327,7 @@ import {
   type AdminChallengeVersionItem,
   type AdminContestAnnouncementItem,
   type AdminContestChallengeItem,
+  type AdminContestRegistrationItem,
   type AdminContestItem,
   type AdminInstanceItem,
   type AdminInstanceReaperRunResponse,
@@ -2686,6 +2798,7 @@ const challengeRuntimeLint = ref<AdminChallengeRuntimeLintResponse | null>(null)
 const contests = ref<AdminContestItem[]>([]);
 const contestBindings = ref<AdminContestChallengeItem[]>([]);
 const contestAnnouncements = ref<AdminContestAnnouncementItem[]>([]);
+const contestRegistrations = ref<AdminContestRegistrationItem[]>([]);
 const instances = ref<AdminInstanceItem[]>([]);
 const selectedInstanceRuntimeMetrics = ref<AdminInstanceRuntimeMetricsResponse | null>(null);
 const users = ref<AdminUserItem[]>([]);
@@ -2697,6 +2810,7 @@ const selectedContestId = ref("");
 const selectedChallengeId = ref("");
 const selectedBindingChallengeId = ref("");
 const selectedAnnouncementId = ref("");
+const selectedContestRegistrationId = ref("");
 const selectedRuntimeAlertId = ref("");
 const selectedInstanceId = ref("");
 const selectedUserId = ref("");
@@ -2706,7 +2820,7 @@ const editingContestId = ref("");
 const adminModule = ref<"challenges" | "contests" | "operations" | "users" | "audit">("challenges");
 const challengeSubTab = ref<"library" | "versions" | "lint">("library");
 const challengeLibraryMode = ref<"catalog" | "editor">("catalog");
-const contestSubTab = ref<"contests" | "bindings" | "announcements">("contests");
+const contestSubTab = ref<"contests" | "bindings" | "announcements" | "registrations">("contests");
 const contestManageMode = ref<"catalog" | "editor">("catalog");
 const operationsSubTab = ref<"runtime" | "alerts" | "instances">("runtime");
 
@@ -2720,6 +2834,7 @@ const challengeImageTestError = ref("");
 const contestError = ref("");
 const bindingError = ref("");
 const announcementError = ref("");
+const contestRegistrationError = ref("");
 const instanceError = ref("");
 const userError = ref("");
 const auditError = ref("");
@@ -2749,6 +2864,7 @@ const creatingAnnouncement = ref(false);
 const updatingAnnouncementId = ref("");
 const deletingAnnouncementId = ref("");
 const savingAnnouncementId = ref("");
+const updatingContestRegistrationId = ref("");
 const loadingUsers = ref(false);
 const auditLoading = ref(false);
 const loadingRuntimeAlerts = ref(false);
@@ -2769,6 +2885,8 @@ const challengeLintKeywordFilter = ref("");
 const challengeLintOnlyErrors = ref(false);
 const challengeLintLimit = ref(500);
 const contestKeyword = ref("");
+const contestRegistrationStatusFilter = ref("");
+const contestRegistrationLimit = ref(200);
 const runtimeAlertStatusFilter = ref("");
 const runtimeAlertSeverityFilter = ref("");
 const runtimeAlertTypeFilter = ref("");
@@ -2822,6 +2940,7 @@ const newChallenge = reactive({
   flag_mode: "static",
   flag_hash: "",
   tags_input: "",
+  hints_input: "",
   writeup_visibility: "hidden",
   writeup_content: "",
   change_note: "",
@@ -2963,6 +3082,7 @@ const newContest = reactive({
   first_blood_bonus_percent: 10,
   second_blood_bonus_percent: 5,
   third_blood_bonus_percent: 2,
+  registration_requires_approval: true,
   start_at: defaultStart,
   end_at: defaultEnd,
   freeze_at: ""
@@ -3210,6 +3330,13 @@ function parseTagsInput(raw: string): string[] {
     .filter((item) => item.length > 0);
 }
 
+function parseHintsInput(raw: string): string[] {
+  return raw
+    .split(/\r?\n/g)
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+}
+
 function appendChallengeRuntimeImageStreamLine(line: string) {
   const normalized = line.replace(/\r/g, "");
   challengeRuntimeImageStreamLines.value.push(normalized);
@@ -3234,6 +3361,7 @@ function resetChallengeForm() {
   newChallenge.flag_mode = "static";
   newChallenge.flag_hash = "";
   newChallenge.tags_input = "";
+  newChallenge.hints_input = "";
   newChallenge.writeup_visibility = "hidden";
   newChallenge.writeup_content = "";
   newChallenge.change_note = "";
@@ -3260,6 +3388,7 @@ function resetContestForm() {
   newContest.first_blood_bonus_percent = 10;
   newContest.second_blood_bonus_percent = 5;
   newContest.third_blood_bonus_percent = 2;
+  newContest.registration_requires_approval = true;
   newContest.start_at = defaultStart;
   newContest.end_at = defaultEnd;
   newContest.freeze_at = "";
@@ -3314,6 +3443,7 @@ function applyChallengeDetailToForm(detail: AdminChallengeDetailItem) {
   newChallenge.flag_hash = detail.flag_hash ?? "";
   newChallenge.compose_template = detail.compose_template ?? "";
   newChallenge.tags_input = (detail.tags ?? []).join(", ");
+  newChallenge.hints_input = (detail.hints ?? []).join("\n");
   newChallenge.writeup_visibility = detail.writeup_visibility;
   newChallenge.writeup_content = detail.writeup_content ?? "";
   newChallenge.change_note = "";
@@ -3337,6 +3467,7 @@ function applyContestToForm(item: AdminContestItem) {
   newContest.first_blood_bonus_percent = item.first_blood_bonus_percent;
   newContest.second_blood_bonus_percent = item.second_blood_bonus_percent;
   newContest.third_blood_bonus_percent = item.third_blood_bonus_percent;
+  newContest.registration_requires_approval = item.registration_requires_approval;
   newContest.start_at = isoToLocalInput(item.start_at);
   newContest.end_at = isoToLocalInput(item.end_at);
   newContest.freeze_at = item.freeze_at ? isoToLocalInput(item.freeze_at) : "";
@@ -3842,6 +3973,45 @@ async function loadContestAnnouncements() {
   }
 }
 
+async function loadContestRegistrations(options?: { silentError?: boolean }) {
+  contestRegistrationError.value = "";
+
+  if (!selectedContestId.value) {
+    contestRegistrations.value = [];
+    selectedContestRegistrationId.value = "";
+    return;
+  }
+
+  try {
+    const rows = await listAdminContestRegistrations(
+      selectedContestId.value,
+      accessTokenOrThrow(),
+      {
+        status: contestRegistrationStatusFilter.value || undefined,
+        limit: Number.isFinite(contestRegistrationLimit.value)
+          ? Math.max(1, Math.min(1000, contestRegistrationLimit.value))
+          : 200
+      }
+    );
+    contestRegistrations.value = rows;
+
+    if (rows.length === 0) {
+      selectedContestRegistrationId.value = "";
+      return;
+    }
+
+    if (!rows.some((item) => item.id === selectedContestRegistrationId.value)) {
+      selectedContestRegistrationId.value = rows[0].id;
+    }
+  } catch (err) {
+    contestRegistrationError.value =
+      err instanceof ApiClientError ? err.message : tr("加载报名记录失败", "Failed to load contest registrations");
+    if (!options?.silentError) {
+      notify.error("加载报名记录失败", contestRegistrationError.value);
+    }
+  }
+}
+
 async function loadInstances() {
   loadingInstances.value = true;
   instanceError.value = "";
@@ -4145,7 +4315,11 @@ async function refreshAll() {
       loadRuntimeAlerts(),
       loadAuditLogs()
     ]);
-    await Promise.all([loadContestBindings(), loadContestAnnouncements()]);
+    await Promise.all([
+      loadContestBindings(),
+      loadContestAnnouncements(),
+      loadContestRegistrations({ silentError: true })
+    ]);
     if (selectedChallengeId.value) {
       await Promise.all([loadChallengeVersions(), loadChallengeAttachments()]);
     }
@@ -4344,6 +4518,7 @@ async function handleCreateChallenge() {
           : undefined,
       metadata: hasRuntimeMetadata ? runtimeMetadata : undefined,
       tags: parseTagsInput(newChallenge.tags_input),
+      hints: parseHintsInput(newChallenge.hints_input),
       writeup_visibility: newChallenge.writeup_visibility,
       writeup_content: newChallenge.writeup_content || undefined,
       change_note: newChallenge.change_note || undefined
@@ -4622,6 +4797,7 @@ async function handleCreateContest() {
       first_blood_bonus_percent: Math.floor(newContest.first_blood_bonus_percent),
       second_blood_bonus_percent: Math.floor(newContest.second_blood_bonus_percent),
       third_blood_bonus_percent: Math.floor(newContest.third_blood_bonus_percent),
+      registration_requires_approval: !!newContest.registration_requires_approval,
       start_at: localInputToIso(newContest.start_at),
       end_at: localInputToIso(newContest.end_at),
       freeze_at: newContest.freeze_at ? localInputToIso(newContest.freeze_at) : undefined
@@ -4674,6 +4850,48 @@ async function updateContestStatus(contestId: string, status: string) {
     notify.error("更新比赛状态失败", contestError.value);
   } finally {
     updatingContestId.value = "";
+  }
+}
+
+async function updateContestRegistrationStatus(
+  item: AdminContestRegistrationItem,
+  status: "pending" | "approved" | "rejected"
+) {
+  if (!selectedContestId.value) {
+    return;
+  }
+
+  updatingContestRegistrationId.value = item.id;
+  contestRegistrationError.value = "";
+
+  try {
+    const reviewNote =
+      status === "approved"
+        ? tr("管理员批准参赛", "Approved by admin")
+        : status === "rejected"
+          ? tr("管理员拒绝报名", "Rejected by admin")
+          : tr("已重置为待审核状态", "Reset to pending review");
+
+    await updateAdminContestRegistration(
+      selectedContestId.value,
+      item.id,
+      {
+        status,
+        review_note: reviewNote
+      },
+      accessTokenOrThrow()
+    );
+    await loadContestRegistrations({ silentError: true });
+    notify.info(
+      tr("报名状态已更新", "Registration status updated"),
+      `${item.team_name} -> ${status}`
+    );
+  } catch (err) {
+    contestRegistrationError.value =
+      err instanceof ApiClientError ? err.message : tr("更新报名状态失败", "Failed to update registration status");
+    notify.error("更新报名状态失败", contestRegistrationError.value);
+  } finally {
+    updatingContestRegistrationId.value = "";
   }
 }
 
@@ -5184,6 +5402,7 @@ watch(
   () => {
     selectedBindingChallengeId.value = "";
     selectedAnnouncementId.value = "";
+    selectedContestRegistrationId.value = "";
     announcementCreateMode.value = "edit";
     announcementEditMode.value = "edit";
     selectedContestPosterFile.value = null;
@@ -5193,6 +5412,7 @@ watch(
     bindingForm.release_at = "";
     loadContestBindings();
     loadContestAnnouncements();
+    loadContestRegistrations({ silentError: true });
   }
 );
 
@@ -5204,6 +5424,15 @@ watch(
 );
 
 watch(
+  () => contestRegistrationStatusFilter.value,
+  () => {
+    if (adminModule.value === "contests" && contestSubTab.value === "registrations") {
+      loadContestRegistrations({ silentError: true });
+    }
+  }
+);
+
+watch(
   () => [adminModule.value, challengeSubTab.value] as const,
   ([module, subTab]) => {
     if (module !== "challenges" || subTab !== "lint") {
@@ -5211,6 +5440,16 @@ watch(
     }
 
     loadChallengeRuntimeLint({ silentError: true });
+  }
+);
+
+watch(
+  () => [adminModule.value, contestSubTab.value, selectedContestId.value] as const,
+  ([module, subTab, contestId]) => {
+    if (module !== "contests" || subTab !== "registrations" || !contestId) {
+      return;
+    }
+    loadContestRegistrations({ silentError: true });
   }
 );
 

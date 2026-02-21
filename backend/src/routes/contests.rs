@@ -16,6 +16,11 @@ use uuid::Uuid;
 use crate::{
     auth::AuthenticatedUser,
     error::{AppError, AppResult},
+    routes::contest_access::{
+        ensure_contest_visibility, ensure_registration_status, ensure_user_contest_workspace_access,
+        ensure_user_has_team, get_user_team_id_optional, is_privileged_role,
+        load_contest_gate, load_contest_registration, ContestRegistrationRow,
+    },
     state::AppState,
 };
 
@@ -42,6 +47,8 @@ struct ContestChallengeItem {
     title: String,
     category: String,
     difficulty: String,
+    description: String,
+    hints: Vec<String>,
     challenge_type: String,
     static_score: i32,
     release_at: Option<DateTime<Utc>>,
@@ -86,12 +93,6 @@ struct ContestAnnouncementItem {
 }
 
 #[derive(Debug, FromRow)]
-struct ContestAccessRow {
-    visibility: String,
-    status: String,
-}
-
-#[derive(Debug, FromRow)]
 struct ContestChallengeAccessRow {
     contest_status: String,
     challenge_visible: bool,
@@ -106,10 +107,26 @@ struct ContestPosterAccessRow {
     poster_content_type: Option<String>,
 }
 
+#[derive(Debug, Serialize)]
+struct ContestRegistrationStatusResponse {
+    contest_id: Uuid,
+    team_id: Option<Uuid>,
+    registration_requires_approval: bool,
+    registration_status: String,
+    review_note: String,
+    requested_at: Option<DateTime<Utc>>,
+    reviewed_at: Option<DateTime<Utc>>,
+    can_enter_workspace: bool,
+}
+
 pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/contests", get(list_contests))
         .route("/contests/{contest_id}/poster", get(get_contest_poster))
+        .route(
+            "/contests/{contest_id}/registration",
+            get(get_contest_registration).post(apply_contest_registration),
+        )
         .route(
             "/contests/{contest_id}/challenges",
             get(list_contest_challenges),
@@ -226,15 +243,200 @@ async fn get_contest_poster(
     ))
 }
 
+async fn get_contest_registration(
+    State(state): State<Arc<AppState>>,
+    Path(contest_id): Path<Uuid>,
+    current_user: AuthenticatedUser,
+) -> AppResult<Json<ContestRegistrationStatusResponse>> {
+    let contest = load_contest_gate(state.as_ref(), contest_id).await?;
+    ensure_contest_visibility(&contest, &current_user)?;
+
+    if is_privileged_role(&current_user.role) {
+        return Ok(Json(ContestRegistrationStatusResponse {
+            contest_id,
+            team_id: None,
+            registration_requires_approval: contest.registration_requires_approval,
+            registration_status: "approved".to_string(),
+            review_note: "privileged role bypass".to_string(),
+            requested_at: None,
+            reviewed_at: None,
+            can_enter_workspace: true,
+        }));
+    }
+
+    let team_id = get_user_team_id_optional(state.as_ref(), current_user.user_id).await?;
+    let Some(team_id) = team_id else {
+        return Ok(Json(ContestRegistrationStatusResponse {
+            contest_id,
+            team_id: None,
+            registration_requires_approval: contest.registration_requires_approval,
+            registration_status: "no_team".to_string(),
+            review_note: "".to_string(),
+            requested_at: None,
+            reviewed_at: None,
+            can_enter_workspace: false,
+        }));
+    };
+
+    let registration = load_contest_registration(state.as_ref(), contest_id, team_id).await?;
+    let (registration_status, review_note, requested_at, reviewed_at, can_enter_workspace) =
+        if let Some(row) = registration {
+            let can_enter = ensure_registration_status(
+                Some(&row),
+                contest.registration_requires_approval,
+            )
+            .is_ok();
+            (
+                row.status,
+                row.review_note,
+                Some(row.requested_at),
+                row.reviewed_at,
+                can_enter,
+            )
+        } else {
+            ("not_registered".to_string(), "".to_string(), None, None, false)
+        };
+
+    Ok(Json(ContestRegistrationStatusResponse {
+        contest_id,
+        team_id: Some(team_id),
+        registration_requires_approval: contest.registration_requires_approval,
+        registration_status,
+        review_note,
+        requested_at,
+        reviewed_at,
+        can_enter_workspace,
+    }))
+}
+
+async fn apply_contest_registration(
+    State(state): State<Arc<AppState>>,
+    Path(contest_id): Path<Uuid>,
+    current_user: AuthenticatedUser,
+) -> AppResult<Json<ContestRegistrationStatusResponse>> {
+    let contest = load_contest_gate(state.as_ref(), contest_id).await?;
+    ensure_contest_visibility(&contest, &current_user)?;
+
+    if is_privileged_role(&current_user.role) {
+        return Err(AppError::BadRequest(
+            "privileged role does not require contest registration".to_string(),
+        ));
+    }
+
+    let team_id = ensure_user_has_team(state.as_ref(), current_user.user_id).await?;
+    let existing = load_contest_registration(state.as_ref(), contest_id, team_id).await?;
+
+    let row = if let Some(existing_row) = existing {
+        if existing_row.status == "approved" {
+            existing_row
+        } else {
+            upsert_contest_registration(
+                state.as_ref(),
+                contest_id,
+                team_id,
+                current_user.user_id,
+                contest.registration_requires_approval,
+            )
+            .await?
+        }
+    } else {
+        upsert_contest_registration(
+            state.as_ref(),
+            contest_id,
+            team_id,
+            current_user.user_id,
+            contest.registration_requires_approval,
+        )
+        .await?
+    };
+
+    let can_enter_workspace =
+        ensure_registration_status(Some(&row), contest.registration_requires_approval).is_ok();
+
+    Ok(Json(ContestRegistrationStatusResponse {
+        contest_id,
+        team_id: Some(team_id),
+        registration_requires_approval: contest.registration_requires_approval,
+        registration_status: row.status,
+        review_note: row.review_note,
+        requested_at: Some(row.requested_at),
+        reviewed_at: row.reviewed_at,
+        can_enter_workspace,
+    }))
+}
+
+async fn upsert_contest_registration(
+    state: &AppState,
+    contest_id: Uuid,
+    team_id: Uuid,
+    user_id: Uuid,
+    registration_requires_approval: bool,
+) -> AppResult<ContestRegistrationRow> {
+    let status = if registration_requires_approval {
+        "pending"
+    } else {
+        "approved"
+    };
+    let review_note = if registration_requires_approval {
+        "".to_string()
+    } else {
+        "auto approved by contest policy".to_string()
+    };
+
+    sqlx::query_as::<_, ContestRegistrationRow>(
+        "INSERT INTO contest_registrations (
+            contest_id,
+            team_id,
+            status,
+            requested_by,
+            requested_at,
+            reviewed_by,
+            reviewed_at,
+            review_note
+         )
+         VALUES (
+            $1, $2, $3, $4, NOW(), NULL,
+            CASE WHEN $3 = 'approved' THEN NOW() ELSE NULL END,
+            $5
+         )
+         ON CONFLICT (contest_id, team_id)
+         DO UPDATE
+         SET status = EXCLUDED.status,
+             requested_by = EXCLUDED.requested_by,
+             requested_at = NOW(),
+             reviewed_by = NULL,
+             reviewed_at = CASE WHEN EXCLUDED.status = 'approved' THEN NOW() ELSE NULL END,
+             review_note = EXCLUDED.review_note,
+             updated_at = NOW()
+         RETURNING status, review_note, requested_at, reviewed_at",
+    )
+    .bind(contest_id)
+    .bind(team_id)
+    .bind(status)
+    .bind(user_id)
+    .bind(review_note)
+    .fetch_one(&state.db)
+    .await
+    .map_err(AppError::internal)
+}
+
 async fn list_contest_challenges(
     State(state): State<Arc<AppState>>,
     Path(contest_id): Path<Uuid>,
     current_user: AuthenticatedUser,
 ) -> AppResult<Json<Vec<ContestChallengeItem>>> {
-    ensure_contest_access(state.as_ref(), contest_id, &current_user).await?;
+    ensure_user_contest_workspace_access(state.as_ref(), contest_id, &current_user).await?;
 
     let challenge_items = sqlx::query_as::<_, ContestChallengeItem>(
-        "SELECT c.id, c.title, c.category, c.difficulty, c.challenge_type, c.static_score, cc.release_at
+        "SELECT c.id,
+                c.title,
+                c.category,
+                c.difficulty,
+                c.description,
+                c.hints,
+                c.challenge_type,
+                c.static_score,
+                cc.release_at
          FROM contest_challenges cc
          JOIN challenges c ON c.id = cc.challenge_id
          JOIN contests ct ON ct.id = cc.contest_id
@@ -257,7 +459,7 @@ async fn list_contest_announcements(
     Path(contest_id): Path<Uuid>,
     current_user: AuthenticatedUser,
 ) -> AppResult<Json<Vec<ContestAnnouncementItem>>> {
-    ensure_contest_access(state.as_ref(), contest_id, &current_user).await?;
+    ensure_user_contest_workspace_access(state.as_ref(), contest_id, &current_user).await?;
 
     let rows = sqlx::query_as::<_, ContestAnnouncementItem>(
         "SELECT id,
@@ -369,42 +571,13 @@ async fn download_contest_challenge_attachment(
     ))
 }
 
-async fn ensure_contest_access(
-    state: &AppState,
-    contest_id: Uuid,
-    current_user: &AuthenticatedUser,
-) -> AppResult<()> {
-    let contest = sqlx::query_as::<_, ContestAccessRow>(
-        "SELECT visibility, status
-         FROM contests
-         WHERE id = $1
-         LIMIT 1",
-    )
-    .bind(contest_id)
-    .fetch_optional(&state.db)
-    .await
-    .map_err(AppError::internal)?
-    .ok_or(AppError::BadRequest("contest not found".to_string()))?;
-
-    let is_privileged = current_user.role == "admin" || current_user.role == "judge";
-    if contest.visibility == "private" && !is_privileged {
-        return Err(AppError::Forbidden);
-    }
-
-    if (contest.status == "draft" || contest.status == "archived") && !is_privileged {
-        return Err(AppError::Forbidden);
-    }
-
-    Ok(())
-}
-
 async fn ensure_contest_challenge_access(
     state: &AppState,
     contest_id: Uuid,
     challenge_id: Uuid,
     current_user: &AuthenticatedUser,
 ) -> AppResult<()> {
-    ensure_contest_access(state, contest_id, current_user).await?;
+    ensure_user_contest_workspace_access(state, contest_id, current_user).await?;
 
     let row = sqlx::query_as::<_, ContestChallengeAccessRow>(
         "SELECT ct.status AS contest_status,
@@ -426,7 +599,7 @@ async fn ensure_contest_challenge_access(
         "challenge is not included in this contest".to_string(),
     ))?;
 
-    let is_privileged = current_user.role == "admin" || current_user.role == "judge";
+    let is_privileged = is_privileged_role(&current_user.role);
     if !row.challenge_visible && !is_privileged {
         return Err(AppError::BadRequest(
             "challenge runtime is not visible".to_string(),

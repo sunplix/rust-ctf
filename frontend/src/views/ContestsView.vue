@@ -132,9 +132,14 @@
             <section class="stack">
               <h3>{{ tr("比赛操作", "Actions") }}</h3>
               <div class="context-menu contest-action-menu" v-if="selectedContestId">
-                <RouterLink class="btn-solid" :to="`/contests/${selectedContest.id}`">
-                  {{ tr("进入比赛空间", "Open Contest Workspace") }}
-                </RouterLink>
+                <button
+                  class="btn-solid"
+                  type="button"
+                  :disabled="enteringContest"
+                  @click="handleEnterContestWorkspace"
+                >
+                  {{ enteringContest ? tr("处理中...", "Processing...") : tr("进入比赛空间", "Open Contest Workspace") }}
+                </button>
                 <button class="btn-line" type="button" @click="copyContestId(selectedContest.id)">
                   {{ tr("复制比赛 ID", "Copy Contest ID") }}
                 </button>
@@ -154,24 +159,34 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 
 import {
   ApiClientError,
+  applyContestRegistration,
   buildApiAssetUrl,
+  getContestRegistrationStatus,
+  getMyTeam,
   listContests,
   type ContestListItem
 } from "../api/client";
 import { useL10n } from "../composables/useL10n";
 import { markdownToPlainText } from "../composables/useMarkdown";
+import { useTimeFormat } from "../composables/useTimeFormat";
+import { useAuthStore } from "../stores/auth";
 import { useUiStore } from "../stores/ui";
 
+const router = useRouter();
+const authStore = useAuthStore();
 const uiStore = useUiStore();
-const { locale, tr } = useL10n();
+const { tr } = useL10n();
+const { formatTime } = useTimeFormat();
 
 const contests = ref<ContestListItem[]>([]);
 const selectedContestId = ref("");
 const loading = ref(false);
 const error = ref("");
+const enteringContest = ref(false);
 const cacheVersion = ref(`${Date.now()}`);
 const contestKeyword = ref("");
 const contestStatusFilter = ref<"all" | "running" | "scheduled" | "ended">("all");
@@ -246,11 +261,6 @@ watch(
   { immediate: true }
 );
 
-function formatTime(input: string) {
-  const localeTag = locale.value === "en" ? "en-US" : "zh-CN";
-  return new Date(input).toLocaleString(localeTag);
-}
-
 function formatRange(startAt: string, endAt: string) {
   return `${formatTime(startAt)} ~ ${formatTime(endAt)}`;
 }
@@ -299,6 +309,86 @@ async function copyContestId(contestId: string) {
       tr("浏览器不允许写入剪贴板。", "Clipboard access is blocked by the browser."),
       2200
     );
+  }
+}
+
+function accessTokenOrThrow() {
+  const token = authStore.accessToken;
+  if (!token) {
+    throw new ApiClientError(tr("未登录或会话已失效", "Not signed in or session expired"), "unauthorized");
+  }
+  return token;
+}
+
+async function handleEnterContestWorkspace() {
+  const contest = selectedContest.value;
+  if (!contest) {
+    return;
+  }
+
+  enteringContest.value = true;
+
+  try {
+    const token = accessTokenOrThrow();
+    const role = authStore.user?.role ?? "";
+    const isPrivileged = role === "admin" || role === "judge";
+
+    if (!isPrivileged) {
+      const myTeam = await getMyTeam(token);
+      if (!myTeam.team) {
+        uiStore.warning(
+          tr("请先加入队伍", "Join a team first"),
+          tr("你还不在队伍中，请先创建或加入队伍后再参赛。", "Create or join a team before entering contest workspace.")
+        );
+        await router.push({ name: "teams" });
+        return;
+      }
+    }
+
+    let registration = await getContestRegistrationStatus(contest.id, token);
+    if (!registration.can_enter_workspace && registration.registration_status === "not_registered") {
+      registration = await applyContestRegistration(contest.id, token);
+    }
+
+    if (registration.can_enter_workspace) {
+      await router.push({ name: "contest-detail", params: { contestId: contest.id } });
+      return;
+    }
+
+    if (registration.registration_status === "pending") {
+      uiStore.info(
+        tr("报名已提交", "Registration submitted"),
+        tr("当前报名待管理员审核，请稍后再进入比赛空间。", "Registration is pending admin approval.")
+      );
+      return;
+    }
+
+    if (registration.registration_status === "rejected") {
+      uiStore.error(
+        tr("报名被拒绝", "Registration rejected"),
+        registration.review_note || tr("请联系管理员处理报名审核。", "Contact admins for registration review.")
+      );
+      return;
+    }
+
+    if (registration.registration_status === "no_team") {
+      uiStore.warning(
+        tr("请先加入队伍", "Join a team first"),
+        tr("你还不在队伍中，请先创建或加入队伍后再参赛。", "Create or join a team before entering contest workspace.")
+      );
+      await router.push({ name: "teams" });
+      return;
+    }
+
+    uiStore.warning(
+      tr("暂时无法进入", "Unable to enter"),
+      tr("当前不满足参赛条件，请稍后重试。", "Contest entry requirements are not met yet.")
+    );
+  } catch (err) {
+    const message = err instanceof ApiClientError ? err.message : tr("进入比赛失败", "Failed to enter contest workspace");
+    uiStore.error(tr("进入比赛失败", "Failed to enter contest workspace"), message);
+  } finally {
+    enteringContest.value = false;
   }
 }
 

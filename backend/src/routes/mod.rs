@@ -1,4 +1,5 @@
 pub(crate) mod admin;
+pub(crate) mod contest_access;
 mod auth;
 mod contests;
 mod health;

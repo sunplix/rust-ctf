@@ -28,6 +28,7 @@ use uuid::Uuid;
 use crate::{
     auth::AuthenticatedUser,
     error::{AppError, AppResult},
+    routes::contest_access::ensure_team_contest_workspace_access,
     runtime_template::{
         build_single_image_compose_template, parse_runtime_metadata_options,
         render_compose_template_variables, validate_compose_template_schema, RuntimeAccessMode,
@@ -241,6 +242,13 @@ async fn start_instance(
     Json(req): Json<InstanceActionRequest>,
 ) -> AppResult<Json<InstanceResponse>> {
     let team_id = fetch_user_team_id(state.as_ref(), current_user.user_id).await?;
+    ensure_team_contest_workspace_access(
+        state.as_ref(),
+        req.contest_id,
+        team_id,
+        &current_user,
+    )
+    .await?;
     let policy = fetch_runtime_policy(state.as_ref(), req.contest_id, req.challenge_id).await?;
 
     validate_runtime_policy(&policy, &current_user.role, true)?;
@@ -294,6 +302,13 @@ async fn stop_instance(
     Json(req): Json<InstanceActionRequest>,
 ) -> AppResult<Json<InstanceResponse>> {
     let team_id = fetch_user_team_id(state.as_ref(), current_user.user_id).await?;
+    ensure_team_contest_workspace_access(
+        state.as_ref(),
+        req.contest_id,
+        team_id,
+        &current_user,
+    )
+    .await?;
 
     let instance = fetch_instance_row(state.as_ref(), req.contest_id, req.challenge_id, team_id)
         .await?
@@ -331,6 +346,13 @@ async fn reset_instance(
     Json(req): Json<InstanceActionRequest>,
 ) -> AppResult<Json<InstanceResponse>> {
     let team_id = fetch_user_team_id(state.as_ref(), current_user.user_id).await?;
+    ensure_team_contest_workspace_access(
+        state.as_ref(),
+        req.contest_id,
+        team_id,
+        &current_user,
+    )
+    .await?;
     let policy = fetch_runtime_policy(state.as_ref(), req.contest_id, req.challenge_id).await?;
 
     validate_runtime_policy(&policy, &current_user.role, true)?;
@@ -385,6 +407,13 @@ async fn destroy_instance(
     Json(req): Json<InstanceActionRequest>,
 ) -> AppResult<Json<InstanceResponse>> {
     let team_id = fetch_user_team_id(state.as_ref(), current_user.user_id).await?;
+    ensure_team_contest_workspace_access(
+        state.as_ref(),
+        req.contest_id,
+        team_id,
+        &current_user,
+    )
+    .await?;
 
     let instance = fetch_instance_row(state.as_ref(), req.contest_id, req.challenge_id, team_id)
         .await?
@@ -446,6 +475,13 @@ async fn heartbeat_instance(
     Json(req): Json<InstanceActionRequest>,
 ) -> AppResult<Json<InstanceResponse>> {
     let team_id = fetch_user_team_id(state.as_ref(), current_user.user_id).await?;
+    ensure_team_contest_workspace_access(
+        state.as_ref(),
+        req.contest_id,
+        team_id,
+        &current_user,
+    )
+    .await?;
 
     let updated =
         touch_instance_heartbeat(state.as_ref(), req.contest_id, req.challenge_id, team_id)
@@ -490,6 +526,13 @@ async fn get_instance_by_challenge(
     AxumPath((contest_id, challenge_id)): AxumPath<(Uuid, Uuid)>,
 ) -> AppResult<Json<InstanceResponse>> {
     let team_id = fetch_user_team_id(state.as_ref(), current_user.user_id).await?;
+    ensure_team_contest_workspace_access(
+        state.as_ref(),
+        contest_id,
+        team_id,
+        &current_user,
+    )
+    .await?;
 
     let instance = fetch_instance_row(state.as_ref(), contest_id, challenge_id, team_id)
         .await?
@@ -508,6 +551,13 @@ async fn get_instance_wireguard_config(
     AxumPath((contest_id, challenge_id)): AxumPath<(Uuid, Uuid)>,
 ) -> AppResult<Json<WireguardConfigResponse>> {
     let team_id = fetch_user_team_id(state.as_ref(), current_user.user_id).await?;
+    ensure_team_contest_workspace_access(
+        state.as_ref(),
+        contest_id,
+        team_id,
+        &current_user,
+    )
+    .await?;
 
     let instance = fetch_instance_row(state.as_ref(), contest_id, challenge_id, team_id)
         .await?
@@ -552,7 +602,9 @@ async fn fetch_user_team_id(state: &AppState, user_id: Uuid) -> AppResult<Uuid> 
     .fetch_optional(&state.db)
     .await
     .map_err(AppError::internal)?
-    .ok_or(AppError::Forbidden)?;
+    .ok_or(AppError::BadRequest(
+        "join or create a team before entering the contest".to_string(),
+    ))?;
 
     Ok(team.team_id)
 }

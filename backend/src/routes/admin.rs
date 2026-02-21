@@ -46,6 +46,8 @@ const FLAG_MODE_ALLOWED: &[&str] = &["static", "dynamic", "script"];
 const CONTEST_STATUS_ALLOWED: &[&str] = &["draft", "scheduled", "running", "ended", "archived"];
 const CONTEST_VISIBILITY_ALLOWED: &[&str] = &["public", "private"];
 const CONTEST_SCORING_MODE_ALLOWED: &[&str] = &["static", "dynamic"];
+const CONTEST_REGISTRATION_STATUS_ALLOWED: &[&str] = &["pending", "approved", "rejected"];
+const TIME_DISPLAY_MODE_ALLOWED: &[&str] = &["local", "utc"];
 const WRITEUP_VISIBILITY_ALLOWED: &[&str] = &["hidden", "after_solve", "after_contest", "public"];
 const CHALLENGE_STATUS_ALLOWED: &[&str] = &["draft", "published", "offline"];
 const USER_ROLE_ALLOWED: &[&str] = &["player", "admin", "judge"];
@@ -127,6 +129,7 @@ struct AdminChallengeDetailItem {
     metadata: Value,
     is_visible: bool,
     tags: Vec<String>,
+    hints: Vec<String>,
     writeup_visibility: String,
     writeup_content: String,
     current_version: i32,
@@ -152,6 +155,7 @@ struct CreateChallengeRequest {
     metadata: Option<Value>,
     is_visible: Option<bool>,
     tags: Option<Vec<String>>,
+    hints: Option<Vec<String>>,
     writeup_visibility: Option<String>,
     writeup_content: Option<String>,
     change_note: Option<String>,
@@ -173,6 +177,7 @@ struct UpdateChallengeRequest {
     metadata: Option<Value>,
     is_visible: Option<bool>,
     tags: Option<Vec<String>>,
+    hints: Option<Vec<String>>,
     writeup_visibility: Option<String>,
     writeup_content: Option<String>,
     change_note: Option<String>,
@@ -197,6 +202,8 @@ struct ChallengeSnapshot {
     metadata: Value,
     is_visible: bool,
     tags: Vec<String>,
+    #[serde(default)]
+    hints: Vec<String>,
     writeup_visibility: String,
     writeup_content: String,
 }
@@ -220,6 +227,7 @@ struct ChallengeSnapshotRow {
     metadata: Value,
     is_visible: bool,
     tags: Vec<String>,
+    hints: Vec<String>,
     writeup_visibility: String,
     writeup_content: String,
     current_version: i32,
@@ -422,6 +430,7 @@ struct AdminContestItem {
     first_blood_bonus_percent: i32,
     second_blood_bonus_percent: i32,
     third_blood_bonus_percent: i32,
+    registration_requires_approval: bool,
     start_at: DateTime<Utc>,
     end_at: DateTime<Utc>,
     freeze_at: Option<DateTime<Utc>>,
@@ -441,6 +450,7 @@ struct CreateContestRequest {
     first_blood_bonus_percent: Option<i32>,
     second_blood_bonus_percent: Option<i32>,
     third_blood_bonus_percent: Option<i32>,
+    registration_requires_approval: Option<bool>,
     start_at: DateTime<Utc>,
     end_at: DateTime<Utc>,
     freeze_at: Option<DateTime<Utc>>,
@@ -458,6 +468,7 @@ struct UpdateContestRequest {
     first_blood_bonus_percent: Option<i32>,
     second_blood_bonus_percent: Option<i32>,
     third_blood_bonus_percent: Option<i32>,
+    registration_requires_approval: Option<bool>,
     start_at: Option<DateTime<Utc>>,
     end_at: Option<DateTime<Utc>>,
     freeze_at: Option<DateTime<Utc>>,
@@ -598,6 +609,19 @@ struct UpdateSiteSettingsRequest {
     home_signature: Option<String>,
     footer_text: Option<String>,
     challenge_attachment_max_bytes: Option<i64>,
+    time_display_mode: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct AdminContestRegistrationsQuery {
+    status: Option<String>,
+    limit: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+struct UpdateContestRegistrationRequest {
+    status: String,
+    review_note: Option<String>,
 }
 
 #[derive(Debug, Serialize, FromRow)]
@@ -721,7 +745,27 @@ struct AdminSiteSettingsItem {
     home_signature: String,
     footer_text: String,
     challenge_attachment_max_bytes: i64,
+    time_display_mode: String,
     updated_by: Option<Uuid>,
+    updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+struct AdminContestRegistrationItem {
+    id: Uuid,
+    contest_id: Uuid,
+    contest_title: String,
+    team_id: Uuid,
+    team_name: String,
+    status: String,
+    requested_by: Option<Uuid>,
+    requested_by_username: Option<String>,
+    requested_at: DateTime<Utc>,
+    reviewed_by: Option<Uuid>,
+    reviewed_by_username: Option<String>,
+    reviewed_at: Option<DateTime<Utc>>,
+    review_note: String,
+    created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
 }
 
@@ -964,6 +1008,14 @@ pub fn router() -> Router<Arc<AppState>> {
             "/admin/contests/{contest_id}/announcements/{announcement_id}",
             patch(update_contest_announcement).delete(delete_contest_announcement),
         )
+        .route(
+            "/admin/contests/{contest_id}/registrations",
+            get(list_contest_registrations),
+        )
+        .route(
+            "/admin/contests/{contest_id}/registrations/{registration_id}",
+            patch(update_contest_registration),
+        )
         .route("/admin/instances", get(list_instances))
         .route(
             "/admin/instances/{instance_id}/runtime-metrics",
@@ -1051,6 +1103,7 @@ async fn get_site_settings(
                 home_signature,
                 footer_text,
                 challenge_attachment_max_bytes,
+                time_display_mode,
                 updated_by,
                 updated_at
          FROM site_settings
@@ -1096,6 +1149,11 @@ async fn update_site_settings(
             Ok(value)
         })
         .transpose()?;
+    let time_display_mode = req
+        .time_display_mode
+        .as_deref()
+        .map(|value| normalize_with_allowed(value, TIME_DISPLAY_MODE_ALLOWED, "time_display_mode"))
+        .transpose()?;
 
     if site_name.is_none()
         && site_subtitle.is_none()
@@ -1104,6 +1162,7 @@ async fn update_site_settings(
         && home_signature.is_none()
         && footer_text.is_none()
         && challenge_attachment_max_bytes.is_none()
+        && time_display_mode.is_none()
     {
         return Err(AppError::BadRequest(
             "at least one site setting field is required".to_string(),
@@ -1119,7 +1178,8 @@ async fn update_site_settings(
              home_signature = COALESCE($5, home_signature),
              footer_text = COALESCE($6, footer_text),
              challenge_attachment_max_bytes = COALESCE($7, challenge_attachment_max_bytes),
-             updated_by = $8,
+             time_display_mode = COALESCE($8, time_display_mode),
+             updated_by = $9,
              updated_at = NOW()
          WHERE id = TRUE
          RETURNING site_name,
@@ -1129,6 +1189,7 @@ async fn update_site_settings(
                    home_signature,
                    footer_text,
                    challenge_attachment_max_bytes,
+                   time_display_mode,
                    updated_by,
                    updated_at",
     )
@@ -1139,6 +1200,7 @@ async fn update_site_settings(
     .bind(home_signature)
     .bind(footer_text)
     .bind(challenge_attachment_max_bytes)
+    .bind(time_display_mode)
     .bind(current_user.user_id)
     .fetch_optional(&state.db)
     .await
@@ -1156,7 +1218,8 @@ async fn update_site_settings(
             "site_subtitle": row.site_subtitle,
             "home_title": row.home_title,
             "footer_text": row.footer_text,
-            "challenge_attachment_max_bytes": row.challenge_attachment_max_bytes
+            "challenge_attachment_max_bytes": row.challenge_attachment_max_bytes,
+            "time_display_mode": row.time_display_mode
         }),
     )
     .await;
@@ -1751,6 +1814,7 @@ async fn get_challenge_detail(
                 metadata,
                 is_visible,
                 tags,
+                hints,
                 writeup_visibility,
                 writeup_content,
                 current_version,
@@ -2554,6 +2618,7 @@ async fn create_challenge(
         (None, None) => ("draft".to_string(), false),
     };
     let tags = normalize_tags(req.tags.unwrap_or_default())?;
+    let hints = normalize_hints(req.hints.unwrap_or_default())?;
     let writeup_visibility = normalize_with_allowed(
         req.writeup_visibility.as_deref().unwrap_or("hidden"),
         WRITEUP_VISIBILITY_ALLOWED,
@@ -2591,11 +2656,12 @@ async fn create_challenge(
             metadata,
             is_visible,
             tags,
+            hints,
             writeup_visibility,
             writeup_content,
             created_by
          )
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
          RETURNING id,
                    title,
                    slug,
@@ -2613,6 +2679,7 @@ async fn create_challenge(
                    metadata,
                    is_visible,
                    tags,
+                   hints,
                    writeup_visibility,
                    writeup_content,
                    current_version,
@@ -2635,6 +2702,7 @@ async fn create_challenge(
     .bind(metadata)
     .bind(is_visible)
     .bind(tags)
+    .bind(hints)
     .bind(writeup_visibility)
     .bind(writeup_content)
     .bind(current_user.user_id)
@@ -2740,6 +2808,7 @@ async fn update_challenge(
         })
         .transpose()?;
     let normalized_tags = req.tags.map(normalize_tags).transpose()?;
+    let normalized_hints = req.hints.map(normalize_hints).transpose()?;
     let change_note = req
         .change_note
         .as_deref()
@@ -2832,9 +2901,10 @@ async fn update_challenge(
               metadata = COALESCE($12, metadata),
               is_visible = COALESCE($13, is_visible),
               tags = COALESCE($14, tags),
-              writeup_visibility = COALESCE($15, writeup_visibility),
-              writeup_content = COALESCE($16, writeup_content),
-              status = COALESCE($17, status),
+              hints = COALESCE($15, hints),
+              writeup_visibility = COALESCE($16, writeup_visibility),
+              writeup_content = COALESCE($17, writeup_content),
+              status = COALESCE($18, status),
               current_version = current_version + 1,
               updated_at = NOW()
          WHERE id = $1
@@ -2855,6 +2925,7 @@ async fn update_challenge(
                    metadata,
                    is_visible,
                    tags,
+                   hints,
                    writeup_visibility,
                    writeup_content,
                    current_version,
@@ -2875,6 +2946,7 @@ async fn update_challenge(
     .bind(req.metadata)
     .bind(resolved_is_visible)
     .bind(normalized_tags)
+    .bind(normalized_hints)
     .bind(normalized_writeup_visibility)
     .bind(req.writeup_content)
     .bind(resolved_status)
@@ -3107,9 +3179,10 @@ async fn rollback_challenge_version(
              metadata = $14,
              is_visible = $15,
              tags = $16,
-             writeup_visibility = $17,
-             writeup_content = $18,
-             status = $19,
+             hints = $17,
+             writeup_visibility = $18,
+             writeup_content = $19,
+             status = $20,
              current_version = current_version + 1,
              updated_at = NOW()
          WHERE id = $1
@@ -3130,6 +3203,7 @@ async fn rollback_challenge_version(
                    metadata,
                    is_visible,
                    tags,
+                   hints,
                    writeup_visibility,
                    writeup_content,
                    current_version,
@@ -3152,6 +3226,7 @@ async fn rollback_challenge_version(
     .bind(target_snapshot.metadata)
     .bind(rollback_visible)
     .bind(target_snapshot.tags)
+    .bind(target_snapshot.hints)
     .bind(target_snapshot.writeup_visibility)
     .bind(target_snapshot.writeup_content)
     .bind(rollback_status)
@@ -3422,6 +3497,7 @@ async fn list_contests(
                 first_blood_bonus_percent,
                 second_blood_bonus_percent,
                 third_blood_bonus_percent,
+                registration_requires_approval,
                 start_at,
                 end_at,
                 freeze_at,
@@ -3482,6 +3558,7 @@ async fn create_contest(
         req.third_blood_bonus_percent.unwrap_or(2),
         "third_blood_bonus_percent",
     )?;
+    let registration_requires_approval = req.registration_requires_approval.unwrap_or(true);
 
     let row = sqlx::query_as::<_, AdminContestItem>(
         "INSERT INTO contests (
@@ -3495,12 +3572,13 @@ async fn create_contest(
             first_blood_bonus_percent,
             second_blood_bonus_percent,
             third_blood_bonus_percent,
+            registration_requires_approval,
             start_at,
             end_at,
             freeze_at,
             created_by
          )
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
          RETURNING id,
                    title,
                    slug,
@@ -3516,6 +3594,7 @@ async fn create_contest(
                    first_blood_bonus_percent,
                    second_blood_bonus_percent,
                    third_blood_bonus_percent,
+                   registration_requires_approval,
                    start_at,
                    end_at,
                    freeze_at,
@@ -3532,6 +3611,7 @@ async fn create_contest(
     .bind(first_blood_bonus_percent)
     .bind(second_blood_bonus_percent)
     .bind(third_blood_bonus_percent)
+    .bind(registration_requires_approval)
     .bind(req.start_at)
     .bind(req.end_at)
     .bind(req.freeze_at)
@@ -3562,6 +3642,7 @@ async fn create_contest(
             "first_blood_bonus_percent": row.first_blood_bonus_percent,
             "second_blood_bonus_percent": row.second_blood_bonus_percent,
             "third_blood_bonus_percent": row.third_blood_bonus_percent,
+            "registration_requires_approval": row.registration_requires_approval,
             "start_at": row.start_at,
             "end_at": row.end_at,
             "freeze_at": row.freeze_at
@@ -3596,6 +3677,7 @@ async fn update_contest(
                 first_blood_bonus_percent,
                 second_blood_bonus_percent,
                 third_blood_bonus_percent,
+                registration_requires_approval,
                 start_at,
                 end_at,
                 freeze_at,
@@ -3655,6 +3737,9 @@ async fn update_contest(
             .unwrap_or(existing.third_blood_bonus_percent),
         "third_blood_bonus_percent",
     )?;
+    let registration_requires_approval = req
+        .registration_requires_approval
+        .unwrap_or(existing.registration_requires_approval);
 
     let start_at = req.start_at.unwrap_or(existing.start_at);
     let end_at = req.end_at.unwrap_or(existing.end_at);
@@ -3678,9 +3763,10 @@ async fn update_contest(
              first_blood_bonus_percent = $9,
              second_blood_bonus_percent = $10,
              third_blood_bonus_percent = $11,
-             start_at = $12,
-             end_at = $13,
-             freeze_at = $14,
+             registration_requires_approval = $12,
+             start_at = $13,
+             end_at = $14,
+             freeze_at = $15,
              updated_at = NOW()
          WHERE id = $1
          RETURNING id,
@@ -3698,6 +3784,7 @@ async fn update_contest(
                    first_blood_bonus_percent,
                    second_blood_bonus_percent,
                    third_blood_bonus_percent,
+                   registration_requires_approval,
                    start_at,
                    end_at,
                    freeze_at,
@@ -3715,6 +3802,7 @@ async fn update_contest(
     .bind(first_blood_bonus_percent)
     .bind(second_blood_bonus_percent)
     .bind(third_blood_bonus_percent)
+    .bind(registration_requires_approval)
     .bind(start_at)
     .bind(end_at)
     .bind(freeze_at)
@@ -3744,6 +3832,7 @@ async fn update_contest(
             "first_blood_bonus_percent": row.first_blood_bonus_percent,
             "second_blood_bonus_percent": row.second_blood_bonus_percent,
             "third_blood_bonus_percent": row.third_blood_bonus_percent,
+            "registration_requires_approval": row.registration_requires_approval,
             "start_at": row.start_at,
             "end_at": row.end_at,
             "freeze_at": row.freeze_at
@@ -3784,6 +3873,7 @@ async fn update_contest_status(
                    first_blood_bonus_percent,
                    second_blood_bonus_percent,
                    third_blood_bonus_percent,
+                   registration_requires_approval,
                    start_at,
                    end_at,
                    freeze_at,
@@ -3969,6 +4059,7 @@ async fn upload_contest_poster(
                    first_blood_bonus_percent,
                    second_blood_bonus_percent,
                    third_blood_bonus_percent,
+                   registration_requires_approval,
                    start_at,
                    end_at,
                    freeze_at,
@@ -4534,6 +4625,163 @@ async fn delete_contest_announcement(
     .await;
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+async fn list_contest_registrations(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Path(contest_id): Path<Uuid>,
+    Query(query): Query<AdminContestRegistrationsQuery>,
+) -> AppResult<Json<Vec<AdminContestRegistrationItem>>> {
+    ensure_admin_or_judge(&current_user)?;
+    ensure_contest_exists(state.as_ref(), contest_id).await?;
+
+    let status_filter = query
+        .status
+        .as_deref()
+        .map(|value| {
+            normalize_with_allowed(
+                value,
+                CONTEST_REGISTRATION_STATUS_ALLOWED,
+                "registration_status",
+            )
+        })
+        .transpose()?;
+    let limit = query.limit.unwrap_or(200).clamp(1, 1000);
+
+    let rows = sqlx::query_as::<_, AdminContestRegistrationItem>(
+        "SELECT r.id,
+                r.contest_id,
+                c.title AS contest_title,
+                r.team_id,
+                t.name AS team_name,
+                r.status,
+                r.requested_by,
+                req_u.username AS requested_by_username,
+                r.requested_at,
+                r.reviewed_by,
+                rev_u.username AS reviewed_by_username,
+                r.reviewed_at,
+                r.review_note,
+                r.created_at,
+                r.updated_at
+         FROM contest_registrations r
+         JOIN contests c ON c.id = r.contest_id
+         JOIN teams t ON t.id = r.team_id
+         LEFT JOIN users req_u ON req_u.id = r.requested_by
+         LEFT JOIN users rev_u ON rev_u.id = r.reviewed_by
+         WHERE r.contest_id = $1
+           AND ($2::text IS NULL OR r.status = $2)
+         ORDER BY r.requested_at DESC, r.created_at DESC
+         LIMIT $3",
+    )
+    .bind(contest_id)
+    .bind(status_filter)
+    .bind(limit)
+    .fetch_all(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    Ok(Json(rows))
+}
+
+async fn update_contest_registration(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Path((contest_id, registration_id)): Path<(Uuid, Uuid)>,
+    Json(req): Json<UpdateContestRegistrationRequest>,
+) -> AppResult<Json<AdminContestRegistrationItem>> {
+    ensure_admin_or_judge(&current_user)?;
+    ensure_contest_exists(state.as_ref(), contest_id).await?;
+
+    let status = normalize_with_allowed(
+        req.status.as_str(),
+        CONTEST_REGISTRATION_STATUS_ALLOWED,
+        "registration_status",
+    )?;
+    let review_note = req
+        .review_note
+        .as_deref()
+        .and_then(normalize_optional_text)
+        .unwrap_or("")
+        .to_string();
+    if review_note.chars().count() > 1000 {
+        return Err(AppError::BadRequest(
+            "review_note must be at most 1000 characters".to_string(),
+        ));
+    }
+
+    let row = sqlx::query_as::<_, AdminContestRegistrationItem>(
+        "WITH updated AS (
+            UPDATE contest_registrations
+            SET status = $3,
+                reviewed_by = CASE WHEN $3 = 'pending' THEN NULL ELSE $4 END,
+                reviewed_at = CASE WHEN $3 = 'pending' THEN NULL ELSE NOW() END,
+                review_note = $5,
+                updated_at = NOW()
+            WHERE contest_id = $1
+              AND id = $2
+            RETURNING id,
+                      contest_id,
+                      team_id,
+                      status,
+                      requested_by,
+                      requested_at,
+                      reviewed_by,
+                      reviewed_at,
+                      review_note,
+                      created_at,
+                      updated_at
+         )
+         SELECT u.id,
+                u.contest_id,
+                c.title AS contest_title,
+                u.team_id,
+                t.name AS team_name,
+                u.status,
+                u.requested_by,
+                req_u.username AS requested_by_username,
+                u.requested_at,
+                u.reviewed_by,
+                rev_u.username AS reviewed_by_username,
+                u.reviewed_at,
+                u.review_note,
+                u.created_at,
+                u.updated_at
+         FROM updated u
+         JOIN contests c ON c.id = u.contest_id
+         JOIN teams t ON t.id = u.team_id
+         LEFT JOIN users req_u ON req_u.id = u.requested_by
+         LEFT JOIN users rev_u ON rev_u.id = u.reviewed_by",
+    )
+    .bind(contest_id)
+    .bind(registration_id)
+    .bind(&status)
+    .bind(current_user.user_id)
+    .bind(&review_note)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest(
+        "contest registration not found".to_string(),
+    ))?;
+
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.contest.registration.update",
+        "contest_registration",
+        Some(row.id),
+        json!({
+            "contest_id": row.contest_id,
+            "team_id": row.team_id,
+            "status": row.status,
+            "review_note": row.review_note
+        }),
+    )
+    .await;
+
+    Ok(Json(row))
 }
 
 async fn list_instances(
@@ -6167,6 +6415,32 @@ fn normalize_tags(tags: Vec<String>) -> AppResult<Vec<String>> {
     Ok(out)
 }
 
+fn normalize_hints(hints: Vec<String>) -> AppResult<Vec<String>> {
+    if hints.len() > 20 {
+        return Err(AppError::BadRequest(
+            "hints must be at most 20 items".to_string(),
+        ));
+    }
+
+    let mut out: Vec<String> = Vec::new();
+    for hint in hints {
+        let normalized = hint.trim().to_string();
+        if normalized.is_empty() {
+            continue;
+        }
+        if normalized.chars().count() > 500 {
+            return Err(AppError::BadRequest(
+                "each hint must be at most 500 characters".to_string(),
+            ));
+        }
+        if !out.iter().any(|item| item == &normalized) {
+            out.push(normalized);
+        }
+    }
+
+    Ok(out)
+}
+
 fn challenge_item_from_snapshot_row(row: &ChallengeSnapshotRow) -> AdminChallengeItem {
     AdminChallengeItem {
         id: row.id,
@@ -6205,6 +6479,7 @@ fn challenge_snapshot_to_value(row: &ChallengeSnapshotRow) -> Value {
         metadata: row.metadata.clone(),
         is_visible: row.is_visible,
         tags: row.tags.clone(),
+        hints: row.hints.clone(),
         writeup_visibility: row.writeup_visibility.clone(),
         writeup_content: row.writeup_content.clone(),
     })

@@ -16,7 +16,8 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   home_title: "欢迎来到 Rust CTF",
   home_tagline: "面向实战的安全竞赛平台，专注比赛与协作。",
   home_signature: "Think clearly. Ship securely.",
-  footer_text: "© 2026 Rust-CTF. All rights reserved."
+  footer_text: "© 2026 Rust-CTF. All rights reserved.",
+  time_display_mode: "utc"
 };
 
 const APP_PREFERENCES_STORAGE_KEY = "rust-ctf.preferences";
