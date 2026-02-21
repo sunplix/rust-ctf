@@ -2976,7 +2976,11 @@ async fn delete_challenge(
     .ok_or(AppError::BadRequest("challenge not found".to_string()))?;
 
     for storage_path in &attachment_paths {
-        let path = PathBuf::from(storage_path);
+        let path = resolve_challenge_attachment_storage_path(
+            state.as_ref(),
+            challenge_id,
+            storage_path,
+        );
         if let Err(err) = fs::remove_file(&path).await {
             if err.kind() != std::io::ErrorKind::NotFound {
                 return Err(AppError::internal(err));
@@ -3256,7 +3260,10 @@ async fn upload_challenge_attachment(
         .map_err(AppError::internal)?;
 
     let stored_name = format!("{}-{}", Uuid::new_v4(), safe_filename);
-    let stored_path = attachment_dir.join(stored_name);
+    let stored_path = attachment_dir.join(&stored_name);
+    let stored_rel_path = PathBuf::from("_challenge_files")
+        .join(challenge_id.to_string())
+        .join(&stored_name);
     fs::write(&stored_path, &decoded)
         .await
         .map_err(AppError::internal)?;
@@ -3276,7 +3283,7 @@ async fn upload_challenge_attachment(
     .bind(challenge_id)
     .bind(&filename)
     .bind(&content_type)
-    .bind(stored_path.to_string_lossy().to_string())
+    .bind(stored_rel_path.to_string_lossy().to_string())
     .bind(decoded.len() as i64)
     .bind(current_user.user_id)
     .fetch_one(&state.db)
@@ -3366,7 +3373,11 @@ async fn delete_challenge_attachment(
         "challenge attachment not found".to_string(),
     ))?;
 
-    let path = PathBuf::from(&row.storage_path);
+    let path = resolve_challenge_attachment_storage_path(
+        state.as_ref(),
+        row.challenge_id,
+        &row.storage_path,
+    );
     if let Err(err) = fs::remove_file(&path).await {
         if err.kind() != std::io::ErrorKind::NotFound {
             return Err(AppError::internal(err));
@@ -6238,6 +6249,43 @@ fn challenge_attachments_dir(state: &AppState, challenge_id: Uuid) -> PathBuf {
     PathBuf::from(&state.config.instance_runtime_root)
         .join("_challenge_files")
         .join(challenge_id.to_string())
+}
+
+fn resolve_challenge_attachment_storage_path(
+    state: &AppState,
+    challenge_id: Uuid,
+    storage_path: &str,
+) -> PathBuf {
+    let raw = storage_path.trim();
+    if raw.is_empty() {
+        return challenge_attachments_dir(state, challenge_id).join("attachment.bin");
+    }
+
+    let original = PathBuf::from(raw);
+    if original.exists() {
+        return original;
+    }
+
+    let runtime_root = PathBuf::from(&state.config.instance_runtime_root);
+    if !original.is_absolute() {
+        let rooted = runtime_root.join(&original);
+        if rooted.exists() {
+            return rooted;
+        }
+    }
+
+    if let Some(name) = original.file_name() {
+        let fallback = challenge_attachments_dir(state, challenge_id).join(name);
+        if fallback.exists() {
+            return fallback;
+        }
+    }
+
+    if original.is_absolute() {
+        original
+    } else {
+        runtime_root.join(original)
+    }
 }
 
 fn contest_posters_dir(state: &AppState, contest_id: Uuid) -> PathBuf {

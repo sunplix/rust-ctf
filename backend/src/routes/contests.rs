@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
 
 use axum::{
     extract::{Path, State},
@@ -346,7 +346,9 @@ async fn download_contest_challenge_attachment(
         "challenge attachment not found".to_string(),
     ))?;
 
-    let bytes = fs::read(&row.storage_path).await.map_err(|err| {
+    let resolved_path =
+        resolve_challenge_attachment_storage_path(state.as_ref(), challenge_id, &row.storage_path);
+    let bytes = fs::read(&resolved_path).await.map_err(|err| {
         if err.kind() == std::io::ErrorKind::NotFound {
             AppError::BadRequest("challenge attachment file missing".to_string())
         } else {
@@ -475,4 +477,47 @@ fn build_download_disposition(filename: &str) -> String {
         sanitized
     };
     format!("attachment; filename=\"{}\"", fallback)
+}
+
+fn challenge_attachments_dir(state: &AppState, challenge_id: Uuid) -> PathBuf {
+    PathBuf::from(&state.config.instance_runtime_root)
+        .join("_challenge_files")
+        .join(challenge_id.to_string())
+}
+
+fn resolve_challenge_attachment_storage_path(
+    state: &AppState,
+    challenge_id: Uuid,
+    storage_path: &str,
+) -> PathBuf {
+    let raw = storage_path.trim();
+    if raw.is_empty() {
+        return challenge_attachments_dir(state, challenge_id).join("attachment.bin");
+    }
+
+    let original = PathBuf::from(raw);
+    if original.exists() {
+        return original;
+    }
+
+    let runtime_root = PathBuf::from(&state.config.instance_runtime_root);
+    if !original.is_absolute() {
+        let rooted = runtime_root.join(&original);
+        if rooted.exists() {
+            return rooted;
+        }
+    }
+
+    if let Some(name) = original.file_name() {
+        let fallback = challenge_attachments_dir(state, challenge_id).join(name);
+        if fallback.exists() {
+            return fallback;
+        }
+    }
+
+    if original.is_absolute() {
+        original
+    } else {
+        runtime_root.join(original)
+    }
 }
