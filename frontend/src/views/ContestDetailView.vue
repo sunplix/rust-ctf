@@ -69,6 +69,46 @@
           </p>
 
           <section class="stack">
+            <header class="row-between challenge-attachments-head">
+              <h3>{{ tr("题目附件", "Challenge files") }}</h3>
+              <button class="btn-line" type="button" @click="loadChallengeAttachments" :disabled="loadingChallengeAttachments">
+                {{ loadingChallengeAttachments ? tr("刷新中...", "Refreshing...") : tr("刷新附件", "Refresh files") }}
+              </button>
+            </header>
+            <p v-if="loadingChallengeAttachments && challengeAttachments.length === 0" class="soft">
+              {{ tr("正在加载附件...", "Loading files...") }}
+            </p>
+            <div v-else-if="challengeAttachments.length > 0" class="challenge-attachment-list">
+              <article
+                v-for="attachment in challengeAttachments"
+                :key="attachment.id"
+                class="surface stack challenge-attachment-item"
+              >
+                <div class="row-between">
+                  <strong>{{ attachment.filename }}</strong>
+                  <button
+                    class="btn-line"
+                    type="button"
+                    :disabled="downloadingChallengeAttachmentId === attachment.id"
+                    @click="downloadChallengeAttachment(attachment)"
+                  >
+                    {{
+                      downloadingChallengeAttachmentId === attachment.id
+                        ? tr("下载中...", "Downloading...")
+                        : tr("下载附件", "Download")
+                    }}
+                  </button>
+                </div>
+                <p class="soft mono">
+                  {{ attachment.content_type }} · {{ formatSize(attachment.size_bytes) }} · {{ formatTime(attachment.created_at) }}
+                </p>
+              </article>
+            </div>
+            <p v-else class="soft">{{ tr("当前题目暂无附件。", "No files attached to this challenge.") }}</p>
+            <p v-if="challengeAttachmentError" class="error">{{ challengeAttachmentError }}</p>
+          </section>
+
+          <section class="stack">
             <h3>{{ tr("题目操作", "Actions") }}</h3>
             <div class="context-menu" v-if="selectedChallengeId">
               <button
@@ -189,9 +229,9 @@
 
       <aside class="surface stack">
         <section class="stack">
-          <header class="row-between">
+          <header class="row-between scoreboard-head">
             <h2>{{ tr("实时榜单", "Live Scoreboard") }}</h2>
-            <div class="context-menu">
+            <div class="context-menu scoreboard-actions">
               <button class="btn-line" type="button" @click="loadScoreboard" :disabled="loadingScoreboard">
                 {{ loadingScoreboard ? tr("刷新中...", "Refreshing...") : tr("刷新", "Refresh") }}
               </button>
@@ -359,17 +399,20 @@ import { useRouter } from "vue-router";
 import {
   ApiClientError,
   buildScoreboardWsUrl,
+  downloadContestChallengeAttachment,
   destroyInstance,
   getInstance,
   getInstanceWireguardConfig,
   getScoreboard,
   getScoreboardTimeline,
+  listContestChallengeAttachments,
   listContestAnnouncements,
   listContestChallenges,
   resetInstance,
   startInstance,
   stopInstance,
   submitFlag,
+  type ContestChallengeAttachmentItem,
   type ContestAnnouncementItem,
   type ContestChallengeItem,
   type InstanceResponse,
@@ -421,6 +464,10 @@ const contestAnnouncements = ref<ContestAnnouncementItem[]>([]);
 const loadingAnnouncements = ref(false);
 const announcementError = ref("");
 const activeAnnouncement = ref<ContestAnnouncementItem | null>(null);
+const challengeAttachments = ref<ContestChallengeAttachmentItem[]>([]);
+const loadingChallengeAttachments = ref(false);
+const challengeAttachmentError = ref("");
+const downloadingChallengeAttachmentId = ref("");
 
 const wsState = ref("closed");
 let scoreboardSocket: WebSocket | null = null;
@@ -506,12 +553,17 @@ watch(
     submitError.value = "";
     instance.value = null;
     instanceError.value = "";
+    challengeAttachments.value = [];
+    challengeAttachmentError.value = "";
 
-    if (!selectedChallenge.value || !canManageInstance.value) {
+    if (!selectedChallenge.value) {
       return;
     }
 
-    await loadInstance();
+    await loadChallengeAttachments();
+    if (canManageInstance.value) {
+      await loadInstance();
+    }
   }
 );
 
@@ -533,6 +585,21 @@ watch(
 function formatTime(input: string) {
   const localeTag = locale.value === "en" ? "en-US" : "zh-CN";
   return new Date(input).toLocaleString(localeTag);
+}
+
+function formatSize(bytes: number) {
+  const size = Number(bytes);
+  if (!Number.isFinite(size) || size <= 0) {
+    return "0 B";
+  }
+  const units = ["B", "KB", "MB", "GB"];
+  let value = size;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  return `${value.toFixed(value >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
 function renderAnnouncementContent(markdown: string) {
@@ -1079,6 +1146,63 @@ async function downloadWireguardConfig() {
   }
 }
 
+async function loadChallengeAttachments() {
+  const challenge = selectedChallenge.value;
+  if (!challenge) {
+    challengeAttachments.value = [];
+    return;
+  }
+
+  loadingChallengeAttachments.value = true;
+  challengeAttachmentError.value = "";
+
+  try {
+    const token = accessTokenOrThrow();
+    challengeAttachments.value = await listContestChallengeAttachments(
+      props.contestId,
+      challenge.id,
+      token
+    );
+  } catch (err) {
+    challengeAttachments.value = [];
+    challengeAttachmentError.value =
+      err instanceof ApiClientError
+        ? err.message
+        : tr("加载题目附件失败", "Failed to load challenge files");
+  } finally {
+    loadingChallengeAttachments.value = false;
+  }
+}
+
+async function downloadChallengeAttachment(attachment: ContestChallengeAttachmentItem) {
+  const challenge = selectedChallenge.value;
+  if (!challenge) {
+    return;
+  }
+
+  downloadingChallengeAttachmentId.value = attachment.id;
+
+  try {
+    const token = accessTokenOrThrow();
+    const blob = await downloadContestChallengeAttachment(
+      props.contestId,
+      challenge.id,
+      attachment.id,
+      token
+    );
+    downloadBlob(blob, attachment.filename || `${attachment.id}.bin`);
+    uiStore.success(tr("下载成功", "Download succeeded"), attachment.filename, 1800);
+  } catch (err) {
+    const message =
+      err instanceof ApiClientError
+        ? err.message
+        : tr("下载附件失败", "Failed to download challenge file");
+    uiStore.error(tr("下载失败", "Download failed"), message);
+  } finally {
+    downloadingChallengeAttachmentId.value = "";
+  }
+}
+
 async function loadChallenges() {
   loadingChallenges.value = true;
   pageError.value = "";
@@ -1350,6 +1474,40 @@ onUnmounted(() => {
   letter-spacing: 0.01em;
 }
 
+.challenge-attachments-head {
+  align-items: center;
+}
+
+.challenge-attachments-head h3 {
+  margin: 0;
+}
+
+.challenge-attachment-list {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.challenge-attachment-item {
+  gap: 0.28rem;
+  padding: 0.56rem 0.62rem;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.challenge-attachment-item p {
+  margin: 0;
+}
+
+.scoreboard-head {
+  align-items: flex-start;
+  gap: 0.48rem;
+  flex-wrap: wrap;
+}
+
+.scoreboard-actions {
+  margin-left: auto;
+  max-width: 100%;
+}
+
 .instance-panel {
   background: rgba(255, 255, 255, 0.24);
 }
@@ -1446,6 +1604,13 @@ onUnmounted(() => {
 
 .trend-toolbar {
   align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.trend-toolbar .context-menu {
+  margin-left: auto;
+  max-width: 100%;
 }
 
 .trend-toolbar .btn-line.active {

@@ -47,6 +47,34 @@ struct ContestChallengeItem {
     release_at: Option<DateTime<Utc>>,
 }
 
+#[derive(Debug, Serialize)]
+struct ContestChallengeAttachmentItem {
+    id: Uuid,
+    challenge_id: Uuid,
+    filename: String,
+    content_type: String,
+    size_bytes: i64,
+    created_at: DateTime<Utc>,
+    download_url: String,
+}
+
+#[derive(Debug, FromRow)]
+struct ContestChallengeAttachmentRow {
+    id: Uuid,
+    challenge_id: Uuid,
+    filename: String,
+    content_type: String,
+    size_bytes: i64,
+    created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, FromRow)]
+struct ContestChallengeAttachmentFileRow {
+    filename: String,
+    content_type: String,
+    storage_path: String,
+}
+
 #[derive(Debug, Serialize, FromRow)]
 struct ContestAnnouncementItem {
     id: Uuid,
@@ -61,6 +89,13 @@ struct ContestAnnouncementItem {
 struct ContestAccessRow {
     visibility: String,
     status: String,
+}
+
+#[derive(Debug, FromRow)]
+struct ContestChallengeAccessRow {
+    contest_status: String,
+    challenge_visible: bool,
+    release_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, FromRow)]
@@ -82,6 +117,14 @@ pub fn router() -> Router<Arc<AppState>> {
         .route(
             "/contests/{contest_id}/announcements",
             get(list_contest_announcements),
+        )
+        .route(
+            "/contests/{contest_id}/challenges/{challenge_id}/attachments",
+            get(list_contest_challenge_attachments),
+        )
+        .route(
+            "/contests/{contest_id}/challenges/{challenge_id}/attachments/{attachment_id}",
+            get(download_contest_challenge_attachment),
         )
 }
 
@@ -237,6 +280,93 @@ async fn list_contest_announcements(
     Ok(Json(rows))
 }
 
+async fn list_contest_challenge_attachments(
+    State(state): State<Arc<AppState>>,
+    Path((contest_id, challenge_id)): Path<(Uuid, Uuid)>,
+    current_user: AuthenticatedUser,
+) -> AppResult<Json<Vec<ContestChallengeAttachmentItem>>> {
+    ensure_contest_challenge_access(state.as_ref(), contest_id, challenge_id, &current_user).await?;
+
+    let rows = sqlx::query_as::<_, ContestChallengeAttachmentRow>(
+        "SELECT id,
+                challenge_id,
+                filename,
+                content_type,
+                size_bytes,
+                created_at
+         FROM challenge_attachments
+         WHERE challenge_id = $1
+         ORDER BY created_at DESC
+         LIMIT 200",
+    )
+    .bind(challenge_id)
+    .fetch_all(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    let attachments = rows
+        .into_iter()
+        .map(|item| ContestChallengeAttachmentItem {
+            id: item.id,
+            challenge_id: item.challenge_id,
+            filename: item.filename,
+            content_type: item.content_type,
+            size_bytes: item.size_bytes,
+            created_at: item.created_at,
+            download_url: format!(
+                "/api/v1/contests/{}/challenges/{}/attachments/{}",
+                contest_id, challenge_id, item.id
+            ),
+        })
+        .collect();
+
+    Ok(Json(attachments))
+}
+
+async fn download_contest_challenge_attachment(
+    State(state): State<Arc<AppState>>,
+    Path((contest_id, challenge_id, attachment_id)): Path<(Uuid, Uuid, Uuid)>,
+    current_user: AuthenticatedUser,
+) -> AppResult<impl IntoResponse> {
+    ensure_contest_challenge_access(state.as_ref(), contest_id, challenge_id, &current_user).await?;
+
+    let row = sqlx::query_as::<_, ContestChallengeAttachmentFileRow>(
+        "SELECT filename, content_type, storage_path
+         FROM challenge_attachments
+         WHERE id = $1
+           AND challenge_id = $2
+         LIMIT 1",
+    )
+    .bind(attachment_id)
+    .bind(challenge_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest(
+        "challenge attachment not found".to_string(),
+    ))?;
+
+    let bytes = fs::read(&row.storage_path).await.map_err(|err| {
+        if err.kind() == std::io::ErrorKind::NotFound {
+            AppError::BadRequest("challenge attachment file missing".to_string())
+        } else {
+            AppError::internal(err)
+        }
+    })?;
+
+    let content_type = normalize_content_type(&row.content_type);
+    let disposition = build_download_disposition(&row.filename);
+
+    Ok((
+        [
+            (header::CONTENT_TYPE, content_type),
+            (header::CONTENT_DISPOSITION, disposition),
+            (header::CACHE_CONTROL, "private, max-age=60".to_string()),
+        ],
+        bytes,
+    ))
+}
+
 async fn ensure_contest_access(
     state: &AppState,
     contest_id: Uuid,
@@ -264,4 +394,85 @@ async fn ensure_contest_access(
     }
 
     Ok(())
+}
+
+async fn ensure_contest_challenge_access(
+    state: &AppState,
+    contest_id: Uuid,
+    challenge_id: Uuid,
+    current_user: &AuthenticatedUser,
+) -> AppResult<()> {
+    ensure_contest_access(state, contest_id, current_user).await?;
+
+    let row = sqlx::query_as::<_, ContestChallengeAccessRow>(
+        "SELECT ct.status AS contest_status,
+                c.is_visible AS challenge_visible,
+                cc.release_at
+         FROM contest_challenges cc
+         JOIN contests ct ON ct.id = cc.contest_id
+         JOIN challenges c ON c.id = cc.challenge_id
+         WHERE cc.contest_id = $1
+           AND cc.challenge_id = $2
+         LIMIT 1",
+    )
+    .bind(contest_id)
+    .bind(challenge_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest(
+        "challenge is not included in this contest".to_string(),
+    ))?;
+
+    let is_privileged = current_user.role == "admin" || current_user.role == "judge";
+    if !row.challenge_visible && !is_privileged {
+        return Err(AppError::BadRequest(
+            "challenge runtime is not visible".to_string(),
+        ));
+    }
+
+    if row.contest_status != "running" && row.contest_status != "ended" && !is_privileged {
+        return Err(AppError::BadRequest(
+            "contest challenge is not publicly available".to_string(),
+        ));
+    }
+
+    if let Some(release_at) = row.release_at {
+        if release_at > Utc::now() && !is_privileged {
+            return Err(AppError::BadRequest(
+                "challenge runtime has not been released yet".to_string(),
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+fn normalize_content_type(input: &str) -> String {
+    let value = input.trim();
+    if value.is_empty() {
+        "application/octet-stream".to_string()
+    } else {
+        value.to_string()
+    }
+}
+
+fn build_download_disposition(filename: &str) -> String {
+    let sanitized = filename
+        .trim()
+        .chars()
+        .map(|ch| {
+            if ch == '"' || ch == '\\' || ch == '\r' || ch == '\n' || ch.is_control() {
+                '_'
+            } else {
+                ch
+            }
+        })
+        .collect::<String>();
+    let fallback = if sanitized.is_empty() {
+        "attachment.bin".to_string()
+    } else {
+        sanitized
+    };
+    format!("attachment; filename=\"{}\"", fallback)
 }

@@ -151,6 +151,16 @@ export type ContestChallengeItem = {
   release_at: string | null;
 };
 
+export type ContestChallengeAttachmentItem = {
+  id: string;
+  challenge_id: string;
+  filename: string;
+  content_type: string;
+  size_bytes: number;
+  created_at: string;
+  download_url: string;
+};
+
 export type ContestAnnouncementItem = {
   id: string;
   title: string;
@@ -890,6 +900,42 @@ export async function listContestAnnouncements(
       authHeaders(accessToken)
     );
     return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function listContestChallengeAttachments(
+  contestId: string,
+  challengeId: string,
+  accessToken: string
+): Promise<ContestChallengeAttachmentItem[]> {
+  try {
+    const { data } = await api.get<ContestChallengeAttachmentItem[]>(
+      `/contests/${contestId}/challenges/${challengeId}/attachments`,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function downloadContestChallengeAttachment(
+  contestId: string,
+  challengeId: string,
+  attachmentId: string,
+  accessToken: string
+): Promise<Blob> {
+  try {
+    const response = await api.get(
+      `/contests/${contestId}/challenges/${challengeId}/attachments/${attachmentId}`,
+      {
+        ...authHeaders(accessToken),
+        responseType: "blob"
+      }
+    );
+    return response.data as Blob;
   } catch (error) {
     throw toApiClientError(error);
   }
