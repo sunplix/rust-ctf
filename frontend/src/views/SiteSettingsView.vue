@@ -38,6 +38,17 @@
           <span>{{ tr("Footer 版权文案", "Footer Copyright") }}</span>
           <input v-model.trim="form.footer_text" maxlength="240" />
         </label>
+        <label>
+          <span>{{ tr("题目附件大小上限（MB）", "Challenge attachment limit (MB)") }}</span>
+          <input
+            v-model.number="form.challenge_attachment_max_mb"
+            type="number"
+            min="1"
+            max="256"
+            step="1"
+            required
+          />
+        </label>
 
         <button class="btn-solid" type="submit" :disabled="submitting">
           {{ submitting ? tr("保存中...", "Saving...") : tr("保存设置", "Save") }}
@@ -77,7 +88,8 @@ const form = reactive({
   home_title: "",
   home_tagline: "",
   home_signature: "",
-  footer_text: ""
+  footer_text: "",
+  challenge_attachment_max_mb: 20
 });
 
 function accessTokenOrThrow() {
@@ -103,6 +115,7 @@ function applyForm(payload: {
   home_tagline: string;
   home_signature: string;
   footer_text: string;
+  challenge_attachment_max_bytes: number;
 }) {
   form.site_name = payload.site_name;
   form.site_subtitle = payload.site_subtitle;
@@ -110,6 +123,10 @@ function applyForm(payload: {
   form.home_tagline = payload.home_tagline;
   form.home_signature = payload.home_signature;
   form.footer_text = payload.footer_text;
+  form.challenge_attachment_max_mb = Math.max(
+    1,
+    Math.min(256, Math.round(payload.challenge_attachment_max_bytes / (1024 * 1024)))
+  );
 }
 
 async function loadSettings() {
@@ -130,6 +147,9 @@ async function handleSubmit() {
   submitting.value = true;
   error.value = "";
   try {
+    const attachmentLimitMb = Number.isFinite(form.challenge_attachment_max_mb)
+      ? Math.max(1, Math.min(256, Math.floor(form.challenge_attachment_max_mb)))
+      : 20;
     const saved = await updateAdminSiteSettings(
       {
         site_name: form.site_name,
@@ -137,7 +157,8 @@ async function handleSubmit() {
         home_title: form.home_title,
         home_tagline: form.home_tagline,
         home_signature: form.home_signature,
-        footer_text: form.footer_text
+        footer_text: form.footer_text,
+        challenge_attachment_max_bytes: attachmentLimitMb * 1024 * 1024
       },
       accessTokenOrThrow()
     );

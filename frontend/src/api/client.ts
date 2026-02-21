@@ -113,6 +113,7 @@ export type SiteSettings = {
 };
 
 export type AdminSiteSettings = SiteSettings & {
+  challenge_attachment_max_bytes: number;
   updated_by: string | null;
   updated_at: string;
 };
@@ -640,6 +641,48 @@ export type AdminChallengeRuntimeImageTestResponse = {
   generated_at: string;
   steps: AdminChallengeRuntimeImageTestStep[];
 };
+
+export type AdminChallengeRuntimeImageTestStreamEvent =
+  | {
+      event: "start";
+      image: string;
+      force_pull: boolean;
+      run_build_probe: boolean;
+      timeout_seconds: number;
+      generated_at: string;
+    }
+  | {
+      event: "step_start";
+      step: string;
+      command: string;
+      generated_at: string;
+    }
+  | {
+      event: "step_log";
+      step: string;
+      stream: string;
+      line: string;
+      generated_at: string;
+    }
+  | {
+      event: "step_finish";
+      step: string;
+      success: boolean;
+      exit_code: number | null;
+      duration_ms: number;
+      truncated: boolean;
+      generated_at: string;
+    }
+  | {
+      event: "completed";
+      result: AdminChallengeRuntimeImageTestResponse;
+    }
+  | {
+      event: "error";
+      message: string;
+      step?: string | null;
+      generated_at: string;
+    };
 
 export type WireguardConfigResponse = {
   contest_id: string;
@@ -1494,6 +1537,7 @@ export async function updateAdminSiteSettings(
     home_tagline?: string;
     home_signature?: string;
     footer_text?: string;
+    challenge_attachment_max_bytes?: number;
   },
   accessToken: string
 ): Promise<AdminSiteSettings> {
@@ -1959,9 +2003,137 @@ export async function testAdminChallengeRuntimeImage(
     const { data } = await api.post<AdminChallengeRuntimeImageTestResponse>(
       "/admin/challenges/runtime-template/test-image",
       payload,
-      authHeaders(accessToken)
+      {
+        ...authHeaders(accessToken),
+        timeout: 10 * 60 * 1000
+      }
     );
     return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function streamAdminChallengeRuntimeImageTest(
+  payload: {
+    image: string;
+    force_pull?: boolean;
+    run_build_probe?: boolean;
+    timeout_seconds?: number;
+  },
+  accessToken: string,
+  options?: {
+    onEvent?: (event: AdminChallengeRuntimeImageTestStreamEvent) => void;
+  }
+): Promise<AdminChallengeRuntimeImageTestResponse> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/admin/challenges/runtime-template/test-image/stream`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`
+        },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    if (!response.ok) {
+      let message = `request failed (${response.status})`;
+      let code = "request_failed";
+      try {
+        const data = (await response.json()) as ApiErrorEnvelope;
+        message = data.error?.message ?? message;
+        code = data.error?.code ?? code;
+      } catch {
+        try {
+          const text = await response.text();
+          if (text.trim()) {
+            message = text.trim();
+          }
+        } catch {
+          // ignore fallback parsing failures
+        }
+      }
+      throw new ApiClientError(message, code);
+    }
+
+    if (!response.body) {
+      throw new ApiClientError("stream response body is empty", "request_failed");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let completed: AdminChallengeRuntimeImageTestResponse | null = null;
+
+    const emit = (event: AdminChallengeRuntimeImageTestStreamEvent) => {
+      options?.onEvent?.(event);
+      if (event.event === "completed") {
+        completed = event.result;
+        return;
+      }
+      if (event.event === "error") {
+        throw new ApiClientError(event.message || "image test stream failed", "request_failed");
+      }
+    };
+
+    const flushLines = (flushTail: boolean) => {
+      while (true) {
+        const newlineIndex = buffer.indexOf("\n");
+        if (newlineIndex < 0) {
+          break;
+        }
+        const raw = buffer.slice(0, newlineIndex);
+        buffer = buffer.slice(newlineIndex + 1);
+        const line = raw.trim();
+        if (!line) {
+          continue;
+        }
+        let event: AdminChallengeRuntimeImageTestStreamEvent;
+        try {
+          event = JSON.parse(line) as AdminChallengeRuntimeImageTestStreamEvent;
+        } catch {
+          throw new ApiClientError("invalid image test stream event payload", "request_failed");
+        }
+        emit(event);
+      }
+
+      if (flushTail) {
+        const tail = buffer.trim();
+        buffer = "";
+        if (!tail) {
+          return;
+        }
+        let event: AdminChallengeRuntimeImageTestStreamEvent;
+        try {
+          event = JSON.parse(tail) as AdminChallengeRuntimeImageTestStreamEvent;
+        } catch {
+          throw new ApiClientError("invalid image test stream tail payload", "request_failed");
+        }
+        emit(event);
+      }
+    };
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        buffer += decoder.decode();
+        flushLines(true);
+        break;
+      }
+      buffer += decoder.decode(value, { stream: true });
+      flushLines(false);
+    }
+
+    if (!completed) {
+      throw new ApiClientError(
+        "image test stream finished without completion event",
+        "request_failed"
+      );
+    }
+    return completed;
   } catch (error) {
     throw toApiClientError(error);
   }

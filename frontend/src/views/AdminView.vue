@@ -341,6 +341,7 @@
                         <option value="dynamic">dynamic</option>
                         <option value="internal">internal</option>
                       </select>
+                      <small class="field-note">{{ challengeTypeDescription }}</small>
                     </label>
                     <label>
                       <span>{{ tl('flag 模式') }}</span>
@@ -349,6 +350,7 @@
                         <option value="dynamic">dynamic</option>
                         <option value="script">script</option>
                       </select>
+                      <small class="field-note">{{ flagModeDescription }}</small>
                     </label>
                     <label class="field-span-2">
                       <span>{{ tl('flag/哈希') }}</span>
@@ -357,9 +359,11 @@
                     <label>
                       <span>{{ tl('运行模式') }}</span>
                       <select v-model="newChallenge.runtime_mode">
+                        <option value="none">{{ tr("no_runtime（无需容器）", "no_runtime (no container runtime)") }}</option>
                         <option value="compose">{{ tl('compose（多容器）') }}</option>
                         <option value="single_image">{{ tl('single_image（单镜像）') }}</option>
                       </select>
+                      <small class="field-note">{{ runtimeModeDescription }}</small>
                     </label>
                     <label v-if="newChallenge.runtime_mode === 'compose'">
                       <span>{{ tl('访问模式') }}</span>
@@ -396,6 +400,18 @@
                           {{ testingChallengeRuntimeImage ? tl('测试中...') : tl('测试镜像（拉取+构建探测）') }}
                         </button>
                       </div>
+                      <p class="muted">
+                        {{
+                          tr(
+                            "测试日志会实时显示（默认最长 300 秒），适合镜像拉取/构建较慢场景。",
+                            "Live logs are streamed in real time (default timeout: 300s)."
+                          )
+                        }}
+                      </p>
+                      <pre
+                        v-if="challengeRuntimeImageStreamOutput || testingChallengeRuntimeImage"
+                        class="mono image-test-live-log"
+                      >{{ challengeRuntimeImageStreamOutput || tr("等待日志输出...", "Waiting for stream output...") }}</pre>
                       <p v-if="challengeImageTestError" class="error">{{ challengeImageTestError }}</p>
                       <div
                         v-if="challengeRuntimeImageTestResult"
@@ -416,7 +432,13 @@
                       </div>
                     </div>
                     <label v-if="newChallenge.runtime_mode === 'compose'" class="field-span-2">
-                      <span>{{ tl('compose 模板（可选）') }}</span>
+                      <span>
+                        {{
+                          newChallenge.challenge_type === "static"
+                            ? tl("compose 模板（可选）")
+                            : tr("compose 模板（dynamic/internal 必填）", "compose template (required for dynamic/internal)")
+                        }}
+                      </span>
                       <textarea v-model="newChallenge.compose_template" rows="5" />
                     </label>
                   </div>
@@ -454,6 +476,78 @@
                       <input v-model="newChallenge.change_note" />
                     </label>
                   </div>
+                </section>
+
+                <section class="challenge-form-block">
+                  <header class="challenge-form-block-head">
+                    <h4>{{ tr("附件（快捷）", "Attachments (Quick)") }}</h4>
+                    <p>
+                      {{
+                        tr(
+                          "在题库配置页直接管理附件，减少“编辑题目”与“版本与附件”来回切换。",
+                          "Manage attachments directly here to reduce tab switching."
+                        )
+                      }}
+                    </p>
+                  </header>
+                  <div v-if="editingChallengeId" class="stack">
+                    <p v-if="challengeAttachmentError" class="error">{{ challengeAttachmentError }}</p>
+                    <div class="form-grid compact-grid">
+                      <label class="field-span-2">
+                        <span>{{ tl('上传附件') }}</span>
+                        <UploadField
+                          v-model="selectedAttachmentFile"
+                          :input-key="attachmentInputKey"
+                          :button-label="tl('选择文件')"
+                          :clear-label="tl('清除')"
+                          :placeholder="tl('未选择文件')"
+                          :hint="challengeAttachmentUploadHint"
+                        />
+                      </label>
+                      <button
+                        class="ghost"
+                        type="button"
+                        @click="handleUploadChallengeAttachment"
+                        :disabled="uploadingAttachment || !selectedAttachmentFile"
+                      >
+                        {{ uploadingAttachment ? tl('上传中...') : tl('上传附件') }}
+                      </button>
+                      <button class="ghost" type="button" @click="openVersionsFromEditor">
+                        {{ tr("打开完整版本与附件", "Open full versions & files") }}
+                      </button>
+                    </div>
+
+                    <div class="admin-list stagger-list">
+                      <article
+                        v-for="attachment in challengeAttachments.slice(0, 5)"
+                        :key="attachment.id"
+                        class="admin-list-item"
+                      >
+                        <div class="row-between">
+                          <strong>{{ attachment.filename }}</strong>
+                          <span class="muted">{{ formatTime(attachment.created_at) }}</span>
+                        </div>
+                        <p class="muted mono">{{ attachment.content_type }} · {{ formatSize(attachment.size_bytes) }}</p>
+                        <div class="actions-row compact-actions">
+                          <button
+                            class="danger"
+                            type="button"
+                            @click="deleteChallengeAttachment(attachment.id)"
+                            :disabled="deletingAttachmentId === attachment.id"
+                          >
+                            {{ deletingAttachmentId === attachment.id ? tl('删除中...') : tl('删除附件') }}
+                          </button>
+                        </div>
+                      </article>
+                      <p v-if="challengeAttachments.length === 0" class="muted">{{ tl('暂无附件。') }}</p>
+                      <p v-if="challengeAttachments.length > 5" class="muted">
+                        {{ tr("仅显示最近 5 个附件，更多请切换到“版本与附件”。", "Showing latest 5 files. Switch to \"Versions & Files\" for all.") }}
+                      </p>
+                    </div>
+                  </div>
+                  <p v-else class="muted">
+                    {{ tr("请先保存题目，再上传附件。", "Save this challenge first, then upload attachments.") }}
+                  </p>
                 </section>
 
                 <div class="challenge-submit-row">
@@ -604,7 +698,7 @@
                 :button-label="tl('选择文件')"
                 :clear-label="tl('清除')"
                 :placeholder="tl('未选择文件')"
-                :hint="tl('支持任意附件格式')"
+                :hint="challengeAttachmentUploadHint"
               />
             </label>
             <button class="ghost" type="submit" :disabled="uploadingAttachment || !selectedAttachmentFile">
@@ -2085,6 +2179,7 @@ import {
   getAdminInstanceRuntimeMetrics,
   getAdminRuntimeOverview,
   getAdminChallengeDetail,
+  getAdminSiteSettings,
   listAdminChallengeCategories,
   listAdminRuntimeAlerts,
   listAdminChallengeRuntimeTemplateLint,
@@ -2103,7 +2198,7 @@ import {
   runAdminExpiredInstanceReaper,
   runAdminStaleInstanceReaper,
   scanAdminRuntimeAlerts,
-  testAdminChallengeRuntimeImage,
+  streamAdminChallengeRuntimeImageTest,
   uploadAdminContestPoster,
   uploadAdminChallengeAttachment,
   updateAdminContestAnnouncement,
@@ -2114,6 +2209,7 @@ import {
   type AdminChallengeDetailItem,
   type AdminAuditLogItem,
   type AdminChallengeItem,
+  type AdminChallengeRuntimeImageTestStreamEvent,
   type AdminChallengeRuntimeImageTestResponse,
   type AdminChallengeRuntimeLintItem,
   type AdminChallengeRuntimeLintResponse,
@@ -2687,6 +2783,9 @@ const auditTargetTypeFilter = ref("");
 const auditLimit = ref(200);
 const statusActions = ["draft", "scheduled", "running", "ended", "archived"];
 const RUNTIME_POLL_INTERVAL_MS = 20_000;
+const CHALLENGE_IMAGE_TEST_TIMEOUT_SECONDS = 300;
+const CHALLENGE_IMAGE_TEST_MAX_STREAM_LINES = 1200;
+const DEFAULT_CHALLENGE_ATTACHMENT_MAX_BYTES = 20 * 1024 * 1024;
 type AnnouncementEditorMode = "edit" | "preview";
 type MarkdownSnippetPreset = "heading" | "bold" | "italic" | "link" | "code" | "list" | "quote";
 const resetPasswords = reactive<Record<string, string>>({});
@@ -2698,9 +2797,11 @@ const announcementCreateTextareaRef = ref<HTMLTextAreaElement | null>(null);
 const announcementEditTextareaRef = ref<HTMLTextAreaElement | null>(null);
 const attachmentInputKey = ref(0);
 const selectedAttachmentFile = ref<File | null>(null);
+const challengeAttachmentMaxBytes = ref(DEFAULT_CHALLENGE_ATTACHMENT_MAX_BYTES);
 const contestPosterInputKey = ref(0);
 const selectedContestPosterFile = ref<File | null>(null);
 const challengeRuntimeImageTestResult = ref<AdminChallengeRuntimeImageTestResponse | null>(null);
+const challengeRuntimeImageStreamLines = ref<string[]>([]);
 const runtimeReaperResult = ref<AdminInstanceReaperRunResponse | null>(null);
 
 const runtimeAlertPrimed = ref(false);
@@ -2725,7 +2826,7 @@ const newChallenge = reactive({
   writeup_content: "",
   change_note: "",
   compose_template: "",
-  runtime_mode: "compose",
+  runtime_mode: "none",
   runtime_access_mode: "ssh_bastion",
   runtime_image: "",
   runtime_internal_port: 80,
@@ -2993,6 +3094,74 @@ const challengeSubmitLabel = computed(() => {
   return editingChallengeId.value ? tr("保存修改", "Save changes") : tr("创建题目", "Create challenge");
 });
 
+const challengeTypeDescription = computed(() => {
+  if (newChallenge.challenge_type === "dynamic") {
+    return tr(
+      "dynamic：每队可创建独立运行实例，适合隔离容器题。",
+      "dynamic: each team can start an isolated runtime instance."
+    );
+  }
+  if (newChallenge.challenge_type === "internal") {
+    return tr(
+      "internal：题目运行在内部/裁判控制场景，通常不直接暴露给选手公网。",
+      "internal: runtime is intended for internal/judge-controlled scenarios."
+    );
+  }
+  return tr(
+    "static：无需运行实例，提交 flag 即可判定。",
+    "static: no runtime instance is required; only flag verification is used."
+  );
+});
+
+const flagModeDescription = computed(() => {
+  if (newChallenge.flag_mode === "dynamic") {
+    return tr(
+      "dynamic：按队伍下发动态 flag（通常来自实例启动流程）。",
+      "dynamic: per-team flag issued from runtime flow."
+    );
+  }
+  if (newChallenge.flag_mode === "script") {
+    return tr(
+      "script：调用脚本判定，可用于复杂答案校验。",
+      "script: verify via script for complex validation."
+    );
+  }
+  return tr(
+    "static：固定 flag 或哈希比对。",
+    "static: compare against fixed flag/hash."
+  );
+});
+
+const runtimeModeDescription = computed(() => {
+  if (newChallenge.runtime_mode === "single_image") {
+    return tr(
+      "single_image：单镜像快速部署，适合轻量动态题。",
+      "single_image: single-image runtime for lightweight dynamic challenges."
+    );
+  }
+  if (newChallenge.runtime_mode === "compose") {
+    return tr(
+      "compose：多服务编排，支持复杂依赖场景。",
+      "compose: multi-service orchestration for complex runtimes."
+    );
+  }
+  return tr(
+    "no_runtime：不启动容器，适用于纯静态题。",
+    "no_runtime: no container runtime, suited for static challenges."
+  );
+});
+
+const challengeRuntimeImageStreamOutput = computed(() => {
+  return challengeRuntimeImageStreamLines.value.join("\n");
+});
+
+const challengeAttachmentUploadHint = computed(() => {
+  return tr(
+    `支持任意附件格式，大小不超过 ${formatSize(challengeAttachmentMaxBytes.value)}`,
+    `Any file type is supported, up to ${formatSize(challengeAttachmentMaxBytes.value)}.`
+  );
+});
+
 const contestFormTitle = computed(() => {
   return editingContestId.value ? tr("编辑比赛", "Edit Contest") : tr("创建比赛", "Create Contest");
 });
@@ -3041,6 +3210,17 @@ function parseTagsInput(raw: string): string[] {
     .filter((item) => item.length > 0);
 }
 
+function appendChallengeRuntimeImageStreamLine(line: string) {
+  const normalized = line.replace(/\r/g, "");
+  challengeRuntimeImageStreamLines.value.push(normalized);
+  if (challengeRuntimeImageStreamLines.value.length > CHALLENGE_IMAGE_TEST_MAX_STREAM_LINES) {
+    challengeRuntimeImageStreamLines.value.splice(
+      0,
+      challengeRuntimeImageStreamLines.value.length - CHALLENGE_IMAGE_TEST_MAX_STREAM_LINES
+    );
+  }
+}
+
 function resetChallengeForm() {
   editingChallengeId.value = "";
   newChallenge.title = "";
@@ -3058,13 +3238,14 @@ function resetChallengeForm() {
   newChallenge.writeup_content = "";
   newChallenge.change_note = "";
   newChallenge.compose_template = "";
-  newChallenge.runtime_mode = "compose";
+  newChallenge.runtime_mode = "none";
   newChallenge.runtime_access_mode = "ssh_bastion";
   newChallenge.runtime_image = "";
   newChallenge.runtime_internal_port = 80;
   newChallenge.runtime_protocol = "http";
   challengeImageTestError.value = "";
   challengeRuntimeImageTestResult.value = null;
+  challengeRuntimeImageStreamLines.value = [];
 }
 
 function resetContestForm() {
@@ -3087,9 +3268,21 @@ function resetContestForm() {
 function applyChallengeDetailToForm(detail: AdminChallengeDetailItem) {
   const runtime = (detail.metadata?.runtime ?? {}) as Record<string, unknown>;
   const runtimeModeRaw = typeof runtime.mode === "string" ? runtime.mode.trim().toLowerCase() : "";
-  const runtimeMode = runtimeModeRaw === "single_image" || runtimeModeRaw === "single-image" || runtimeModeRaw === "image"
-    ? "single_image"
-    : "compose";
+  const hasRuntimeMetadata =
+    Object.keys(runtime).length > 0 ||
+    typeof runtime.mode === "string" ||
+    typeof runtime.image === "string" ||
+    typeof runtime.internal_port === "number" ||
+    typeof runtime.access_mode === "string";
+  const hasComposeTemplate = !!detail.compose_template?.trim();
+  const runtimeMode: "none" | "compose" | "single_image" =
+    runtimeModeRaw === "single_image" || runtimeModeRaw === "single-image" || runtimeModeRaw === "image"
+      ? "single_image"
+      : runtimeModeRaw === "compose" || runtimeModeRaw === "compose_template" || hasRuntimeMetadata || hasComposeTemplate
+        ? "compose"
+        : detail.challenge_type === "static"
+          ? "none"
+          : "compose";
   const accessModeRaw =
     typeof runtime.access_mode === "string" ? runtime.access_mode.trim().toLowerCase() : "";
   const runtimeAccessMode =
@@ -3129,6 +3322,7 @@ function applyChallengeDetailToForm(detail: AdminChallengeDetailItem) {
   newChallenge.runtime_image = typeof runtime.image === "string" ? runtime.image : "";
   newChallenge.runtime_internal_port = runtimeInternalPort;
   newChallenge.runtime_protocol = runtimeProtocol;
+  challengeRuntimeImageStreamLines.value = [];
 }
 
 function applyContestToForm(item: AdminContestItem) {
@@ -3149,6 +3343,10 @@ function applyContestToForm(item: AdminContestItem) {
 }
 
 function buildChallengeRuntimeMetadata() {
+  if (newChallenge.runtime_mode === "none") {
+    return {};
+  }
+
   const runtime: Record<string, unknown> = {
     mode: newChallenge.runtime_mode
   };
@@ -3470,6 +3668,21 @@ async function loadChallenges() {
   } catch (err) {
     challengeError.value = err instanceof ApiClientError ? err.message : tl("加载题目失败");
     notify.error("加载题目失败", challengeError.value);
+  }
+}
+
+async function loadChallengeAttachmentLimit(options?: { silentError?: boolean }) {
+  try {
+    const settings = await getAdminSiteSettings(accessTokenOrThrow());
+    const value = Number(settings.challenge_attachment_max_bytes);
+    if (Number.isFinite(value) && value > 0) {
+      challengeAttachmentMaxBytes.value = Math.floor(value);
+    }
+  } catch (err) {
+    if (!options?.silentError) {
+      const message = err instanceof ApiClientError ? err.message : tr("加载失败", "Load failed");
+      notify.error(tr("加载站点设置失败", "Failed to load site settings"), message);
+    }
   }
 }
 
@@ -3922,6 +4135,7 @@ async function refreshAll() {
 
   try {
     await Promise.all([
+      loadChallengeAttachmentLimit({ silentError: true }),
       loadChallengeCategories(),
       loadChallenges(),
       loadContests(),
@@ -3954,6 +4168,8 @@ async function handleLoadChallengeForEdit(challengeId: string) {
     selectedChallengeId.value = detail.id;
     challengeLibraryMode.value = "editor";
     challengeRuntimeImageTestResult.value = null;
+    challengeRuntimeImageStreamLines.value = [];
+    await Promise.all([loadChallengeVersions(), loadChallengeAttachments()]);
     notify.info("已载入题目配置", `正在编辑：${detail.title}`);
   } catch (err) {
     challengeError.value = err instanceof ApiClientError ? err.message : tl("加载题目详情失败");
@@ -3978,9 +4194,17 @@ function openSelectedChallengeEditor() {
   void handleLoadChallengeForEdit(selectedChallengeId.value);
 }
 
+function openVersionsFromEditor() {
+  if (!selectedChallengeId.value) {
+    return;
+  }
+  challengeSubTab.value = "versions";
+}
+
 async function handleTestChallengeRuntimeImage() {
   challengeImageTestError.value = "";
   challengeRuntimeImageTestResult.value = null;
+  challengeRuntimeImageStreamLines.value = [];
 
   if (newChallenge.runtime_mode !== "single_image") {
     challengeImageTestError.value = tl("仅 single_image 模式支持镜像测试");
@@ -3996,13 +4220,48 @@ async function handleTestChallengeRuntimeImage() {
 
   testingChallengeRuntimeImage.value = true;
   try {
-    const result = await testAdminChallengeRuntimeImage(
+    const result = await streamAdminChallengeRuntimeImageTest(
       {
         image: newChallenge.runtime_image.trim(),
         force_pull: true,
-        run_build_probe: true
+        run_build_probe: true,
+        timeout_seconds: CHALLENGE_IMAGE_TEST_TIMEOUT_SECONDS
       },
-      accessTokenOrThrow()
+      accessTokenOrThrow(),
+      {
+        onEvent: (event: AdminChallengeRuntimeImageTestStreamEvent) => {
+          if (event.event === "start") {
+            appendChallengeRuntimeImageStreamLine(
+              `[start] image=${event.image} timeout=${event.timeout_seconds}s`
+            );
+            return;
+          }
+          if (event.event === "step_start") {
+            appendChallengeRuntimeImageStreamLine(`[${event.step}] $ ${event.command}`);
+            return;
+          }
+          if (event.event === "step_log") {
+            const prefix = event.stream === "stderr" ? "[stderr] " : "";
+            appendChallengeRuntimeImageStreamLine(`${prefix}${event.line}`);
+            return;
+          }
+          if (event.event === "step_finish") {
+            appendChallengeRuntimeImageStreamLine(
+              `[${event.step}] done success=${event.success ? "yes" : "no"} exit=${event.exit_code ?? "timeout"} duration=${event.duration_ms}ms`
+            );
+            return;
+          }
+          if (event.event === "completed") {
+            appendChallengeRuntimeImageStreamLine(
+              `[completed] ${event.result.succeeded ? "success" : "failed"}`
+            );
+            return;
+          }
+          if (event.event === "error") {
+            appendChallengeRuntimeImageStreamLine(`[error] ${event.message}`);
+          }
+        }
+      }
     );
     challengeRuntimeImageTestResult.value = result;
     if (result.succeeded) {
@@ -4024,6 +4283,14 @@ async function handleCreateChallenge() {
 
   try {
     const isEditMode = !!editingChallengeId.value;
+    if (newChallenge.runtime_mode === "none" && newChallenge.challenge_type !== "static") {
+      challengeError.value = tr(
+        "no_runtime 模式仅支持 static 题型",
+        "no_runtime mode only supports static challenges."
+      );
+      return;
+    }
+
     if (newChallenge.runtime_mode === "single_image") {
       if (!newChallenge.runtime_image.trim()) {
         challengeError.value = tl("single_image 模式必须填写镜像仓库地址");
@@ -4053,6 +4320,7 @@ async function handleCreateChallenge() {
     }
 
     const runtimeMetadata = buildChallengeRuntimeMetadata();
+    const hasRuntimeMetadata = Object.keys(runtimeMetadata).length > 0;
     const selectedCategory = newChallenge.category.trim().toLowerCase();
     if (!selectedCategory) {
       challengeError.value = tr("请选择题目类别。", "Please select a challenge category.");
@@ -4074,7 +4342,7 @@ async function handleCreateChallenge() {
         newChallenge.runtime_mode === "compose"
           ? newChallenge.compose_template || undefined
           : undefined,
-      metadata: runtimeMetadata,
+      metadata: hasRuntimeMetadata ? runtimeMetadata : undefined,
       tags: parseTagsInput(newChallenge.tags_input),
       writeup_visibility: newChallenge.writeup_visibility,
       writeup_content: newChallenge.writeup_content || undefined,
@@ -4218,6 +4486,16 @@ async function handleUploadChallengeAttachment() {
   if (!selectedAttachmentFile.value) {
     challengeAttachmentError.value = tl("请先选择一个附件文件");
     notify.warning("未选择文件", challengeAttachmentError.value);
+    return;
+  }
+
+  if (selectedAttachmentFile.value.size > challengeAttachmentMaxBytes.value) {
+    const limitText = formatSize(challengeAttachmentMaxBytes.value);
+    challengeAttachmentError.value = tr(
+      `附件超过大小限制（最大 ${limitText}）。`,
+      `Attachment exceeds size limit (max ${limitText}).`
+    );
+    notify.warning(tr("附件过大", "Attachment too large"), challengeAttachmentError.value);
     return;
   }
 
@@ -5118,8 +5396,9 @@ onUnmounted(() => {
 }
 
 .challenge-editor-column {
-  width: min(100%, 980px);
-  justify-self: center;
+  width: 100%;
+  max-width: none;
+  justify-self: stretch;
 }
 
 .challenge-library-column .challenge-card-grid {
@@ -5154,8 +5433,9 @@ onUnmounted(() => {
 }
 
 .contest-editor-column {
-  width: min(100%, 980px);
-  justify-self: center;
+  width: 100%;
+  max-width: none;
+  justify-self: stretch;
 }
 
 .contest-catalog-column {
@@ -5232,6 +5512,14 @@ onUnmounted(() => {
 
 .challenge-form-grid textarea {
   min-height: 7.1rem;
+}
+
+.challenge-form-grid .field-note {
+  display: block;
+  margin-top: 0.28rem;
+  font-size: 0.75rem;
+  color: rgba(18, 18, 18, 0.62);
+  line-height: 1.45;
 }
 
 .challenge-submit-row {
@@ -5587,6 +5875,18 @@ onUnmounted(() => {
 .image-test-result {
   display: grid;
   gap: 0.45rem;
+}
+
+.image-test-live-log {
+  margin: 0.4rem 0 0;
+  max-height: 260px;
+  overflow: auto;
+  border-radius: 8px;
+  padding: 0.5rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px dashed rgba(12, 12, 12, 0.2);
 }
 
 .image-test-result.failed {
@@ -5996,6 +6296,7 @@ onUnmounted(() => {
 :root[data-theme="dark"] .contest-list-item,
 :root[data-theme="dark"] .contest-detail-pane,
 :root[data-theme="dark"] .image-test-block,
+:root[data-theme="dark"] .image-test-live-log,
 :root[data-theme="dark"] .image-test-step,
 :root[data-theme="dark"] .image-test-step pre,
 :root[data-theme="dark"] .metric-card,
@@ -6038,6 +6339,10 @@ onUnmounted(() => {
 :root[data-theme="dark"] .announcement-editor-title,
 :root[data-theme="dark"] .announcement-markdown-hint {
   color: rgba(228, 228, 228, 0.72);
+}
+
+:root[data-theme="dark"] .challenge-form-grid .field-note {
+  color: rgba(228, 228, 228, 0.7);
 }
 
 :root[data-theme="dark"] .instance-entry-link {

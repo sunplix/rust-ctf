@@ -382,11 +382,22 @@ const chartSeries = computed(() => {
       return { x, y };
     });
 
+    const stepCoords: Array<{ x: number; y: number }> = [];
+    coords.forEach((point, idx) => {
+      if (idx === 0) {
+        stepCoords.push(point);
+        return;
+      }
+      const prev = coords[idx - 1];
+      stepCoords.push({ x: point.x, y: prev.y });
+      stepCoords.push(point);
+    });
+
     const last = coords[coords.length - 1] ?? { x: right, y: top };
     return {
       teamId: item.teamId,
       label: `#${item.rank} ${item.teamName}`,
-      points: coords.map((point) => `${point.x},${point.y}`).join(" "),
+      points: stepCoords.map((point) => `${point.x},${point.y}`).join(" "),
       color: item.color,
       lastX: last.x,
       lastY: last.y,

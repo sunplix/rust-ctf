@@ -1,22 +1,29 @@
-use std::{collections::HashSet, path::PathBuf, process::Stdio, sync::Arc, time::Instant};
+use std::{
+    collections::HashSet, convert::Infallible, path::PathBuf, process::Stdio, sync::Arc,
+    time::Instant,
+};
 
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
     Argon2,
 };
 use axum::{
-    extract::{Path, Query, State},
-    http::StatusCode,
+    body::{Body, Bytes},
+    extract::{DefaultBodyLimit, Path, Query, State},
+    http::{header, HeaderValue, StatusCode},
+    response::Response,
     routing::{get, patch, post},
     Json, Router,
 };
 use chrono::{DateTime, Utc};
+use futures_util::stream;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sqlx::FromRow;
 use tokio::fs;
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
+use tokio::sync::mpsc;
 use tokio::time::{timeout, Duration as TokioDuration};
 use tracing::warn;
 use uuid::Uuid;
@@ -66,6 +73,10 @@ const RUNTIME_ALERT_SCANNER_TYPES: &[&str] = &[
 ];
 const CONTEST_POSTER_MAX_BYTES: usize = 8 * 1024 * 1024;
 const IMAGE_TEST_LOG_MAX_BYTES: usize = 256 * 1024;
+const DEFAULT_CHALLENGE_ATTACHMENT_MAX_BYTES: i64 = 20 * 1024 * 1024;
+const MIN_CHALLENGE_ATTACHMENT_MAX_BYTES: i64 = 1 * 1024 * 1024;
+const MAX_CHALLENGE_ATTACHMENT_MAX_BYTES: i64 = 256 * 1024 * 1024;
+const ATTACHMENT_UPLOAD_JSON_BODY_LIMIT_BYTES: usize = 384 * 1024 * 1024;
 
 #[derive(Debug, Serialize, FromRow)]
 struct AdminChallengeItem {
@@ -274,6 +285,45 @@ struct TestChallengeRuntimeImageResponse {
     succeeded: bool,
     generated_at: DateTime<Utc>,
     steps: Vec<TestChallengeRuntimeImageStep>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(tag = "event", rename_all = "snake_case")]
+enum TestChallengeRuntimeImageStreamEvent {
+    Start {
+        image: String,
+        force_pull: bool,
+        run_build_probe: bool,
+        timeout_seconds: u64,
+        generated_at: DateTime<Utc>,
+    },
+    StepStart {
+        step: String,
+        command: String,
+        generated_at: DateTime<Utc>,
+    },
+    StepLog {
+        step: String,
+        stream: String,
+        line: String,
+        generated_at: DateTime<Utc>,
+    },
+    StepFinish {
+        step: String,
+        success: bool,
+        exit_code: Option<i32>,
+        duration_ms: i64,
+        truncated: bool,
+        generated_at: DateTime<Utc>,
+    },
+    Completed {
+        result: TestChallengeRuntimeImageResponse,
+    },
+    Error {
+        message: String,
+        step: Option<String>,
+        generated_at: DateTime<Utc>,
+    },
 }
 
 #[derive(Debug, FromRow)]
@@ -547,6 +597,7 @@ struct UpdateSiteSettingsRequest {
     home_tagline: Option<String>,
     home_signature: Option<String>,
     footer_text: Option<String>,
+    challenge_attachment_max_bytes: Option<i64>,
 }
 
 #[derive(Debug, Serialize, FromRow)]
@@ -669,6 +720,7 @@ struct AdminSiteSettingsItem {
     home_tagline: String,
     home_signature: String,
     footer_text: String,
+    challenge_attachment_max_bytes: i64,
     updated_by: Option<Uuid>,
     updated_at: DateTime<Utc>,
 }
@@ -854,6 +906,10 @@ pub fn router() -> Router<Arc<AppState>> {
             post(test_challenge_runtime_image),
         )
         .route(
+            "/admin/challenges/runtime-template/test-image/stream",
+            post(test_challenge_runtime_image_stream),
+        )
+        .route(
             "/admin/challenges/{challenge_id}",
             get(get_challenge_detail)
                 .patch(update_challenge)
@@ -869,7 +925,11 @@ pub fn router() -> Router<Arc<AppState>> {
         )
         .route(
             "/admin/challenges/{challenge_id}/attachments",
-            get(list_challenge_attachments).post(upload_challenge_attachment),
+            get(list_challenge_attachments)
+                .post(upload_challenge_attachment)
+                .layer(DefaultBodyLimit::max(
+                    ATTACHMENT_UPLOAD_JSON_BODY_LIMIT_BYTES,
+                )),
         )
         .route(
             "/admin/challenges/{challenge_id}/attachments/{attachment_id}",
@@ -990,6 +1050,7 @@ async fn get_site_settings(
                 home_tagline,
                 home_signature,
                 footer_text,
+                challenge_attachment_max_bytes,
                 updated_by,
                 updated_at
          FROM site_settings
@@ -1019,7 +1080,22 @@ async fn update_site_settings(
         normalize_optional_setting(req.home_tagline.as_deref(), "home_tagline", 0, 2000)?;
     let home_signature =
         normalize_optional_setting(req.home_signature.as_deref(), "home_signature", 0, 200)?;
-    let footer_text = normalize_optional_setting(req.footer_text.as_deref(), "footer_text", 0, 240)?;
+    let footer_text =
+        normalize_optional_setting(req.footer_text.as_deref(), "footer_text", 0, 240)?;
+    let challenge_attachment_max_bytes = req
+        .challenge_attachment_max_bytes
+        .map(|value| {
+            if !(MIN_CHALLENGE_ATTACHMENT_MAX_BYTES..=MAX_CHALLENGE_ATTACHMENT_MAX_BYTES)
+                .contains(&value)
+            {
+                return Err(AppError::BadRequest(format!(
+                    "challenge_attachment_max_bytes must be in {}..={}",
+                    MIN_CHALLENGE_ATTACHMENT_MAX_BYTES, MAX_CHALLENGE_ATTACHMENT_MAX_BYTES
+                )));
+            }
+            Ok(value)
+        })
+        .transpose()?;
 
     if site_name.is_none()
         && site_subtitle.is_none()
@@ -1027,6 +1103,7 @@ async fn update_site_settings(
         && home_tagline.is_none()
         && home_signature.is_none()
         && footer_text.is_none()
+        && challenge_attachment_max_bytes.is_none()
     {
         return Err(AppError::BadRequest(
             "at least one site setting field is required".to_string(),
@@ -1041,7 +1118,8 @@ async fn update_site_settings(
              home_tagline = COALESCE($4, home_tagline),
              home_signature = COALESCE($5, home_signature),
              footer_text = COALESCE($6, footer_text),
-             updated_by = $7,
+             challenge_attachment_max_bytes = COALESCE($7, challenge_attachment_max_bytes),
+             updated_by = $8,
              updated_at = NOW()
          WHERE id = TRUE
          RETURNING site_name,
@@ -1050,6 +1128,7 @@ async fn update_site_settings(
                    home_tagline,
                    home_signature,
                    footer_text,
+                   challenge_attachment_max_bytes,
                    updated_by,
                    updated_at",
     )
@@ -1059,6 +1138,7 @@ async fn update_site_settings(
     .bind(home_tagline)
     .bind(home_signature)
     .bind(footer_text)
+    .bind(challenge_attachment_max_bytes)
     .bind(current_user.user_id)
     .fetch_optional(&state.db)
     .await
@@ -1075,7 +1155,8 @@ async fn update_site_settings(
             "site_name": row.site_name,
             "site_subtitle": row.site_subtitle,
             "home_title": row.home_title,
-            "footer_text": row.footer_text
+            "footer_text": row.footer_text,
+            "challenge_attachment_max_bytes": row.challenge_attachment_max_bytes
         }),
     )
     .await;
@@ -2019,6 +2100,372 @@ async fn test_challenge_runtime_image(
     }))
 }
 
+async fn test_challenge_runtime_image_stream(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Json(req): Json<TestChallengeRuntimeImageRequest>,
+) -> AppResult<Response> {
+    ensure_admin_or_judge(&current_user)?;
+
+    let image = validate_container_image_reference(req.image.as_str())?;
+    let force_pull = req.force_pull.unwrap_or(true);
+    let run_build_probe = req.run_build_probe.unwrap_or(true);
+    let timeout_seconds = req
+        .timeout_seconds
+        .unwrap_or(state.config.compose_command_timeout_seconds)
+        .clamp(10, 900);
+
+    let (sender, receiver) = mpsc::unbounded_channel::<Result<Bytes, Infallible>>();
+    let state_clone = Arc::clone(&state);
+    let current_user_clone = current_user.clone();
+
+    tokio::spawn(async move {
+        emit_test_challenge_runtime_image_stream_event(
+            &sender,
+            TestChallengeRuntimeImageStreamEvent::Start {
+                image: image.clone(),
+                force_pull,
+                run_build_probe,
+                timeout_seconds,
+                generated_at: Utc::now(),
+            },
+        );
+
+        match execute_test_challenge_runtime_image_stream(
+            state_clone,
+            &current_user_clone,
+            &image,
+            force_pull,
+            run_build_probe,
+            timeout_seconds,
+            &sender,
+        )
+        .await
+        {
+            Ok(result) => {
+                emit_test_challenge_runtime_image_stream_event(
+                    &sender,
+                    TestChallengeRuntimeImageStreamEvent::Completed { result },
+                );
+            }
+            Err(err) => {
+                emit_test_challenge_runtime_image_stream_event(
+                    &sender,
+                    TestChallengeRuntimeImageStreamEvent::Error {
+                        message: image_test_stream_error_message(&err),
+                        step: None,
+                        generated_at: Utc::now(),
+                    },
+                );
+            }
+        }
+    });
+
+    let body_stream = stream::unfold(receiver, |mut receiver| async move {
+        receiver.recv().await.map(|item| (item, receiver))
+    });
+
+    let mut response = Response::new(Body::from_stream(body_stream));
+    response.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("application/x-ndjson; charset=utf-8"),
+    );
+    response
+        .headers_mut()
+        .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-cache"));
+
+    Ok(response)
+}
+
+async fn execute_test_challenge_runtime_image_stream(
+    state: Arc<AppState>,
+    current_user: &AuthenticatedUser,
+    image: &str,
+    force_pull: bool,
+    run_build_probe: bool,
+    timeout_seconds: u64,
+    sender: &mpsc::UnboundedSender<Result<Bytes, Infallible>>,
+) -> AppResult<TestChallengeRuntimeImageResponse> {
+    let mut steps: Vec<TestChallengeRuntimeImageStep> = Vec::new();
+
+    let temp_runtime_context = std::env::temp_dir().join(format!(
+        "rust-ctf-image-test-runtime-{}",
+        Uuid::new_v4().as_simple()
+    ));
+    fs::create_dir_all(&temp_runtime_context)
+        .await
+        .map_err(AppError::internal)?;
+
+    let runtime_result = async {
+        let runtime_compose_file = temp_runtime_context.join("docker-compose.yml");
+        let runtime_compose_content =
+            format!("version: \"3.9\"\nservices:\n  runtime_image_probe:\n    image: {image}\n");
+        fs::write(&runtime_compose_file, runtime_compose_content)
+            .await
+            .map_err(AppError::internal)?;
+        let runtime_compose_path = runtime_compose_file.to_string_lossy().to_string();
+        let runtime_project = format!("imgtest{}", Uuid::new_v4().as_simple());
+
+        if force_pull {
+            let pull_args = vec![
+                "-f".to_string(),
+                runtime_compose_path.clone(),
+                "-p".to_string(),
+                runtime_project.clone(),
+                "pull".to_string(),
+                "runtime_image_probe".to_string(),
+            ];
+            let pull_step = run_runtime_image_test_step_stream(
+                "runtime_pull",
+                &pull_args,
+                &temp_runtime_context,
+                timeout_seconds,
+                sender,
+            )
+            .await?;
+            steps.push(pull_step);
+        }
+
+        let inspect_args = vec![
+            "-f".to_string(),
+            runtime_compose_path.clone(),
+            "-p".to_string(),
+            runtime_project,
+            "config".to_string(),
+        ];
+        let inspect_step = run_runtime_image_test_step_stream(
+            "runtime_config_validate",
+            &inspect_args,
+            &temp_runtime_context,
+            timeout_seconds,
+            sender,
+        )
+        .await?;
+        steps.push(inspect_step);
+
+        Ok::<(), AppError>(())
+    }
+    .await;
+
+    if let Err(err) = fs::remove_dir_all(&temp_runtime_context).await {
+        if err.kind() != std::io::ErrorKind::NotFound {
+            warn!(
+                path = %temp_runtime_context.to_string_lossy(),
+                error = %err,
+                "failed to cleanup image test runtime context"
+            );
+        }
+    }
+    runtime_result?;
+
+    if run_build_probe {
+        let probe_tag = format!("rust-ctf-image-probe:{}", Uuid::new_v4().as_simple());
+        let dockerfile_content = format!("FROM {image}\nLABEL rust_ctf_image_probe=\"1\"\n");
+        let temp_build_context = std::env::temp_dir().join(format!(
+            "rust-ctf-image-test-build-{}",
+            Uuid::new_v4().as_simple()
+        ));
+        fs::create_dir_all(&temp_build_context)
+            .await
+            .map_err(AppError::internal)?;
+
+        let build_result = async {
+            let build_compose_file = temp_build_context.join("docker-compose.yml");
+            let build_compose_content = format!(
+                "version: \"3.9\"\nservices:\n  runtime_build_probe:\n    image: {probe_tag}\n    build:\n      context: .\n      dockerfile: Dockerfile\n"
+            );
+
+            fs::write(temp_build_context.join("Dockerfile"), dockerfile_content)
+                .await
+                .map_err(AppError::internal)?;
+            fs::write(&build_compose_file, build_compose_content)
+                .await
+                .map_err(AppError::internal)?;
+
+            let build_compose_path = build_compose_file.to_string_lossy().to_string();
+            let build_project = format!("imgprobe{}", Uuid::new_v4().as_simple());
+
+            let mut build_args = vec![
+                "-f".to_string(),
+                build_compose_path.clone(),
+                "-p".to_string(),
+                build_project.clone(),
+                "build".to_string(),
+            ];
+            if force_pull {
+                build_args.push("--pull".to_string());
+            }
+            build_args.push("runtime_build_probe".to_string());
+
+            let build_step = run_runtime_image_test_step_stream(
+                "runtime_build_probe",
+                &build_args,
+                &temp_build_context,
+                timeout_seconds,
+                sender,
+            )
+            .await?;
+            steps.push(build_step);
+
+            let cleanup_args = vec![
+                "-f".to_string(),
+                build_compose_path,
+                "-p".to_string(),
+                build_project,
+                "down".to_string(),
+                "--rmi".to_string(),
+                "local".to_string(),
+                "--volumes".to_string(),
+                "--remove-orphans".to_string(),
+            ];
+            let cleanup_step = run_runtime_image_test_step_stream(
+                "runtime_cleanup_probe",
+                &cleanup_args,
+                &temp_build_context,
+                timeout_seconds,
+                sender,
+            )
+            .await?;
+            steps.push(cleanup_step);
+
+            Ok::<(), AppError>(())
+        }
+        .await;
+
+        if let Err(err) = fs::remove_dir_all(&temp_build_context).await {
+            if err.kind() != std::io::ErrorKind::NotFound {
+                warn!(
+                    path = %temp_build_context.to_string_lossy(),
+                    error = %err,
+                    "failed to cleanup image test build context"
+                );
+            }
+        }
+
+        build_result?;
+    }
+
+    let succeeded = steps
+        .iter()
+        .filter(|item| item.step != "runtime_cleanup_probe")
+        .all(|item| item.success);
+
+    record_audit_log(
+        state.as_ref(),
+        current_user,
+        "admin.challenge.runtime.image_test",
+        "challenge_runtime",
+        None,
+        json!({
+            "image": image,
+            "force_pull": force_pull,
+            "run_build_probe": run_build_probe,
+            "timeout_seconds": timeout_seconds,
+            "succeeded": succeeded,
+            "step_count": steps.len()
+        }),
+    )
+    .await;
+
+    Ok(TestChallengeRuntimeImageResponse {
+        image: image.to_string(),
+        force_pull,
+        run_build_probe,
+        succeeded,
+        generated_at: Utc::now(),
+        steps,
+    })
+}
+
+async fn run_runtime_image_test_step_stream(
+    step: &str,
+    args: &[String],
+    workdir: &std::path::Path,
+    timeout_seconds: u64,
+    sender: &mpsc::UnboundedSender<Result<Bytes, Infallible>>,
+) -> AppResult<TestChallengeRuntimeImageStep> {
+    let step_owned = step.to_string();
+    emit_test_challenge_runtime_image_stream_event(
+        sender,
+        TestChallengeRuntimeImageStreamEvent::StepStart {
+            step: step_owned.clone(),
+            command: compose_command_preview(args),
+            generated_at: Utc::now(),
+        },
+    );
+
+    let output = run_compose_compatible_external_command_stream(
+        args,
+        None,
+        Some(workdir),
+        timeout_seconds,
+        |stream_name, line| {
+            emit_test_challenge_runtime_image_stream_event(
+                sender,
+                TestChallengeRuntimeImageStreamEvent::StepLog {
+                    step: step_owned.clone(),
+                    stream: stream_name.to_string(),
+                    line: line.to_string(),
+                    generated_at: Utc::now(),
+                },
+            );
+        },
+    )
+    .await?;
+
+    emit_test_challenge_runtime_image_stream_event(
+        sender,
+        TestChallengeRuntimeImageStreamEvent::StepFinish {
+            step: step_owned.clone(),
+            success: output.success,
+            exit_code: output.exit_code,
+            duration_ms: output.duration_ms,
+            truncated: output.truncated,
+            generated_at: Utc::now(),
+        },
+    );
+
+    Ok(TestChallengeRuntimeImageStep {
+        step: step_owned,
+        success: output.success,
+        exit_code: output.exit_code,
+        duration_ms: output.duration_ms,
+        output: output.output,
+        truncated: output.truncated,
+    })
+}
+
+fn emit_test_challenge_runtime_image_stream_event(
+    sender: &mpsc::UnboundedSender<Result<Bytes, Infallible>>,
+    event: TestChallengeRuntimeImageStreamEvent,
+) {
+    match serde_json::to_string(&event) {
+        Ok(mut line) => {
+            line.push('\n');
+            let _ = sender.send(Ok(Bytes::from(line)));
+        }
+        Err(err) => warn!(error = %err, "failed to serialize image test stream event"),
+    }
+}
+
+fn image_test_stream_error_message(err: &AppError) -> String {
+    match err {
+        AppError::BadRequest(message) => message.clone(),
+        AppError::Unauthorized => "invalid credentials or token".to_string(),
+        AppError::Forbidden => "permission denied".to_string(),
+        AppError::TooManyRequests(message) => message.clone(),
+        AppError::Conflict(message) => message.clone(),
+        AppError::Internal(_) => "unexpected server error".to_string(),
+    }
+}
+
+fn compose_command_preview(args: &[String]) -> String {
+    if args.is_empty() {
+        return "docker compose".to_string();
+    }
+    format!("docker compose {}", args.join(" "))
+}
+
 async fn create_challenge(
     State(state): State<Arc<AppState>>,
     current_user: AuthenticatedUser,
@@ -2768,6 +3215,7 @@ async fn upload_challenge_attachment(
 ) -> AppResult<Json<AdminChallengeAttachmentItem>> {
     ensure_admin_or_judge(&current_user)?;
     ensure_challenge_exists(state.as_ref(), challenge_id).await?;
+    let attachment_limit_bytes = load_challenge_attachment_limit_bytes(state.as_ref()).await?;
 
     let filename = trim_required(&req.filename, "filename")?;
     if filename.chars().count() > 255 {
@@ -2788,10 +3236,11 @@ async fn upload_challenge_attachment(
             "attachment content is empty".to_string(),
         ));
     }
-    if decoded.len() > 20 * 1024 * 1024 {
-        return Err(AppError::BadRequest(
-            "attachment size must be <= 20MB".to_string(),
-        ));
+    if decoded.len() as i64 > attachment_limit_bytes {
+        return Err(AppError::BadRequest(format!(
+            "attachment size must be <= {}",
+            format_bytes_for_message(attachment_limit_bytes)
+        )));
     }
 
     let content_type = req
@@ -3010,14 +3459,18 @@ async fn create_contest(
             "dynamic_decay must be between 1 and 100000".to_string(),
         ));
     }
-    let first_blood_bonus_percent =
-        validate_blood_bonus_percent(req.first_blood_bonus_percent.unwrap_or(10), "first_blood_bonus_percent")?;
+    let first_blood_bonus_percent = validate_blood_bonus_percent(
+        req.first_blood_bonus_percent.unwrap_or(10),
+        "first_blood_bonus_percent",
+    )?;
     let second_blood_bonus_percent = validate_blood_bonus_percent(
         req.second_blood_bonus_percent.unwrap_or(5),
         "second_blood_bonus_percent",
     )?;
-    let third_blood_bonus_percent =
-        validate_blood_bonus_percent(req.third_blood_bonus_percent.unwrap_or(2), "third_blood_bonus_percent")?;
+    let third_blood_bonus_percent = validate_blood_bonus_percent(
+        req.third_blood_bonus_percent.unwrap_or(2),
+        "third_blood_bonus_percent",
+    )?;
 
     let row = sqlx::query_as::<_, AdminContestItem>(
         "INSERT INTO contests (
@@ -5553,6 +6006,40 @@ fn normalize_optional_text(value: &str) -> Option<&str> {
     }
 }
 
+fn format_bytes_for_message(size_bytes: i64) -> String {
+    if size_bytes <= 0 {
+        return "0 B".to_string();
+    }
+    if size_bytes < 1024 {
+        return format!("{size_bytes} B");
+    }
+    if size_bytes < 1024 * 1024 {
+        return format!("{:.1} KB", size_bytes as f64 / 1024.0);
+    }
+    if size_bytes < 1024 * 1024 * 1024 {
+        return format!("{:.1} MB", size_bytes as f64 / (1024.0 * 1024.0));
+    }
+    format!("{:.2} GB", size_bytes as f64 / (1024.0 * 1024.0 * 1024.0))
+}
+
+async fn load_challenge_attachment_limit_bytes(state: &AppState) -> AppResult<i64> {
+    let configured = sqlx::query_scalar::<_, i64>(
+        "SELECT challenge_attachment_max_bytes
+         FROM site_settings
+         WHERE id = TRUE
+         LIMIT 1",
+    )
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    let value = configured.unwrap_or(DEFAULT_CHALLENGE_ATTACHMENT_MAX_BYTES);
+    Ok(value.clamp(
+        MIN_CHALLENGE_ATTACHMENT_MAX_BYTES,
+        MAX_CHALLENGE_ATTACHMENT_MAX_BYTES,
+    ))
+}
+
 fn validate_compose_runtime_configuration(
     challenge_type: &str,
     compose_template: Option<&str>,
@@ -5637,7 +6124,9 @@ async fn ensure_challenge_category_exists(state: &AppState, category: &str) -> A
     if exists {
         Ok(())
     } else {
-        Err(AppError::BadRequest("challenge category not found".to_string()))
+        Err(AppError::BadRequest(
+            "challenge category not found".to_string(),
+        ))
     }
 }
 
@@ -5883,6 +6372,82 @@ async fn run_compose_compatible_external_command(
     }
 }
 
+#[derive(Debug)]
+struct CommandLogLine {
+    stream: &'static str,
+    line: String,
+}
+
+async fn run_compose_compatible_external_command_stream<F>(
+    args: &[String],
+    stdin_input: Option<&str>,
+    workdir: Option<&std::path::Path>,
+    timeout_seconds: u64,
+    mut on_log_line: F,
+) -> AppResult<ProcessExecutionOutput>
+where
+    F: FnMut(&str, &str),
+{
+    let mut docker_args: Vec<String> = Vec::with_capacity(args.len() + 1);
+    docker_args.push("compose".to_string());
+    docker_args.extend(args.iter().cloned());
+    let docker_args_ref = docker_args.iter().map(String::as_str).collect::<Vec<_>>();
+
+    let mut primary_output: Option<ProcessExecutionOutput> = None;
+    match run_external_command_stream(
+        "docker",
+        &docker_args_ref,
+        stdin_input,
+        workdir,
+        timeout_seconds,
+        |stream_name, line| on_log_line(stream_name, line),
+    )
+    .await
+    {
+        Ok(output) => {
+            if output.success || !should_fallback_to_legacy_compose_output(&output.output) {
+                return Ok(output);
+            }
+            primary_output = Some(output);
+        }
+        Err(AppError::BadRequest(message)) if message == "docker command not found" => {}
+        Err(err) => return Err(err),
+    }
+
+    on_log_line("stderr", "[executor=fallback] switching to docker-compose");
+    let legacy_args_ref = args.iter().map(String::as_str).collect::<Vec<_>>();
+    match run_external_command_stream(
+        "docker-compose",
+        &legacy_args_ref,
+        stdin_input,
+        workdir,
+        timeout_seconds,
+        |stream_name, line| on_log_line(stream_name, line),
+    )
+    .await
+    {
+        Ok(mut legacy_output) => {
+            let prefix = "[executor=docker-compose]\n";
+            legacy_output.output = if legacy_output.output.is_empty() {
+                prefix.trim_end().to_string()
+            } else {
+                format!("{prefix}{}", legacy_output.output)
+            };
+            Ok(legacy_output)
+        }
+        Err(AppError::BadRequest(message)) if message == "docker-compose command not found" => {
+            if let Some(output) = primary_output {
+                Ok(output)
+            } else {
+                Err(AppError::BadRequest(
+                    "docker compose command is unavailable (tried 'docker compose' and 'docker-compose')".to_string(),
+                ))
+            }
+        }
+        Err(err) => Err(err),
+    }
+}
+
 fn should_fallback_to_legacy_compose_output(raw: &str) -> bool {
     let lowered = raw.to_ascii_lowercase();
     lowered.contains("is not a docker command")
@@ -5893,6 +6458,135 @@ fn should_fallback_to_legacy_compose_output(raw: &str) -> bool {
                 || lowered.contains("in -p")
                 || lowered.contains("see 'docker --help'")))
         || (lowered.contains("client version") && lowered.contains("minimum supported api version"))
+}
+
+async fn run_external_command_stream<F>(
+    program: &str,
+    args: &[&str],
+    stdin_input: Option<&str>,
+    workdir: Option<&std::path::Path>,
+    timeout_seconds: u64,
+    mut on_log_line: F,
+) -> AppResult<ProcessExecutionOutput>
+where
+    F: FnMut(&str, &str),
+{
+    let mut command = Command::new(program);
+    command.args(args);
+    command.kill_on_drop(true);
+    command.env_remove("DOCKER_API_VERSION");
+    if let Some(dir) = workdir {
+        command.current_dir(dir);
+    }
+
+    if stdin_input.is_some() {
+        command.stdin(Stdio::piped());
+    } else {
+        command.stdin(Stdio::null());
+    }
+    command.stdout(Stdio::piped());
+    command.stderr(Stdio::piped());
+
+    let start = Instant::now();
+    let mut child = command.spawn().map_err(|err| {
+        if err.kind() == std::io::ErrorKind::NotFound {
+            AppError::BadRequest(format!("{program} command not found"))
+        } else {
+            AppError::internal(err)
+        }
+    })?;
+
+    if let Some(input) = stdin_input {
+        if let Some(mut stdin) = child.stdin.take() {
+            stdin
+                .write_all(input.as_bytes())
+                .await
+                .map_err(AppError::internal)?;
+            stdin.shutdown().await.map_err(AppError::internal)?;
+        }
+    }
+
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| AppError::internal(anyhow::anyhow!("failed to capture child stdout")))?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| AppError::internal(anyhow::anyhow!("failed to capture child stderr")))?;
+
+    let (log_sender, mut log_receiver) = mpsc::unbounded_channel::<CommandLogLine>();
+    let stdout_task = tokio::spawn(pump_command_output_lines(
+        stdout,
+        "stdout",
+        log_sender.clone(),
+    ));
+    let stderr_task = tokio::spawn(pump_command_output_lines(stderr, "stderr", log_sender));
+
+    let wait_deadline = tokio::time::sleep(TokioDuration::from_secs(timeout_seconds));
+    tokio::pin!(wait_deadline);
+
+    let mut exit_code = None;
+    let mut merged: Vec<u8> = Vec::new();
+
+    loop {
+        tokio::select! {
+            maybe_log = log_receiver.recv() => {
+                match maybe_log {
+                    Some(item) => {
+                        append_command_output_line(&mut merged, item.line.as_str());
+                        on_log_line(item.stream, item.line.as_str());
+                    }
+                    None => {
+                        if exit_code.is_some() {
+                            break;
+                        }
+                    }
+                }
+            }
+            wait_result = child.wait(), if exit_code.is_none() => {
+                let status = wait_result.map_err(AppError::internal)?;
+                exit_code = status.code();
+            }
+            _ = &mut wait_deadline, if exit_code.is_none() => {
+                return Ok(ProcessExecutionOutput {
+                    success: false,
+                    exit_code: None,
+                    duration_ms: start.elapsed().as_millis() as i64,
+                    output: format!("command timed out after {timeout_seconds} seconds"),
+                    truncated: false,
+                });
+            }
+        }
+    }
+
+    match stdout_task.await {
+        Ok(Ok(())) => {}
+        Ok(Err(err)) => {
+            warn!(error = %err, "failed to read child stdout stream");
+        }
+        Err(err) => {
+            warn!(error = %err, "failed to join child stdout reader task");
+        }
+    }
+    match stderr_task.await {
+        Ok(Ok(())) => {}
+        Ok(Err(err)) => {
+            warn!(error = %err, "failed to read child stderr stream");
+        }
+        Err(err) => {
+            warn!(error = %err, "failed to join child stderr reader task");
+        }
+    }
+
+    let (text, truncated) = truncate_log_bytes(merged);
+    Ok(ProcessExecutionOutput {
+        success: exit_code.unwrap_or(1) == 0,
+        exit_code,
+        duration_ms: start.elapsed().as_millis() as i64,
+        output: text,
+        truncated,
+    })
 }
 
 async fn run_external_command(
@@ -5972,6 +6666,28 @@ async fn run_external_command(
         output: text,
         truncated,
     })
+}
+
+fn append_command_output_line(target: &mut Vec<u8>, line: &str) {
+    if !target.is_empty() {
+        target.extend_from_slice(b"\n");
+    }
+    target.extend_from_slice(line.as_bytes());
+}
+
+async fn pump_command_output_lines<R>(
+    reader: R,
+    stream: &'static str,
+    sender: mpsc::UnboundedSender<CommandLogLine>,
+) -> std::io::Result<()>
+where
+    R: tokio::io::AsyncRead + Unpin,
+{
+    let mut lines = BufReader::new(reader).lines();
+    while let Some(line) = lines.next_line().await? {
+        let _ = sender.send(CommandLogLine { stream, line });
+    }
+    Ok(())
 }
 
 fn truncate_log_bytes(bytes: Vec<u8>) -> (String, bool) {

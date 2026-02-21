@@ -25,21 +25,31 @@
         <p v-if="!loadingChallenges && challenges.length === 0" class="soft">{{ tr("暂无可见题目。", "No visible challenges.") }}</p>
 
         <div class="list-board">
-          <button
-            v-for="challenge in challenges"
-            :key="challenge.id"
-            class="select-item"
-            :class="{ active: challenge.id === selectedChallengeId }"
-            type="button"
-            @click="selectedChallengeId = challenge.id"
+          <section
+            v-for="group in challengeGroups"
+            :key="group.category"
+            class="challenge-category-group stack"
           >
-            <div class="row-between">
-              <strong>{{ challenge.title }}</strong>
-              <span class="badge">{{ challenge.challenge_type }}</span>
-            </div>
-            <p class="soft">{{ challenge.category }} · {{ challenge.difficulty }}</p>
-            <p class="soft mono">{{ tr("分值", "Score") }} {{ challenge.static_score }}</p>
-          </button>
+            <header class="row-between challenge-category-head">
+              <h3>{{ group.category }}</h3>
+              <span class="badge">{{ group.items.length }}</span>
+            </header>
+            <button
+              v-for="challenge in group.items"
+              :key="challenge.id"
+              class="select-item"
+              :class="{ active: challenge.id === selectedChallengeId }"
+              type="button"
+              @click="selectedChallengeId = challenge.id"
+            >
+              <div class="row-between">
+                <strong>{{ challenge.title }}</strong>
+                <span class="badge">{{ challenge.challenge_type }}</span>
+              </div>
+              <p class="soft">{{ challenge.category }} · {{ challenge.difficulty }}</p>
+              <p class="soft mono">{{ tr("分值", "Score") }} {{ challenge.static_score }}</p>
+            </button>
+          </section>
         </div>
       </aside>
 
@@ -271,7 +281,16 @@
           <p v-if="announcementError" class="error">{{ announcementError }}</p>
 
           <div class="list-board">
-            <article v-for="announcement in contestAnnouncements" :key="announcement.id" class="surface stack notice-card">
+            <article
+              v-for="announcement in contestAnnouncements"
+              :key="announcement.id"
+              class="surface stack notice-card notice-card-clickable"
+              role="button"
+              tabindex="0"
+              @click="openAnnouncementModal(announcement)"
+              @keydown.enter.prevent="openAnnouncementModal(announcement)"
+              @keydown.space.prevent="openAnnouncementModal(announcement)"
+            >
               <div class="row-between">
                 <strong>{{ announcement.title }}</strong>
                 <span v-if="announcement.is_pinned" class="badge">{{ tr("置顶", "Pinned") }}</span>
@@ -280,10 +299,13 @@
                 {{ tr("发布时间", "Published at") }}:
                 {{ announcement.published_at ? formatTime(announcement.published_at) : formatTime(announcement.created_at) }}
               </p>
-              <article
-                class="muted markdown-body announcement-content"
+              <div
+                class="muted markdown-body announcement-content announcement-preview"
                 v-html="renderAnnouncementContent(announcement.content)"
-              ></article>
+              ></div>
+              <p class="soft announcement-preview-hint">
+                {{ tr("点击查看完整公告", "Click to view full announcement") }}
+              </p>
             </article>
           </div>
           <p v-if="!loadingAnnouncements && contestAnnouncements.length === 0" class="soft">
@@ -291,6 +313,41 @@
           </p>
         </section>
       </aside>
+    </div>
+
+    <div
+      v-if="activeAnnouncement"
+      class="announcement-modal"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="tr('公告详情', 'Announcement details')"
+      @click.self="closeAnnouncementModal"
+    >
+      <article class="announcement-modal-card stack">
+        <header class="row-between announcement-modal-head">
+          <div class="stack gap-xs">
+            <strong>{{ activeAnnouncement.title }}</strong>
+            <p class="soft mono announcement-modal-meta">
+              {{ tr("发布时间", "Published at") }}:
+              {{
+                activeAnnouncement.published_at
+                  ? formatTime(activeAnnouncement.published_at)
+                  : formatTime(activeAnnouncement.created_at)
+              }}
+            </p>
+          </div>
+          <div class="announcement-modal-actions">
+            <span v-if="activeAnnouncement.is_pinned" class="badge">{{ tr("置顶", "Pinned") }}</span>
+            <button class="btn-line" type="button" @click="closeAnnouncementModal">
+              {{ tr("关闭", "Close") }}
+            </button>
+          </div>
+        </header>
+        <div
+          class="markdown-body announcement-content announcement-modal-content"
+          v-html="renderAnnouncementContent(activeAnnouncement.content)"
+        ></div>
+      </article>
     </div>
   </section>
 </template>
@@ -363,6 +420,7 @@ const scoreboardTrendCanvasRef = ref<HTMLCanvasElement | null>(null);
 const contestAnnouncements = ref<ContestAnnouncementItem[]>([]);
 const loadingAnnouncements = ref(false);
 const announcementError = ref("");
+const activeAnnouncement = ref<ContestAnnouncementItem | null>(null);
 
 const wsState = ref("closed");
 let scoreboardSocket: WebSocket | null = null;
@@ -379,6 +437,24 @@ const selectedChallenge = computed(() => {
     return null;
   }
   return challenges.value.find((item) => item.id === selectedChallengeId.value) ?? null;
+});
+
+const challengeGroups = computed(() => {
+  const groups = new Map<string, ContestChallengeItem[]>();
+  for (const item of challenges.value) {
+    const category = item.category?.trim() || tr("未分类", "Uncategorized");
+    const bucket = groups.get(category);
+    if (bucket) {
+      bucket.push(item);
+    } else {
+      groups.set(category, [item]);
+    }
+  }
+
+  return Array.from(groups.entries()).map(([category, items]) => ({
+    category,
+    items
+  }));
 });
 
 const canManageInstance = computed(() => {
@@ -461,6 +537,20 @@ function formatTime(input: string) {
 
 function renderAnnouncementContent(markdown: string) {
   return renderMarkdownToHtml(markdown);
+}
+
+function openAnnouncementModal(announcement: ContestAnnouncementItem) {
+  activeAnnouncement.value = announcement;
+}
+
+function closeAnnouncementModal() {
+  activeAnnouncement.value = null;
+}
+
+function handleWindowKeydown(event: KeyboardEvent) {
+  if (event.key === "Escape" && activeAnnouncement.value) {
+    closeAnnouncementModal();
+  }
 }
 
 function openScoreboardWall(mode: "score" | "rank") {
@@ -712,6 +802,8 @@ function drawScoreboardTrendChart(
       if (pointIndex === 0) {
         ctx.moveTo(x, y);
       } else {
+        const previousY = yOf(team.values[pointIndex - 1]);
+        ctx.lineTo(x, previousY);
         ctx.lineTo(x, y);
       }
     });
@@ -1214,6 +1306,7 @@ onMounted(async () => {
   await Promise.all([loadChallenges(), loadAnnouncements(), loadScoreboard()]);
   openScoreboardSocket();
   scheduleTrendRender();
+  window.addEventListener("keydown", handleWindowKeydown);
   themeObserver = new MutationObserver(() => {
     scheduleTrendRender();
   });
@@ -1226,6 +1319,7 @@ onMounted(async () => {
 onUnmounted(() => {
   shouldReconnectScoreboard = false;
   teardownSocket();
+  window.removeEventListener("keydown", handleWindowKeydown);
   if (themeObserver) {
     themeObserver.disconnect();
     themeObserver = null;
@@ -1242,6 +1336,20 @@ onUnmounted(() => {
   align-items: start;
 }
 
+.challenge-category-group {
+  gap: 0.38rem;
+}
+
+.challenge-category-head {
+  padding: 0.12rem 0.08rem;
+}
+
+.challenge-category-head h3 {
+  margin: 0;
+  font-size: 0.88rem;
+  letter-spacing: 0.01em;
+}
+
 .instance-panel {
   background: rgba(255, 255, 255, 0.24);
 }
@@ -1250,8 +1358,90 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.24);
 }
 
+.notice-card-clickable {
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.notice-card-clickable:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-soft);
+}
+
+.notice-card-clickable:focus-visible {
+  outline: 2px solid var(--fg-0);
+  outline-offset: 2px;
+}
+
 .announcement-content {
   margin: 0;
+}
+
+.announcement-preview {
+  height: 10.5rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.announcement-preview::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2.6rem;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(250, 250, 250, 0.96));
+}
+
+.announcement-preview-hint {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.announcement-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 94;
+  padding: 1rem;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 8, 8, 0.42);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.announcement-modal-card {
+  width: min(780px, 96vw);
+  max-height: min(84vh, 840px);
+  padding: 0.88rem 0.94rem;
+  border-radius: var(--radius-lg);
+  background: var(--glass-strong);
+  box-shadow: var(--shadow-strong);
+  border: 1px solid var(--line-mid);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 0.72rem;
+}
+
+.announcement-modal-head {
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+
+.announcement-modal-meta {
+  margin: 0;
+}
+
+.announcement-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.announcement-modal-content {
+  overflow: auto;
+  padding-right: 0.18rem;
 }
 
 .trend-toolbar {
@@ -1278,6 +1468,10 @@ onUnmounted(() => {
 
 :root[data-theme="dark"] .trend-canvas-wrap {
   background: var(--glass-mid);
+}
+
+:root[data-theme="dark"] .announcement-preview::after {
+  background: linear-gradient(to bottom, rgba(10, 10, 10, 0), rgba(20, 20, 20, 0.96));
 }
 
 @media (max-width: 1180px) {
