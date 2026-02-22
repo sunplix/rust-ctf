@@ -24,6 +24,8 @@ use crate::{
     state::AppState,
 };
 
+const RUNTIME_ATTACHMENT_FILENAME_PREFIX: &str = "runtime/";
+
 #[derive(Debug, Serialize, FromRow)]
 struct ContestListItem {
     id: Uuid,
@@ -503,10 +505,12 @@ async fn list_contest_challenge_attachments(
                 created_at
          FROM challenge_attachments
          WHERE challenge_id = $1
+           AND filename NOT LIKE $2
          ORDER BY created_at DESC
          LIMIT 200",
     )
     .bind(challenge_id)
+    .bind(format!("{RUNTIME_ATTACHMENT_FILENAME_PREFIX}%"))
     .fetch_all(&state.db)
     .await
     .map_err(AppError::internal)?;
@@ -553,6 +557,11 @@ async fn download_contest_challenge_attachment(
     .ok_or(AppError::BadRequest(
         "challenge attachment not found".to_string(),
     ))?;
+    if row.filename.starts_with(RUNTIME_ATTACHMENT_FILENAME_PREFIX) {
+        return Err(AppError::BadRequest(
+            "challenge attachment not found".to_string(),
+        ));
+    }
 
     let resolved_path =
         resolve_challenge_attachment_storage_path(state.as_ref(), challenge_id, &row.storage_path);

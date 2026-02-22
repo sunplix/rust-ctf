@@ -1,9 +1,5 @@
 use std::{
-    collections::HashSet,
-    convert::Infallible,
-    path::PathBuf,
-    process::Stdio,
-    sync::Arc,
+    collections::HashSet, convert::Infallible, path::PathBuf, process::Stdio, sync::Arc,
     time::Instant,
 };
 
@@ -39,7 +35,7 @@ use crate::{
     routes::instances,
     runtime_template::{
         build_single_image_compose_template, parse_runtime_metadata_options,
-        validate_compose_template_schema, RuntimeMode,
+        render_compose_template_variables, validate_compose_template_schema, RuntimeMode,
     },
     state::AppState,
 };
@@ -284,6 +280,16 @@ struct TestChallengeRuntimeImageRequest {
     timeout_seconds: Option<u64>,
 }
 
+#[derive(Debug, Deserialize)]
+struct TestChallengeRuntimeComposeRequest {
+    challenge_id: Option<Uuid>,
+    compose_template: String,
+    metadata: Option<Value>,
+    force_pull: Option<bool>,
+    run_build_probe: Option<bool>,
+    timeout_seconds: Option<u64>,
+}
+
 #[derive(Debug, Serialize)]
 struct TestChallengeRuntimeImageStep {
     step: String,
@@ -297,6 +303,16 @@ struct TestChallengeRuntimeImageStep {
 #[derive(Debug, Serialize)]
 struct TestChallengeRuntimeImageResponse {
     image: String,
+    force_pull: bool,
+    run_build_probe: bool,
+    succeeded: bool,
+    generated_at: DateTime<Utc>,
+    steps: Vec<TestChallengeRuntimeImageStep>,
+}
+
+#[derive(Debug, Serialize)]
+struct TestChallengeRuntimeComposeResponse {
+    compose_template_preview: String,
     force_pull: bool,
     run_build_probe: bool,
     succeeded: bool,
@@ -335,6 +351,45 @@ enum TestChallengeRuntimeImageStreamEvent {
     },
     Completed {
         result: TestChallengeRuntimeImageResponse,
+    },
+    Error {
+        message: String,
+        step: Option<String>,
+        generated_at: DateTime<Utc>,
+    },
+}
+
+#[derive(Debug, Serialize)]
+#[serde(tag = "event", rename_all = "snake_case")]
+enum TestChallengeRuntimeComposeStreamEvent {
+    Start {
+        compose_template_preview: String,
+        force_pull: bool,
+        run_build_probe: bool,
+        timeout_seconds: u64,
+        generated_at: DateTime<Utc>,
+    },
+    StepStart {
+        step: String,
+        command: String,
+        generated_at: DateTime<Utc>,
+    },
+    StepLog {
+        step: String,
+        stream: String,
+        line: String,
+        generated_at: DateTime<Utc>,
+    },
+    StepFinish {
+        step: String,
+        success: bool,
+        exit_code: Option<i32>,
+        duration_ms: i64,
+        truncated: bool,
+        generated_at: DateTime<Utc>,
+    },
+    Completed {
+        result: TestChallengeRuntimeComposeResponse,
     },
     Error {
         message: String,
@@ -974,6 +1029,14 @@ pub fn router() -> Router<Arc<AppState>> {
         .route(
             "/admin/challenges/runtime-template/test-image/stream",
             post(test_challenge_runtime_image_stream),
+        )
+        .route(
+            "/admin/challenges/runtime-template/test-compose",
+            post(test_challenge_runtime_compose),
+        )
+        .route(
+            "/admin/challenges/runtime-template/test-compose/stream",
+            post(test_challenge_runtime_compose_stream),
         )
         .route(
             "/admin/challenges/{challenge_id}",
@@ -2463,6 +2526,530 @@ async fn execute_test_challenge_runtime_image_stream(
     })
 }
 
+fn compose_template_preview(template: &str) -> String {
+    let first_line = template
+        .lines()
+        .map(str::trim)
+        .find(|line| !line.is_empty())
+        .unwrap_or("<empty>");
+    if first_line.chars().count() > 120 {
+        let truncated = first_line.chars().take(117).collect::<String>();
+        format!("{truncated}...")
+    } else {
+        first_line.to_string()
+    }
+}
+
+fn render_compose_template_for_admin_test(
+    compose_template: &str,
+    metadata: &Value,
+    compose_project_name: &str,
+) -> AppResult<String> {
+    validate_compose_template_schema(compose_template, metadata).map_err(AppError::BadRequest)?;
+
+    let mut rendered = render_compose_template_variables(compose_template, metadata)
+        .map_err(AppError::BadRequest)?;
+
+    let network_name = format!("{compose_project_name}_net");
+    let replacements = [
+        ("{{PROJECT_NAME}}", compose_project_name),
+        ("{{COMPOSE_PROJECT_NAME}}", compose_project_name),
+        ("{{NETWORK_NAME}}", network_name.as_str()),
+        ("{{SUBNET}}", "10.66.0.0/24"),
+        ("{{SUBNET_CIDR}}", "10.66.0.0/24"),
+        ("{{TEAM_ID}}", "team-test"),
+        ("{{CONTEST_ID}}", "contest-test"),
+        ("{{CHALLENGE_ID}}", "challenge-test"),
+        ("{{ENTRYPOINT_URL}}", "http://127.0.0.1:39080"),
+        ("{{ENTRYPOINT_HOST}}", "10.66.0.2"),
+        ("{{GATEWAY_IP}}", "10.66.0.1"),
+        ("{{PUBLIC_HOST}}", "127.0.0.1"),
+        ("{{HOST_PORT}}", "39080"),
+        ("{{ACCESS_HOST_PORT}}", "39080"),
+        ("{{ACCESS_USERNAME}}", "ctf"),
+        ("{{ACCESS_PASSWORD}}", "ctf123456"),
+        ("{{CPU_LIMIT}}", "1.0"),
+        ("{{MEMORY_LIMIT_MB}}", "512"),
+        ("{{MEMORY_LIMIT}}", "512m"),
+        (
+            "{{HEARTBEAT_REPORT_URL}}",
+            "http://127.0.0.1:8080/api/v1/instances/heartbeat/report",
+        ),
+        ("{{HEARTBEAT_REPORT_TOKEN}}", "runtime-compose-test-token"),
+        ("{{HEARTBEAT_INTERVAL_SECONDS}}", "30"),
+    ];
+    for (token, value) in replacements {
+        rendered = rendered.replace(token, value);
+    }
+
+    rendered = rendered.replace("{{DYNAMIC_FLAG}}", "ctf{runtime_test_dynamic_flag}");
+    rendered = rendered.replace("{{FLAG}}", "ctf{runtime_test_dynamic_flag}");
+
+    Ok(rendered)
+}
+
+async fn test_challenge_runtime_compose(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Json(req): Json<TestChallengeRuntimeComposeRequest>,
+) -> AppResult<Json<TestChallengeRuntimeComposeResponse>> {
+    ensure_admin_or_judge(&current_user)?;
+
+    let challenge_id = req.challenge_id;
+    if let Some(value) = challenge_id {
+        ensure_challenge_exists(state.as_ref(), value).await?;
+    }
+    let compose_template = trim_required(req.compose_template.as_str(), "compose_template")?;
+    let metadata = req.metadata.unwrap_or(Value::Object(Default::default()));
+    let force_pull = req.force_pull.unwrap_or(true);
+    let run_build_probe = req.run_build_probe.unwrap_or(true);
+    let timeout_seconds = req
+        .timeout_seconds
+        .unwrap_or(state.config.compose_command_timeout_seconds)
+        .clamp(10, 900);
+
+    let compose_project = format!("cmptest{}", Uuid::new_v4().as_simple());
+    let rendered_compose = render_compose_template_for_admin_test(
+        compose_template.as_str(),
+        &metadata,
+        &compose_project,
+    )?;
+    let template_preview = compose_template_preview(compose_template.as_str());
+
+    let mut steps: Vec<TestChallengeRuntimeImageStep> = Vec::new();
+    let temp_runtime_context = std::env::temp_dir().join(format!(
+        "rust-ctf-compose-test-runtime-{}",
+        Uuid::new_v4().as_simple()
+    ));
+    fs::create_dir_all(&temp_runtime_context)
+        .await
+        .map_err(AppError::internal)?;
+
+    let runtime_result = async {
+        let runtime_compose_file = temp_runtime_context.join("docker-compose.yml");
+        fs::write(&runtime_compose_file, rendered_compose)
+            .await
+            .map_err(AppError::internal)?;
+        if let Some(value) = challenge_id {
+            restore_runtime_attachments_for_compose_test(
+                state.as_ref(),
+                value,
+                temp_runtime_context.as_path(),
+            )
+            .await?;
+        }
+        let runtime_compose_path = runtime_compose_file.to_string_lossy().to_string();
+
+        let inspect_args = vec![
+            "-f".to_string(),
+            runtime_compose_path.clone(),
+            "-p".to_string(),
+            compose_project.clone(),
+            "config".to_string(),
+        ];
+        let inspect_output = run_compose_compatible_external_command(
+            &inspect_args,
+            None,
+            Some(&temp_runtime_context),
+            timeout_seconds,
+        )
+        .await?;
+        steps.push(TestChallengeRuntimeImageStep {
+            step: "runtime_compose_config_validate".to_string(),
+            success: inspect_output.success,
+            exit_code: inspect_output.exit_code,
+            duration_ms: inspect_output.duration_ms,
+            output: inspect_output.output,
+            truncated: inspect_output.truncated,
+        });
+
+        if force_pull {
+            let pull_args = vec![
+                "-f".to_string(),
+                runtime_compose_path.clone(),
+                "-p".to_string(),
+                compose_project.clone(),
+                "pull".to_string(),
+            ];
+            let pull_output = run_compose_compatible_external_command(
+                &pull_args,
+                None,
+                Some(&temp_runtime_context),
+                timeout_seconds,
+            )
+            .await?;
+            steps.push(TestChallengeRuntimeImageStep {
+                step: "runtime_compose_pull".to_string(),
+                success: pull_output.success,
+                exit_code: pull_output.exit_code,
+                duration_ms: pull_output.duration_ms,
+                output: pull_output.output,
+                truncated: pull_output.truncated,
+            });
+        }
+
+        if run_build_probe {
+            let mut build_args = vec![
+                "-f".to_string(),
+                runtime_compose_path.clone(),
+                "-p".to_string(),
+                compose_project.clone(),
+                "build".to_string(),
+            ];
+            if force_pull {
+                build_args.push("--pull".to_string());
+            }
+
+            let build_output = run_compose_compatible_external_command(
+                &build_args,
+                None,
+                Some(&temp_runtime_context),
+                timeout_seconds,
+            )
+            .await?;
+            steps.push(TestChallengeRuntimeImageStep {
+                step: "runtime_compose_build_probe".to_string(),
+                success: build_output.success,
+                exit_code: build_output.exit_code,
+                duration_ms: build_output.duration_ms,
+                output: build_output.output,
+                truncated: build_output.truncated,
+            });
+        }
+
+        let mut cleanup_args = vec![
+            "-f".to_string(),
+            runtime_compose_path,
+            "-p".to_string(),
+            compose_project.clone(),
+            "down".to_string(),
+            "--volumes".to_string(),
+            "--remove-orphans".to_string(),
+        ];
+        if run_build_probe {
+            cleanup_args.push("--rmi".to_string());
+            cleanup_args.push("local".to_string());
+        }
+        let cleanup_output = run_compose_compatible_external_command(
+            &cleanup_args,
+            None,
+            Some(&temp_runtime_context),
+            timeout_seconds,
+        )
+        .await?;
+        steps.push(TestChallengeRuntimeImageStep {
+            step: "runtime_compose_cleanup_probe".to_string(),
+            success: cleanup_output.success,
+            exit_code: cleanup_output.exit_code,
+            duration_ms: cleanup_output.duration_ms,
+            output: cleanup_output.output,
+            truncated: cleanup_output.truncated,
+        });
+
+        Ok::<(), AppError>(())
+    }
+    .await;
+
+    if let Err(err) = fs::remove_dir_all(&temp_runtime_context).await {
+        if err.kind() != std::io::ErrorKind::NotFound {
+            warn!(
+                path = %temp_runtime_context.to_string_lossy(),
+                error = %err,
+                "failed to cleanup compose test runtime context"
+            );
+        }
+    }
+    runtime_result?;
+
+    let succeeded = steps
+        .iter()
+        .filter(|item| item.step != "runtime_compose_cleanup_probe")
+        .all(|item| item.success);
+
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.challenge.runtime.compose_test",
+        "challenge_runtime",
+        None,
+        json!({
+            "compose_template_preview": &template_preview,
+            "force_pull": force_pull,
+            "run_build_probe": run_build_probe,
+            "timeout_seconds": timeout_seconds,
+            "succeeded": succeeded,
+            "step_count": steps.len()
+        }),
+    )
+    .await;
+
+    Ok(Json(TestChallengeRuntimeComposeResponse {
+        compose_template_preview: template_preview,
+        force_pull,
+        run_build_probe,
+        succeeded,
+        generated_at: Utc::now(),
+        steps,
+    }))
+}
+
+async fn test_challenge_runtime_compose_stream(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Json(req): Json<TestChallengeRuntimeComposeRequest>,
+) -> AppResult<Response> {
+    ensure_admin_or_judge(&current_user)?;
+
+    let challenge_id = req.challenge_id;
+    if let Some(value) = challenge_id {
+        ensure_challenge_exists(state.as_ref(), value).await?;
+    }
+    let compose_template = trim_required(req.compose_template.as_str(), "compose_template")?;
+    let metadata = req.metadata.unwrap_or(Value::Object(Default::default()));
+    let force_pull = req.force_pull.unwrap_or(true);
+    let run_build_probe = req.run_build_probe.unwrap_or(true);
+    let timeout_seconds = req
+        .timeout_seconds
+        .unwrap_or(state.config.compose_command_timeout_seconds)
+        .clamp(10, 900);
+
+    let compose_project = format!("cmptest{}", Uuid::new_v4().as_simple());
+    let rendered_compose = render_compose_template_for_admin_test(
+        compose_template.as_str(),
+        &metadata,
+        &compose_project,
+    )?;
+    let template_preview = compose_template_preview(compose_template.as_str());
+
+    let (sender, receiver) = mpsc::unbounded_channel::<Result<Bytes, Infallible>>();
+    let state_clone = Arc::clone(&state);
+    let current_user_clone = current_user.clone();
+
+    tokio::spawn(async move {
+        emit_test_challenge_runtime_compose_stream_event(
+            &sender,
+            TestChallengeRuntimeComposeStreamEvent::Start {
+                compose_template_preview: template_preview.clone(),
+                force_pull,
+                run_build_probe,
+                timeout_seconds,
+                generated_at: Utc::now(),
+            },
+        );
+
+        match execute_test_challenge_runtime_compose_stream(
+            state_clone,
+            &current_user_clone,
+            &template_preview,
+            challenge_id,
+            &compose_project,
+            rendered_compose.as_str(),
+            force_pull,
+            run_build_probe,
+            timeout_seconds,
+            &sender,
+        )
+        .await
+        {
+            Ok(result) => {
+                emit_test_challenge_runtime_compose_stream_event(
+                    &sender,
+                    TestChallengeRuntimeComposeStreamEvent::Completed { result },
+                );
+            }
+            Err(err) => {
+                emit_test_challenge_runtime_compose_stream_event(
+                    &sender,
+                    TestChallengeRuntimeComposeStreamEvent::Error {
+                        message: image_test_stream_error_message(&err),
+                        step: None,
+                        generated_at: Utc::now(),
+                    },
+                );
+            }
+        }
+    });
+
+    let body_stream = stream::unfold(receiver, |mut receiver| async move {
+        receiver.recv().await.map(|item| (item, receiver))
+    });
+
+    let mut response = Response::new(Body::from_stream(body_stream));
+    response.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("application/x-ndjson; charset=utf-8"),
+    );
+    response
+        .headers_mut()
+        .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-cache"));
+
+    Ok(response)
+}
+
+async fn execute_test_challenge_runtime_compose_stream(
+    state: Arc<AppState>,
+    current_user: &AuthenticatedUser,
+    template_preview: &str,
+    challenge_id: Option<Uuid>,
+    compose_project: &str,
+    rendered_compose: &str,
+    force_pull: bool,
+    run_build_probe: bool,
+    timeout_seconds: u64,
+    sender: &mpsc::UnboundedSender<Result<Bytes, Infallible>>,
+) -> AppResult<TestChallengeRuntimeComposeResponse> {
+    let mut steps: Vec<TestChallengeRuntimeImageStep> = Vec::new();
+    let temp_runtime_context = std::env::temp_dir().join(format!(
+        "rust-ctf-compose-test-runtime-{}",
+        Uuid::new_v4().as_simple()
+    ));
+    fs::create_dir_all(&temp_runtime_context)
+        .await
+        .map_err(AppError::internal)?;
+
+    let runtime_result = async {
+        let runtime_compose_file = temp_runtime_context.join("docker-compose.yml");
+        fs::write(&runtime_compose_file, rendered_compose)
+            .await
+            .map_err(AppError::internal)?;
+        if let Some(value) = challenge_id {
+            restore_runtime_attachments_for_compose_test(
+                state.as_ref(),
+                value,
+                temp_runtime_context.as_path(),
+            )
+            .await?;
+        }
+        let runtime_compose_path = runtime_compose_file.to_string_lossy().to_string();
+
+        let inspect_args = vec![
+            "-f".to_string(),
+            runtime_compose_path.clone(),
+            "-p".to_string(),
+            compose_project.to_string(),
+            "config".to_string(),
+        ];
+        let inspect_step = run_runtime_compose_test_step_stream(
+            "runtime_compose_config_validate",
+            &inspect_args,
+            &temp_runtime_context,
+            timeout_seconds,
+            sender,
+        )
+        .await?;
+        steps.push(inspect_step);
+
+        if force_pull {
+            let pull_args = vec![
+                "-f".to_string(),
+                runtime_compose_path.clone(),
+                "-p".to_string(),
+                compose_project.to_string(),
+                "pull".to_string(),
+            ];
+            let pull_step = run_runtime_compose_test_step_stream(
+                "runtime_compose_pull",
+                &pull_args,
+                &temp_runtime_context,
+                timeout_seconds,
+                sender,
+            )
+            .await?;
+            steps.push(pull_step);
+        }
+
+        if run_build_probe {
+            let mut build_args = vec![
+                "-f".to_string(),
+                runtime_compose_path.clone(),
+                "-p".to_string(),
+                compose_project.to_string(),
+                "build".to_string(),
+            ];
+            if force_pull {
+                build_args.push("--pull".to_string());
+            }
+            let build_step = run_runtime_compose_test_step_stream(
+                "runtime_compose_build_probe",
+                &build_args,
+                &temp_runtime_context,
+                timeout_seconds,
+                sender,
+            )
+            .await?;
+            steps.push(build_step);
+        }
+
+        let mut cleanup_args = vec![
+            "-f".to_string(),
+            runtime_compose_path,
+            "-p".to_string(),
+            compose_project.to_string(),
+            "down".to_string(),
+            "--volumes".to_string(),
+            "--remove-orphans".to_string(),
+        ];
+        if run_build_probe {
+            cleanup_args.push("--rmi".to_string());
+            cleanup_args.push("local".to_string());
+        }
+        let cleanup_step = run_runtime_compose_test_step_stream(
+            "runtime_compose_cleanup_probe",
+            &cleanup_args,
+            &temp_runtime_context,
+            timeout_seconds,
+            sender,
+        )
+        .await?;
+        steps.push(cleanup_step);
+
+        Ok::<(), AppError>(())
+    }
+    .await;
+
+    if let Err(err) = fs::remove_dir_all(&temp_runtime_context).await {
+        if err.kind() != std::io::ErrorKind::NotFound {
+            warn!(
+                path = %temp_runtime_context.to_string_lossy(),
+                error = %err,
+                "failed to cleanup compose test runtime context"
+            );
+        }
+    }
+    runtime_result?;
+
+    let succeeded = steps
+        .iter()
+        .filter(|item| item.step != "runtime_compose_cleanup_probe")
+        .all(|item| item.success);
+
+    record_audit_log(
+        state.as_ref(),
+        current_user,
+        "admin.challenge.runtime.compose_test",
+        "challenge_runtime",
+        None,
+        json!({
+            "compose_template_preview": template_preview,
+            "force_pull": force_pull,
+            "run_build_probe": run_build_probe,
+            "timeout_seconds": timeout_seconds,
+            "succeeded": succeeded,
+            "step_count": steps.len()
+        }),
+    )
+    .await;
+
+    Ok(TestChallengeRuntimeComposeResponse {
+        compose_template_preview: template_preview.to_string(),
+        force_pull,
+        run_build_probe,
+        succeeded,
+        generated_at: Utc::now(),
+        steps,
+    })
+}
+
 async fn run_runtime_image_test_step_stream(
     step: &str,
     args: &[String],
@@ -2521,6 +3108,64 @@ async fn run_runtime_image_test_step_stream(
     })
 }
 
+async fn run_runtime_compose_test_step_stream(
+    step: &str,
+    args: &[String],
+    workdir: &std::path::Path,
+    timeout_seconds: u64,
+    sender: &mpsc::UnboundedSender<Result<Bytes, Infallible>>,
+) -> AppResult<TestChallengeRuntimeImageStep> {
+    let step_owned = step.to_string();
+    emit_test_challenge_runtime_compose_stream_event(
+        sender,
+        TestChallengeRuntimeComposeStreamEvent::StepStart {
+            step: step_owned.clone(),
+            command: compose_command_preview(args),
+            generated_at: Utc::now(),
+        },
+    );
+
+    let output = run_compose_compatible_external_command_stream(
+        args,
+        None,
+        Some(workdir),
+        timeout_seconds,
+        |stream_name, line| {
+            emit_test_challenge_runtime_compose_stream_event(
+                sender,
+                TestChallengeRuntimeComposeStreamEvent::StepLog {
+                    step: step_owned.clone(),
+                    stream: stream_name.to_string(),
+                    line: line.to_string(),
+                    generated_at: Utc::now(),
+                },
+            );
+        },
+    )
+    .await?;
+
+    emit_test_challenge_runtime_compose_stream_event(
+        sender,
+        TestChallengeRuntimeComposeStreamEvent::StepFinish {
+            step: step_owned.clone(),
+            success: output.success,
+            exit_code: output.exit_code,
+            duration_ms: output.duration_ms,
+            truncated: output.truncated,
+            generated_at: Utc::now(),
+        },
+    );
+
+    Ok(TestChallengeRuntimeImageStep {
+        step: step_owned,
+        success: output.success,
+        exit_code: output.exit_code,
+        duration_ms: output.duration_ms,
+        output: output.output,
+        truncated: output.truncated,
+    })
+}
+
 fn emit_test_challenge_runtime_image_stream_event(
     sender: &mpsc::UnboundedSender<Result<Bytes, Infallible>>,
     event: TestChallengeRuntimeImageStreamEvent,
@@ -2531,6 +3176,19 @@ fn emit_test_challenge_runtime_image_stream_event(
             let _ = sender.send(Ok(Bytes::from(line)));
         }
         Err(err) => warn!(error = %err, "failed to serialize image test stream event"),
+    }
+}
+
+fn emit_test_challenge_runtime_compose_stream_event(
+    sender: &mpsc::UnboundedSender<Result<Bytes, Infallible>>,
+    event: TestChallengeRuntimeComposeStreamEvent,
+) {
+    match serde_json::to_string(&event) {
+        Ok(mut line) => {
+            line.push('\n');
+            let _ = sender.send(Ok(Bytes::from(line)));
+        }
+        Err(err) => warn!(error = %err, "failed to serialize compose test stream event"),
     }
 }
 
@@ -3377,9 +4035,9 @@ async fn upload_challenge_attachment(
             state.as_ref(),
             &mut tx,
             challenge_id,
-            runtime_config
-                .as_ref()
-                .ok_or(AppError::BadRequest("challenge runtime configuration is missing".to_string()))?,
+            runtime_config.as_ref().ok_or(AppError::BadRequest(
+                "challenge runtime configuration is missing".to_string(),
+            ))?,
             &plan,
             current_user.user_id,
         )
@@ -6551,6 +7209,12 @@ struct AttachmentStoragePathRow {
     storage_path: String,
 }
 
+#[derive(Debug, FromRow)]
+struct RuntimeAttachmentRestoreRow {
+    filename: String,
+    storage_path: String,
+}
+
 fn is_zip_filename(filename: &str) -> bool {
     filename.trim().to_ascii_lowercase().ends_with(".zip")
 }
@@ -6810,12 +7474,11 @@ async fn build_runtime_bundle_import_plan(
         };
 
         let mut total_size = 0usize;
-        let compose_bytes = extract_zip_entry_bytes(&archive_path, &entries[compose_index].0).await?;
+        let compose_bytes =
+            extract_zip_entry_bytes(&archive_path, &entries[compose_index].0).await?;
         total_size += compose_bytes.len();
         let compose_template = String::from_utf8(compose_bytes).map_err(|_| {
-            AppError::BadRequest(
-                "compose file in zip archive is not valid UTF-8 text".to_string(),
-            )
+            AppError::BadRequest("compose file in zip archive is not valid UTF-8 text".to_string())
         })?;
         if compose_template.trim().is_empty() {
             return Err(AppError::BadRequest(
@@ -6896,7 +7559,9 @@ async fn persist_challenge_attachment_record(
     let stored_rel_path = PathBuf::from("_challenge_files")
         .join(challenge_id.to_string())
         .join(&stored_name);
-    fs::write(&stored_path, bytes).await.map_err(AppError::internal)?;
+    fs::write(&stored_path, bytes)
+        .await
+        .map_err(AppError::internal)?;
 
     sqlx::query_scalar::<_, Uuid>(
         "INSERT INTO challenge_attachments (
@@ -6939,12 +7604,67 @@ async fn remove_runtime_prefixed_attachments(
     .map_err(AppError::internal)?;
 
     for row in rows {
-        let path = resolve_challenge_attachment_storage_path(state, challenge_id, &row.storage_path);
+        let path =
+            resolve_challenge_attachment_storage_path(state, challenge_id, &row.storage_path);
         if let Err(err) = fs::remove_file(path).await {
             if err.kind() != std::io::ErrorKind::NotFound {
                 return Err(AppError::internal(err));
             }
         }
+    }
+
+    Ok(())
+}
+
+async fn restore_runtime_attachments_for_compose_test(
+    state: &AppState,
+    challenge_id: Uuid,
+    runtime_context_dir: &std::path::Path,
+) -> AppResult<()> {
+    let rows = sqlx::query_as::<_, RuntimeAttachmentRestoreRow>(
+        "SELECT filename, storage_path
+         FROM challenge_attachments
+         WHERE challenge_id = $1
+           AND filename LIKE $2
+         ORDER BY created_at ASC",
+    )
+    .bind(challenge_id)
+    .bind(format!("{RUNTIME_ATTACHMENT_FILENAME_PREFIX}%"))
+    .fetch_all(&state.db)
+    .await
+    .map_err(AppError::internal)?;
+
+    for row in rows {
+        let relative_raw = row
+            .filename
+            .strip_prefix(RUNTIME_ATTACHMENT_FILENAME_PREFIX)
+            .unwrap_or("");
+        let relative = normalize_runtime_bundle_entry_path(relative_raw).ok_or_else(|| {
+            AppError::BadRequest(format!(
+                "invalid runtime attachment path for compose test: '{}'",
+                row.filename
+            ))
+        })?;
+        let target = runtime_context_dir.join(relative);
+        if let Some(parent) = target.parent() {
+            fs::create_dir_all(parent)
+                .await
+                .map_err(AppError::internal)?;
+        }
+
+        let source =
+            resolve_challenge_attachment_storage_path(state, challenge_id, &row.storage_path);
+        let bytes = fs::read(&source).await.map_err(|err| {
+            if err.kind() == std::io::ErrorKind::NotFound {
+                AppError::BadRequest(format!(
+                    "runtime attachment file missing for compose test: '{}'",
+                    row.filename
+                ))
+            } else {
+                AppError::internal(err)
+            }
+        })?;
+        fs::write(target, bytes).await.map_err(AppError::internal)?;
     }
 
     Ok(())

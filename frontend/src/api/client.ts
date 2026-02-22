@@ -686,6 +686,15 @@ export type AdminChallengeRuntimeImageTestResponse = {
   steps: AdminChallengeRuntimeImageTestStep[];
 };
 
+export type AdminChallengeRuntimeComposeTestResponse = {
+  compose_template_preview: string;
+  force_pull: boolean;
+  run_build_probe: boolean;
+  succeeded: boolean;
+  generated_at: string;
+  steps: AdminChallengeRuntimeImageTestStep[];
+};
+
 export type AdminChallengeRuntimeImageTestStreamEvent =
   | {
       event: "start";
@@ -720,6 +729,48 @@ export type AdminChallengeRuntimeImageTestStreamEvent =
   | {
       event: "completed";
       result: AdminChallengeRuntimeImageTestResponse;
+    }
+  | {
+      event: "error";
+      message: string;
+      step?: string | null;
+      generated_at: string;
+    };
+
+export type AdminChallengeRuntimeComposeTestStreamEvent =
+  | {
+      event: "start";
+      compose_template_preview: string;
+      force_pull: boolean;
+      run_build_probe: boolean;
+      timeout_seconds: number;
+      generated_at: string;
+    }
+  | {
+      event: "step_start";
+      step: string;
+      command: string;
+      generated_at: string;
+    }
+  | {
+      event: "step_log";
+      step: string;
+      stream: string;
+      line: string;
+      generated_at: string;
+    }
+  | {
+      event: "step_finish";
+      step: string;
+      success: boolean;
+      exit_code: number | null;
+      duration_ms: number;
+      truncated: boolean;
+      generated_at: string;
+    }
+  | {
+      event: "completed";
+      result: AdminChallengeRuntimeComposeTestResponse;
     }
   | {
       event: "error";
@@ -2283,6 +2334,133 @@ export async function streamAdminChallengeRuntimeImageTest(
     if (!completed) {
       throw new ApiClientError(
         "image test stream finished without completion event",
+        "request_failed"
+      );
+    }
+    return completed;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function streamAdminChallengeRuntimeComposeTest(
+  payload: {
+    challenge_id?: string;
+    compose_template: string;
+    metadata?: Record<string, unknown>;
+    force_pull?: boolean;
+    run_build_probe?: boolean;
+    timeout_seconds?: number;
+  },
+  accessToken: string,
+  options?: {
+    onEvent?: (event: AdminChallengeRuntimeComposeTestStreamEvent) => void;
+  }
+): Promise<AdminChallengeRuntimeComposeTestResponse> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/admin/challenges/runtime-template/test-compose/stream`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`
+        },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    if (!response.ok) {
+      let message = `request failed (${response.status})`;
+      let code = "request_failed";
+      try {
+        const data = (await response.json()) as ApiErrorEnvelope;
+        message = data.error?.message ?? message;
+        code = data.error?.code ?? code;
+      } catch {
+        try {
+          const text = await response.text();
+          if (text.trim()) {
+            message = text.trim();
+          }
+        } catch {
+          // ignore fallback parsing failures
+        }
+      }
+      throw new ApiClientError(message, code);
+    }
+
+    if (!response.body) {
+      throw new ApiClientError("stream response body is empty", "request_failed");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let completed: AdminChallengeRuntimeComposeTestResponse | null = null;
+
+    const emit = (event: AdminChallengeRuntimeComposeTestStreamEvent) => {
+      options?.onEvent?.(event);
+      if (event.event === "completed") {
+        completed = event.result;
+        return;
+      }
+      if (event.event === "error") {
+        throw new ApiClientError(event.message || "compose test stream failed", "request_failed");
+      }
+    };
+
+    const flushLines = (flushTail: boolean) => {
+      while (true) {
+        const newlineIndex = buffer.indexOf("\n");
+        if (newlineIndex < 0) {
+          break;
+        }
+        const raw = buffer.slice(0, newlineIndex);
+        buffer = buffer.slice(newlineIndex + 1);
+        const line = raw.trim();
+        if (!line) {
+          continue;
+        }
+        let event: AdminChallengeRuntimeComposeTestStreamEvent;
+        try {
+          event = JSON.parse(line) as AdminChallengeRuntimeComposeTestStreamEvent;
+        } catch {
+          throw new ApiClientError("invalid compose test stream event payload", "request_failed");
+        }
+        emit(event);
+      }
+
+      if (flushTail) {
+        const tail = buffer.trim();
+        buffer = "";
+        if (!tail) {
+          return;
+        }
+        let event: AdminChallengeRuntimeComposeTestStreamEvent;
+        try {
+          event = JSON.parse(tail) as AdminChallengeRuntimeComposeTestStreamEvent;
+        } catch {
+          throw new ApiClientError("invalid compose test stream tail payload", "request_failed");
+        }
+        emit(event);
+      }
+    };
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        buffer += decoder.decode();
+        flushLines(true);
+        break;
+      }
+      buffer += decoder.decode(value, { stream: true });
+      flushLines(false);
+    }
+
+    if (!completed) {
+      throw new ApiClientError(
+        "compose test stream finished without completion event",
         "request_failed"
       );
     }

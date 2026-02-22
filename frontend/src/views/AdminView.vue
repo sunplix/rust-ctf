@@ -444,6 +444,48 @@
                       <span>{{ tr("compose 模板（可选，可由压缩包自动导入）", "compose template (optional, can be auto-imported from zip)") }}</span>
                       <textarea v-model="newChallenge.compose_template" rows="5" />
                       <small class="field-note">{{ composeRuntimeAttachmentHint }}</small>
+                      <div class="image-test-block">
+                        <div class="actions-row compact-actions">
+                          <button
+                            class="ghost"
+                            type="button"
+                            @click="handleTestChallengeRuntimeCompose"
+                            :disabled="testingChallengeRuntimeCompose || !newChallenge.compose_template.trim()"
+                          >
+                            {{ testingChallengeRuntimeCompose ? tl('测试中...') : tl('测试 compose（config+build探测）') }}
+                          </button>
+                        </div>
+                        <p class="muted">
+                          {{
+                            tr(
+                              "测试日志会实时显示（默认最长 300 秒）；编辑已有题目时，会自动还原 runtime/ 附件到测试目录。",
+                              "Live logs are streamed in real time (default timeout: 300s). For existing challenges, runtime/ attachments are restored into the test directory automatically."
+                            )
+                          }}
+                        </p>
+                        <pre
+                          v-if="challengeRuntimeComposeStreamOutput || testingChallengeRuntimeCompose"
+                          class="mono image-test-live-log"
+                        >{{ challengeRuntimeComposeStreamOutput || tr("等待日志输出...", "Waiting for stream output...") }}</pre>
+                        <p v-if="challengeComposeTestError" class="error">{{ challengeComposeTestError }}</p>
+                        <div
+                          v-if="challengeRuntimeComposeTestResult"
+                          class="image-test-result"
+                          :class="{ failed: !challengeRuntimeComposeTestResult.succeeded }"
+                        >
+                          <p class="mono">
+                            {{ tl('模板') }} {{ challengeRuntimeComposeTestResult.compose_template_preview }} ·
+                            {{ tl('结果') }} {{ challengeRuntimeComposeTestResult.succeeded ? "success" : "failed" }} ·
+                            {{ tl('时间') }} {{ formatTime(challengeRuntimeComposeTestResult.generated_at) }}
+                          </p>
+                          <details v-for="step in challengeRuntimeComposeTestResult.steps" :key="step.step" class="image-test-step">
+                            <summary>
+                              {{ step.step }} · {{ step.success ? "ok" : "failed" }} · {{ step.duration_ms }}ms · exit={{ step.exit_code ?? "timeout" }}
+                            </summary>
+                            <pre class="mono">{{ step.output || "-" }}</pre>
+                          </details>
+                        </div>
+                      </div>
                     </label>
                   </div>
                 </section>
@@ -2304,6 +2346,7 @@ import {
   runAdminExpiredInstanceReaper,
   runAdminStaleInstanceReaper,
   scanAdminRuntimeAlerts,
+  streamAdminChallengeRuntimeComposeTest,
   streamAdminChallengeRuntimeImageTest,
   uploadAdminContestPoster,
   uploadAdminChallengeAttachment,
@@ -2318,6 +2361,8 @@ import {
   type AdminChallengeItem,
   type AdminChallengeRuntimeImageTestStreamEvent,
   type AdminChallengeRuntimeImageTestResponse,
+  type AdminChallengeRuntimeComposeTestStreamEvent,
+  type AdminChallengeRuntimeComposeTestResponse,
   type AdminChallengeRuntimeLintItem,
   type AdminChallengeRuntimeLintResponse,
   type AdminChallengeVersionItem,
@@ -2675,6 +2720,13 @@ const adminTextMap: Record<string, string> = {
   "最近失败实例": "Recent failed instances",
   "最新题目、比赛、实例、审计和运行概览已同步。": "Challenges, contests, instances, audit logs, and runtime overview are synced.",
   "compose 模板（可选）": "compose template (optional)",
+  "测试 compose（config+build探测）": "Test compose (config + build probe)",
+  "仅 compose 模式支持模板测试": "Only compose mode supports template testing.",
+  "请先填写 compose 模板": "Please fill in the compose template first.",
+  "无法测试 compose": "Cannot test compose",
+  "模板为空": "Template is empty",
+  "compose 测试失败": "Compose test failed",
+  "compose 测试通过": "Compose test passed",
   "compose（多容器）": "compose (multiple containers)",
   "CPU 总计": "Total CPU",
   "direct（直连入口）": "direct (direct entrance)",
@@ -2827,6 +2879,7 @@ const challengeVersionError = ref("");
 const challengeAttachmentError = ref("");
 const challengeLintError = ref("");
 const challengeImageTestError = ref("");
+const challengeComposeTestError = ref("");
 const contestError = ref("");
 const bindingError = ref("");
 const announcementError = ref("");
@@ -2850,6 +2903,7 @@ const uploadingAttachment = ref(false);
 const deletingAttachmentId = ref("");
 const loadingChallengeRuntimeLint = ref(false);
 const testingChallengeRuntimeImage = ref(false);
+const testingChallengeRuntimeCompose = ref(false);
 const loadingInstances = ref(false);
 const updatingContestId = ref("");
 const destroyingContestId = ref("");
@@ -2916,6 +2970,8 @@ const contestPosterInputKey = ref(0);
 const selectedContestPosterFile = ref<File | null>(null);
 const challengeRuntimeImageTestResult = ref<AdminChallengeRuntimeImageTestResponse | null>(null);
 const challengeRuntimeImageStreamLines = ref<string[]>([]);
+const challengeRuntimeComposeTestResult = ref<AdminChallengeRuntimeComposeTestResponse | null>(null);
+const challengeRuntimeComposeStreamLines = ref<string[]>([]);
 const runtimeReaperResult = ref<AdminInstanceReaperRunResponse | null>(null);
 
 const runtimeAlertPrimed = ref(false);
@@ -3297,6 +3353,10 @@ const challengeRuntimeImageStreamOutput = computed(() => {
   return challengeRuntimeImageStreamLines.value.join("\n");
 });
 
+const challengeRuntimeComposeStreamOutput = computed(() => {
+  return challengeRuntimeComposeStreamLines.value.join("\n");
+});
+
 const challengeAttachmentUploadHint = computed(() => {
   return tr(
     `支持任意附件格式，大小不超过 ${formatSize(challengeAttachmentMaxBytes.value)}。若上传 .zip 且包含 docker-compose.yml，会自动导入 compose，并将其余文件保存为 runtime/...。`,
@@ -3370,6 +3430,17 @@ function appendChallengeRuntimeImageStreamLine(line: string) {
   }
 }
 
+function appendChallengeRuntimeComposeStreamLine(line: string) {
+  const normalized = line.replace(/\r/g, "");
+  challengeRuntimeComposeStreamLines.value.push(normalized);
+  if (challengeRuntimeComposeStreamLines.value.length > CHALLENGE_IMAGE_TEST_MAX_STREAM_LINES) {
+    challengeRuntimeComposeStreamLines.value.splice(
+      0,
+      challengeRuntimeComposeStreamLines.value.length - CHALLENGE_IMAGE_TEST_MAX_STREAM_LINES
+    );
+  }
+}
+
 function resetChallengeForm() {
   editingChallengeId.value = "";
   newChallenge.title = "";
@@ -3394,8 +3465,11 @@ function resetChallengeForm() {
   newChallenge.runtime_internal_port = 80;
   newChallenge.runtime_protocol = "http";
   challengeImageTestError.value = "";
+  challengeComposeTestError.value = "";
   challengeRuntimeImageTestResult.value = null;
   challengeRuntimeImageStreamLines.value = [];
+  challengeRuntimeComposeTestResult.value = null;
+  challengeRuntimeComposeStreamLines.value = [];
 }
 
 function resetContestForm() {
@@ -3475,6 +3549,7 @@ function applyChallengeDetailToForm(detail: AdminChallengeDetailItem) {
   newChallenge.runtime_internal_port = runtimeInternalPort;
   newChallenge.runtime_protocol = runtimeProtocol;
   challengeRuntimeImageStreamLines.value = [];
+  challengeRuntimeComposeStreamLines.value = [];
 }
 
 function applyContestToForm(item: AdminContestItem) {
@@ -4357,6 +4432,7 @@ async function refreshAll() {
 async function handleLoadChallengeForEdit(challengeId: string) {
   challengeError.value = "";
   challengeImageTestError.value = "";
+  challengeComposeTestError.value = "";
 
   try {
     const detail = await getAdminChallengeDetail(challengeId, accessTokenOrThrow());
@@ -4365,6 +4441,8 @@ async function handleLoadChallengeForEdit(challengeId: string) {
     challengeLibraryMode.value = "editor";
     challengeRuntimeImageTestResult.value = null;
     challengeRuntimeImageStreamLines.value = [];
+    challengeRuntimeComposeTestResult.value = null;
+    challengeRuntimeComposeStreamLines.value = [];
     await Promise.all([loadChallengeVersions(), loadChallengeAttachments()]);
     notify.info("已载入题目配置", `正在编辑：${detail.title}`);
   } catch (err) {
@@ -4470,6 +4548,84 @@ async function handleTestChallengeRuntimeImage() {
     notify.error("镜像测试失败", challengeImageTestError.value);
   } finally {
     testingChallengeRuntimeImage.value = false;
+  }
+}
+
+async function handleTestChallengeRuntimeCompose() {
+  challengeComposeTestError.value = "";
+  challengeRuntimeComposeTestResult.value = null;
+  challengeRuntimeComposeStreamLines.value = [];
+
+  if (newChallenge.runtime_mode !== "compose") {
+    challengeComposeTestError.value = tl("仅 compose 模式支持模板测试");
+    notify.warning(tr("无法测试 compose", "Cannot test compose"), challengeComposeTestError.value);
+    return;
+  }
+
+  if (!newChallenge.compose_template.trim()) {
+    challengeComposeTestError.value = tl("请先填写 compose 模板");
+    notify.warning(tr("模板为空", "Template is empty"), challengeComposeTestError.value);
+    return;
+  }
+
+  testingChallengeRuntimeCompose.value = true;
+  try {
+    const result = await streamAdminChallengeRuntimeComposeTest(
+      {
+        challenge_id: editingChallengeId.value || undefined,
+        compose_template: newChallenge.compose_template.trim(),
+        metadata: buildChallengeRuntimeMetadata(),
+        force_pull: true,
+        run_build_probe: true,
+        timeout_seconds: CHALLENGE_IMAGE_TEST_TIMEOUT_SECONDS
+      },
+      accessTokenOrThrow(),
+      {
+        onEvent: (event: AdminChallengeRuntimeComposeTestStreamEvent) => {
+          if (event.event === "start") {
+            appendChallengeRuntimeComposeStreamLine(
+              `[start] compose=${event.compose_template_preview} timeout=${event.timeout_seconds}s`
+            );
+            return;
+          }
+          if (event.event === "step_start") {
+            appendChallengeRuntimeComposeStreamLine(`[${event.step}] $ ${event.command}`);
+            return;
+          }
+          if (event.event === "step_log") {
+            const prefix = event.stream === "stderr" ? "[stderr] " : "";
+            appendChallengeRuntimeComposeStreamLine(`${prefix}${event.line}`);
+            return;
+          }
+          if (event.event === "step_finish") {
+            appendChallengeRuntimeComposeStreamLine(
+              `[${event.step}] done success=${event.success ? "yes" : "no"} exit=${event.exit_code ?? "timeout"} duration=${event.duration_ms}ms`
+            );
+            return;
+          }
+          if (event.event === "completed") {
+            appendChallengeRuntimeComposeStreamLine(
+              `[completed] ${event.result.succeeded ? "success" : "failed"}`
+            );
+            return;
+          }
+          if (event.event === "error") {
+            appendChallengeRuntimeComposeStreamLine(`[error] ${event.message}`);
+          }
+        }
+      }
+    );
+    challengeRuntimeComposeTestResult.value = result;
+    if (result.succeeded) {
+      notify.success(tl("compose 测试通过"), result.compose_template_preview);
+    } else {
+      notify.warning(tl("compose 测试失败"), result.compose_template_preview);
+    }
+  } catch (err) {
+    challengeComposeTestError.value = err instanceof ApiClientError ? err.message : tl("compose 测试失败");
+    notify.error(tl("compose 测试失败"), challengeComposeTestError.value);
+  } finally {
+    testingChallengeRuntimeCompose.value = false;
   }
 }
 
