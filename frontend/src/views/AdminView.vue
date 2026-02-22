@@ -380,6 +380,7 @@
                         <option value="wireguard">wireguard（VPN）</option>
                         <option value="direct">{{ tl('direct（直连入口）') }}</option>
                       </select>
+                      <small class="field-note">{{ runtimeAccessModeDescription }}</small>
                     </label>
                     <label v-if="newChallenge.runtime_mode === 'single_image'" class="field-span-2">
                       <span>{{ tl('镜像仓库地址') }}</span>
@@ -448,6 +449,7 @@
                         }}
                       </span>
                       <textarea v-model="newChallenge.compose_template" rows="5" />
+                      <small class="field-note">{{ composeRuntimeAttachmentHint }}</small>
                     </label>
                   </div>
                 </section>
@@ -3271,6 +3273,32 @@ const runtimeModeDescription = computed(() => {
   );
 });
 
+const runtimeAccessModeDescription = computed(() => {
+  if (newChallenge.runtime_access_mode === "wireguard") {
+    return tr(
+      "wireguard：下发 VPN 配置，选手可从本机直接访问队伍子网。",
+      "wireguard: issue VPN config so teams can access their subnet from local machine."
+    );
+  }
+  if (newChallenge.runtime_access_mode === "direct") {
+    return tr(
+      "direct：不注入跳板或 VPN，仅使用题目入口地址。",
+      "direct: no bastion/VPN injection; only expose the challenge entrypoint."
+    );
+  }
+  return tr(
+    "ssh_bastion：自动注入跳板机，适合内网扫描与横向测试。",
+    "ssh_bastion: inject an SSH bastion, suitable for internal scan and lateral testing."
+  );
+});
+
+const composeRuntimeAttachmentHint = computed(() => {
+  return tr(
+    "可在“版本与附件”上传 runtime/ 前缀文件（如 runtime/Dockerfile、runtime/app/start.sh），实例启动时会自动还原到运行目录。",
+    "Upload runtime/ prefixed files in Attachments (e.g. runtime/Dockerfile, runtime/app/start.sh); they are restored into runtime workspace on instance start."
+  );
+});
+
 const challengeRuntimeImageStreamOutput = computed(() => {
   return challengeRuntimeImageStreamLines.value.join("\n");
 });
@@ -5742,6 +5770,11 @@ onUnmounted(() => {
 .challenge-form-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.58rem 0.62rem;
+}
+
+.challenge-form-grid > label {
+  align-self: start;
+  align-content: start;
 }
 
 .challenge-form-grid .field-span-2,
