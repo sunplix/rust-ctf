@@ -16,7 +16,7 @@
     "en": "Refresh failed",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2633",
+      "src/views/AdminView.vue:2634",
       "src/views/AdminView.vue:4484"
     ]
   },
@@ -28,7 +28,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1317",
-      "src/views/AdminView.vue:2660"
+      "src/views/AdminView.vue:2661"
     ]
   },
   "m_00492b40": {
@@ -38,7 +38,7 @@
     "en": "access mode",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2478"
+      "src/views/AdminView.vue:2479"
     ]
   },
   "m_004dcf1e": {
@@ -48,7 +48,7 @@
     "en": "Password too short",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2576"
+      "src/views/AdminView.vue:2577"
     ]
   },
   "m_00595bb6": {
@@ -88,7 +88,7 @@
     "en": "Please select an attachment file first.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2594",
+      "src/views/AdminView.vue:2595",
       "src/views/AdminView.vue:4890"
     ]
   },
@@ -171,7 +171,7 @@
     "en": "Failed to update challenge",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2496",
+      "src/views/AdminView.vue:2497",
       "src/views/AdminView.vue:4799"
     ]
   },
@@ -214,7 +214,7 @@
     "en": "Please fill in the compose template first.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2742",
+      "src/views/AdminView.vue:2743",
       "src/views/AdminView.vue:4625"
     ]
   },
@@ -245,7 +245,7 @@
     "en": "Test image (pull + build probe)",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2450",
+      "src/views/AdminView.vue:2451",
       "src/views/AdminView.vue:427"
     ]
   },
@@ -256,7 +256,7 @@
     "en": "Select and manage",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2676",
+      "src/views/AdminView.vue:2677",
       "src/views/AdminView.vue:663"
     ]
   },
@@ -278,7 +278,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1987",
-      "src/views/AdminView.vue:2521"
+      "src/views/AdminView.vue:2522"
     ]
   },
   "m_070fdd67": {
@@ -339,7 +339,7 @@
     "en": "Failed to load instances",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2545",
+      "src/views/AdminView.vue:2546",
       "src/views/AdminView.vue:4197"
     ]
   },
@@ -361,7 +361,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1702",
-      "src/views/AdminView.vue:2716"
+      "src/views/AdminView.vue:2717"
     ]
   },
   "m_095bfdbe": {
@@ -392,7 +392,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2318",
-      "src/views/AdminView.vue:2708"
+      "src/views/AdminView.vue:2709"
     ]
   },
   "m_0a313cc1": {
@@ -423,7 +423,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1079",
-      "src/views/AdminView.vue:2423"
+      "src/views/AdminView.vue:2424"
     ]
   },
   "m_0a7b00b8": {
@@ -443,7 +443,7 @@
     "en": "Cannot test image",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2658"
+      "src/views/AdminView.vue:2659"
     ]
   },
   "m_0bb69211": {
@@ -454,7 +454,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1693",
-      "src/views/AdminView.vue:2693"
+      "src/views/AdminView.vue:2694"
     ]
   },
   "m_0bbf7363": {
@@ -486,7 +486,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1736",
-      "src/views/AdminView.vue:2418"
+      "src/views/AdminView.vue:2419"
     ]
   },
   "m_0c4ebfa3": {
@@ -496,7 +496,7 @@
     "en": "Not signed in or session expired",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2652",
+      "src/views/AdminView.vue:2653",
       "src/views/AdminView.vue:3748"
     ]
   },
@@ -518,7 +518,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2197",
-      "src/views/AdminView.vue:2701"
+      "src/views/AdminView.vue:2702"
     ]
   },
   "m_0cccf76f": {
@@ -528,7 +528,7 @@
     "en": "Failed to remove binding",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2679",
+      "src/views/AdminView.vue:2680",
       "src/views/AdminView.vue:5621"
     ]
   },
@@ -550,7 +550,7 @@
     "en": "· status",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2419",
+      "src/views/AdminView.vue:2420",
       "src/views/AdminView.vue:655"
     ]
   },
@@ -561,7 +561,7 @@
     "en": "Image test failed",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2565",
+      "src/views/AdminView.vue:2566",
       "src/views/AdminView.vue:4606"
     ]
   },
@@ -572,7 +572,7 @@
     "en": "Announcement content",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2503"
+      "src/views/AdminView.vue:2504"
     ]
   },
   "m_0dd20335": {
@@ -633,7 +633,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1746",
-      "src/views/AdminView.vue:2495",
+      "src/views/AdminView.vue:2496",
       "src/views/AdminView.vue:878",
       "src/views/AdminView.vue:894"
     ]
@@ -685,7 +685,7 @@
     "en": "Version/Attachment",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2424",
+      "src/views/AdminView.vue:2425",
       "src/views/AdminView.vue:682"
     ]
   },
@@ -707,7 +707,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1575",
-      "src/views/AdminView.vue:2475",
+      "src/views/AdminView.vue:2476",
       "src/views/AdminView.vue:688"
     ]
   },
@@ -718,7 +718,7 @@
     "en": "Challenge deleted",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2646"
+      "src/views/AdminView.vue:2647"
     ]
   },
   "m_10239abc": {
@@ -738,7 +738,7 @@
     "en": "Failed to load runtime overview",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2552",
+      "src/views/AdminView.vue:2553",
       "src/views/AdminView.vue:4268"
     ]
   },
@@ -750,7 +750,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1058",
-      "src/views/AdminView.vue:2560"
+      "src/views/AdminView.vue:2561"
     ]
   },
   "m_111b0037": {
@@ -760,7 +760,7 @@
     "en": "Announcement content incomplete",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2504"
+      "src/views/AdminView.vue:2505"
     ]
   },
   "m_11270e01": {
@@ -831,7 +831,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1193",
-      "src/views/AdminView.vue:2442"
+      "src/views/AdminView.vue:2443"
     ]
   },
   "m_14c8a36e": {
@@ -842,7 +842,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1575",
-      "src/views/AdminView.vue:2455"
+      "src/views/AdminView.vue:2456"
     ]
   },
   "m_14e5b72a": {
@@ -892,7 +892,7 @@
     "en": "Binding removed",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2519"
+      "src/views/AdminView.vue:2520"
     ]
   },
   "m_159a8f4e": {
@@ -945,7 +945,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2300",
-      "src/views/AdminView.vue:2448"
+      "src/views/AdminView.vue:2449"
     ]
   },
   "m_165b1edb": {
@@ -955,7 +955,7 @@
     "en": "Announcement saved.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2506"
+      "src/views/AdminView.vue:2507"
     ]
   },
   "m_165c42c1": {
@@ -965,7 +965,7 @@
     "en": "Challenge status updated",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2647"
+      "src/views/AdminView.vue:2648"
     ]
   },
   "m_16e77afe": {
@@ -976,7 +976,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1926",
-      "src/views/AdminView.vue:2689",
+      "src/views/AdminView.vue:2690",
       "src/views/LoginView.vue:118",
       "src/views/LoginView.vue:125"
     ]
@@ -1022,7 +1022,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2195",
-      "src/views/AdminView.vue:2483"
+      "src/views/AdminView.vue:2484"
     ]
   },
   "m_183042c1": {
@@ -1033,7 +1033,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2145",
-      "src/views/AdminView.vue:2710"
+      "src/views/AdminView.vue:2711"
     ]
   },
   "m_183a4087": {
@@ -1044,7 +1044,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1887",
-      "src/views/AdminView.vue:2600"
+      "src/views/AdminView.vue:2601"
     ]
   },
   "m_18833119": {
@@ -1148,7 +1148,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1338",
-      "src/views/AdminView.vue:2469"
+      "src/views/AdminView.vue:2470"
     ]
   },
   "m_1cd15757": {
@@ -1160,7 +1160,7 @@
     "sources": [
       "src/views/AdminView.vue:1465",
       "src/views/AdminView.vue:1480",
-      "src/views/AdminView.vue:2654"
+      "src/views/AdminView.vue:2655"
     ]
   },
   "m_1d01abee": {
@@ -1171,7 +1171,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2074",
-      "src/views/AdminView.vue:2728"
+      "src/views/AdminView.vue:2729"
     ]
   },
   "m_1d1af2d7": {
@@ -1181,7 +1181,7 @@
     "en": "Role updated",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2558"
+      "src/views/AdminView.vue:2559"
     ]
   },
   "m_1d53b967": {
@@ -1191,7 +1191,7 @@
     "en": "Failed to load challenge details",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2550",
+      "src/views/AdminView.vue:2551",
       "src/views/AdminView.vue:4508"
     ]
   },
@@ -1213,7 +1213,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2046",
-      "src/views/AdminView.vue:2724"
+      "src/views/AdminView.vue:2725"
     ]
   },
   "m_1daed537": {
@@ -1223,7 +1223,7 @@
     "en": "wireguard: issue VPN config so teams can access their subnet from local machine.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:3352"
+      "src/views/AdminView.vue:3353"
     ]
   },
   "m_1ef6cbe6": {
@@ -1243,7 +1243,7 @@
     "en": "title or slug",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2446",
+      "src/views/AdminView.vue:2447",
       "src/views/AdminView.vue:841"
     ]
   },
@@ -1265,7 +1265,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1054",
-      "src/views/AdminView.vue:2568"
+      "src/views/AdminView.vue:2569"
     ]
   },
   "m_1f98a5ec": {
@@ -1285,7 +1285,7 @@
     "en": "single_image (single image)",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2756",
+      "src/views/AdminView.vue:2757",
       "src/views/AdminView.vue:372"
     ]
   },
@@ -1318,7 +1318,7 @@
     "sources": [
       "src/views/AdminView.vue:214",
       "src/views/AdminView.vue:254",
-      "src/views/AdminView.vue:2598",
+      "src/views/AdminView.vue:2599",
       "src/views/AdminView.vue:977"
     ]
   },
@@ -1339,7 +1339,7 @@
     "en": "Failed to delete challenge",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2669",
+      "src/views/AdminView.vue:2670",
       "src/views/AdminView.vue:4834"
     ]
   },
@@ -1411,7 +1411,7 @@
     "en": "Attachment deleted",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2484"
+      "src/views/AdminView.vue:2485"
     ]
   },
   "m_22d9593f": {
@@ -1421,7 +1421,7 @@
     "en": "Show challenge actions",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2665",
+      "src/views/AdminView.vue:2666",
       "src/views/AdminView.vue:667"
     ]
   },
@@ -1433,7 +1433,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2001",
-      "src/views/AdminView.vue:2562"
+      "src/views/AdminView.vue:2563"
     ]
   },
   "m_2340bcd7": {
@@ -1444,7 +1444,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1773",
-      "src/views/AdminView.vue:2631"
+      "src/views/AdminView.vue:2632"
     ]
   },
   "m_2373da40": {
@@ -1454,7 +1454,7 @@
     "en": "single_image mode only supports dynamic/internal challenge types.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2754",
+      "src/views/AdminView.vue:2755",
       "src/views/AdminView.vue:4719"
     ]
   },
@@ -1485,7 +1485,7 @@
     "en": "Sort updated",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2585"
+      "src/views/AdminView.vue:2586"
     ]
   },
   "m_24eff94d": {
@@ -1545,7 +1545,7 @@
     "en": "Failed to update announcement",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2493",
+      "src/views/AdminView.vue:2494",
       "src/views/AdminView.vue:5431",
       "src/views/AdminView.vue:5466",
       "src/views/AdminView.vue:5494"
@@ -1578,7 +1578,7 @@
     "en": "User status updated",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2690"
+      "src/views/AdminView.vue:2691"
     ]
   },
   "m_2872b7ba": {
@@ -1628,7 +1628,7 @@
     "en": "Stale-heartbeat reaper executed",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2672"
+      "src/views/AdminView.vue:2673"
     ]
   },
   "m_2aa114ab": {
@@ -1639,7 +1639,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1173",
-      "src/views/AdminView.vue:2660"
+      "src/views/AdminView.vue:2661"
     ]
   },
   "m_2aa949f3": {
@@ -1659,7 +1659,7 @@
     "en": "selected",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2682",
+      "src/views/AdminView.vue:2683",
       "src/views/AdminView.vue:663"
     ]
   },
@@ -1681,7 +1681,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2207",
-      "src/views/AdminView.vue:2723"
+      "src/views/AdminView.vue:2724"
     ]
   },
   "m_2b9740b0": {
@@ -1691,7 +1691,7 @@
     "en": "Runtime alert: instance failure",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2698"
+      "src/views/AdminView.vue:2699"
     ]
   },
   "m_2bb67eb7": {
@@ -1702,7 +1702,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2128",
-      "src/views/AdminView.vue:2636"
+      "src/views/AdminView.vue:2637"
     ]
   },
   "m_2bccf299": {
@@ -1795,7 +1795,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1074",
-      "src/views/AdminView.vue:2604",
+      "src/views/AdminView.vue:2605",
       "src/views/AdminView.vue:938"
     ]
   },
@@ -1816,7 +1816,7 @@
     "en": "Failed to load challenge attachments",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2549",
+      "src/views/AdminView.vue:2550",
       "src/views/AdminView.vue:4010"
     ]
   },
@@ -1868,7 +1868,7 @@
     "en": "Image registry URL",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2563",
+      "src/views/AdminView.vue:2564",
       "src/views/AdminView.vue:404"
     ]
   },
@@ -1879,7 +1879,7 @@
     "en": "There are no attachments yet.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2705",
+      "src/views/AdminView.vue:2706",
       "src/views/AdminView.vue:610",
       "src/views/AdminView.vue:798"
     ]
@@ -1922,7 +1922,7 @@
     "en": "Failed to load template lint results",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2543",
+      "src/views/AdminView.vue:2544",
       "src/views/AdminView.vue:4033"
     ]
   },
@@ -1933,7 +1933,7 @@
     "en": "Failed to load users",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2552",
+      "src/views/AdminView.vue:2553",
       "src/views/AdminView.vue:4248"
     ]
   },
@@ -1945,7 +1945,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1159",
-      "src/views/AdminView.vue:2619"
+      "src/views/AdminView.vue:2620"
     ]
   },
   "m_31ed1b1c": {
@@ -1965,7 +1965,7 @@
     "en": "Version notes (optional)",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2424",
+      "src/views/AdminView.vue:2425",
       "src/views/AdminView.vue:543"
     ]
   },
@@ -1998,7 +1998,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2267",
-      "src/views/AdminView.vue:2623"
+      "src/views/AdminView.vue:2624"
     ]
   },
   "m_337bc844": {
@@ -2029,7 +2029,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1770",
-      "src/views/AdminView.vue:2694"
+      "src/views/AdminView.vue:2695"
     ]
   },
   "m_3468f9f1": {
@@ -2039,7 +2039,7 @@
     "en": "Failed to delete contest poster",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2607",
+      "src/views/AdminView.vue:2608",
       "src/views/AdminView.vue:5193"
     ]
   },
@@ -2061,7 +2061,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2299",
-      "src/views/AdminView.vue:2624",
+      "src/views/AdminView.vue:2625",
       "src/views/AdminView.vue:451",
       "src/views/AdminView.vue:497"
     ]
@@ -2103,7 +2103,7 @@
     "en": "offline",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2659",
+      "src/views/AdminView.vue:2660",
       "src/views/AdminView.vue:700"
     ]
   },
@@ -2146,7 +2146,7 @@
     "sources": [
       "src/views/AdminView.vue:1749",
       "src/views/AdminView.vue:2167",
-      "src/views/AdminView.vue:2640",
+      "src/views/AdminView.vue:2641",
       "src/views/AdminView.vue:889"
     ]
   },
@@ -2158,7 +2158,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1730",
-      "src/views/AdminView.vue:2439"
+      "src/views/AdminView.vue:2440"
     ]
   },
   "m_381a0334": {
@@ -2169,7 +2169,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1159",
-      "src/views/AdminView.vue:2622",
+      "src/views/AdminView.vue:2623",
       "src/views/AdminView.vue:581",
       "src/views/AdminView.vue:773"
     ]
@@ -2243,7 +2243,7 @@
     "en": "Challenge type",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2648",
+      "src/views/AdminView.vue:2649",
       "src/views/AdminView.vue:346",
       "src/views/AdminView.vue:822",
       "src/views/AdminView.vue:890"
@@ -2287,7 +2287,7 @@
     "en": "Failed to delete contest",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2668",
+      "src/views/AdminView.vue:2669",
       "src/views/AdminView.vue:5234"
     ]
   },
@@ -2298,7 +2298,7 @@
     "en": "Failed to load announcements",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2541",
+      "src/views/AdminView.vue:2542",
       "src/views/AdminView.vue:4127",
       "src/views/ContestDetailView.vue:1497"
     ]
@@ -2320,7 +2320,7 @@
     "en": "compose: multi-service orchestration for complex runtimes.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:3339"
+      "src/views/AdminView.vue:3340"
     ]
   },
   "m_3cb674b7": {
@@ -2361,7 +2361,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1142",
-      "src/views/AdminView.vue:2616"
+      "src/views/AdminView.vue:2617"
     ]
   },
   "m_3d939718": {
@@ -2371,7 +2371,7 @@
     "en": "Versions & Files:",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2427",
+      "src/views/AdminView.vue:2428",
       "src/views/AdminView.vue:719"
     ]
   },
@@ -2416,7 +2416,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1917",
-      "src/views/AdminView.vue:2635"
+      "src/views/AdminView.vue:2636"
     ]
   },
   "m_3f15c5aa": {
@@ -2427,7 +2427,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1742",
-      "src/views/AdminView.vue:2736"
+      "src/views/AdminView.vue:2737"
     ]
   },
   "m_3fd1ba38": {
@@ -2437,7 +2437,7 @@
     "en": "Create contest",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:3399",
+      "src/views/AdminView.vue:3400",
       "src/views/AdminView.vue:946"
     ]
   },
@@ -2479,7 +2479,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1864",
-      "src/views/AdminView.vue:2528"
+      "src/views/AdminView.vue:2529"
     ]
   },
   "m_40a8c128": {
@@ -2510,7 +2510,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1862",
-      "src/views/AdminView.vue:2734"
+      "src/views/AdminView.vue:2735"
     ]
   },
   "m_417a9700": {
@@ -2530,7 +2530,7 @@
     "en": "Please select a challenge to manage first.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2593",
+      "src/views/AdminView.vue:2594",
       "src/views/AdminView.vue:4843",
       "src/views/AdminView.vue:4884"
     ]
@@ -2542,7 +2542,7 @@
     "en": "Visibility",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2569",
+      "src/views/AdminView.vue:2570",
       "src/views/AdminView.vue:995"
     ]
   },
@@ -2563,7 +2563,7 @@
     "en": "Two options: (1) fill compose template directly; (2) upload a .zip in Versions & Files (contains docker-compose.yml and related files). The system auto-imports compose and stores remaining files as runtime/.... For single-file uploads (non-zip), use runtime/ prefix (e.g. runtime/Dockerfile).",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:3370"
+      "src/views/AdminView.vue:3371"
     ]
   },
   "m_43aeb4c9": {
@@ -2583,7 +2583,7 @@
     "en": "Only compose mode supports template testing.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2741",
+      "src/views/AdminView.vue:2742",
       "src/views/AdminView.vue:4619"
     ]
   },
@@ -2594,7 +2594,7 @@
     "en": "Failed to load challenges",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2550",
+      "src/views/AdminView.vue:2551",
       "src/views/AdminView.vue:3956",
       "src/views/ContestDetailView.vue:1480"
     ]
@@ -2616,7 +2616,7 @@
     "en": "perform rollback",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2719",
+      "src/views/AdminView.vue:2720",
       "src/views/AdminView.vue:733"
     ]
   },
@@ -2667,7 +2667,7 @@
     "en": "No file selected",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2657",
+      "src/views/AdminView.vue:2658",
       "src/views/AdminView.vue:571",
       "src/views/AdminView.vue:768"
     ]
@@ -2679,7 +2679,7 @@
     "en": "· version v",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2415",
+      "src/views/AdminView.vue:2416",
       "src/views/AdminView.vue:655"
     ]
   },
@@ -2690,7 +2690,7 @@
     "en": "Password reset",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2577"
+      "src/views/AdminView.vue:2578"
     ]
   },
   "m_4600650d": {
@@ -2710,7 +2710,7 @@
     "en": "Test compose (config + build probe)",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2740",
+      "src/views/AdminView.vue:2741",
       "src/views/AdminView.vue:473"
     ]
   },
@@ -2732,7 +2732,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1710",
-      "src/views/AdminView.vue:2719"
+      "src/views/AdminView.vue:2720"
     ]
   },
   "m_4724dadb": {
@@ -2763,7 +2763,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1309",
-      "src/views/AdminView.vue:2622"
+      "src/views/AdminView.vue:2623"
     ]
   },
   "m_490b3b0d": {
@@ -2776,7 +2776,7 @@
       "src/views/AdminView.vue:1782",
       "src/views/AdminView.vue:1922",
       "src/views/AdminView.vue:2274",
-      "src/views/AdminView.vue:2713",
+      "src/views/AdminView.vue:2714",
       "src/views/AdminView.vue:819"
     ]
   },
@@ -2788,7 +2788,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1251",
-      "src/views/AdminView.vue:2584"
+      "src/views/AdminView.vue:2585"
     ]
   },
   "m_49615c2b": {
@@ -2798,7 +2798,7 @@
     "en": "Failed to load contests",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2538",
+      "src/views/AdminView.vue:2539",
       "src/views/AdminView.vue:4056",
       "src/views/ContestsView.vue:403"
     ]
@@ -2823,7 +2823,7 @@
       "src/views/AdminView.vue:1811",
       "src/views/AdminView.vue:1950",
       "src/views/AdminView.vue:2289",
-      "src/views/AdminView.vue:2685",
+      "src/views/AdminView.vue:2686",
       "src/views/AdminView.vue:857"
     ]
   },
@@ -2834,7 +2834,7 @@
     "en": "single_image internal port must be between 1 and 65535.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2755",
+      "src/views/AdminView.vue:2756",
       "src/views/AdminView.vue:4715"
     ]
   },
@@ -2864,7 +2864,7 @@
     "en": "content",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2584"
+      "src/views/AdminView.vue:2585"
     ]
   },
   "m_4bbf9aca": {
@@ -2875,7 +2875,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2129",
-      "src/views/AdminView.vue:2453"
+      "src/views/AdminView.vue:2454"
     ]
   },
   "m_4bee959b": {
@@ -2885,7 +2885,7 @@
     "en": "dynamic: each team can start an isolated runtime instance.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:3295"
+      "src/views/AdminView.vue:3296"
     ]
   },
   "m_4c5ee0e3": {
@@ -2895,7 +2895,7 @@
     "en": "Failed to load audit logs",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2545",
+      "src/views/AdminView.vue:2546",
       "src/views/AdminView.vue:4451"
     ]
   },
@@ -2906,7 +2906,7 @@
     "en": "Cannot test compose",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2743",
+      "src/views/AdminView.vue:2744",
       "src/views/AdminView.vue:4620"
     ]
   },
@@ -2917,7 +2917,7 @@
     "en": "Please select a poster file first.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2592",
+      "src/views/AdminView.vue:2593",
       "src/views/AdminView.vue:5134"
     ]
   },
@@ -2928,7 +2928,7 @@
     "en": "Invalid version number",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2427"
+      "src/views/AdminView.vue:2428"
     ]
   },
   "m_4da3b942": {
@@ -2950,7 +2950,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2229",
-      "src/views/AdminView.vue:2651"
+      "src/views/AdminView.vue:2652"
     ]
   },
   "m_4db82d6c": {
@@ -2980,7 +2980,7 @@
     "en": "Announcement pinned",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2512"
+      "src/views/AdminView.vue:2513"
     ]
   },
   "m_4e587c3b": {
@@ -3001,7 +3001,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1489",
-      "src/views/AdminView.vue:2445",
+      "src/views/AdminView.vue:2446",
       "src/views/AdminView.vue:295",
       "src/views/AdminView.vue:983"
     ]
@@ -3065,7 +3065,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2027",
-      "src/views/AdminView.vue:2500"
+      "src/views/AdminView.vue:2501"
     ]
   },
   "m_50fba5af": {
@@ -3187,7 +3187,7 @@
     "en": "Rolling back...",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2535",
+      "src/views/AdminView.vue:2536",
       "src/views/AdminView.vue:733"
     ]
   },
@@ -3208,7 +3208,7 @@
     "en": "no_runtime: no container runtime, suited for static challenges.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:3344"
+      "src/views/AdminView.vue:3345"
     ]
   },
   "m_55e9dbe2": {
@@ -3238,7 +3238,7 @@
     "en": "Failed to run expired instance reaper",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2718",
+      "src/views/AdminView.vue:2719",
       "src/views/AdminView.vue:4365"
     ]
   },
@@ -3259,7 +3259,7 @@
     "en": "Create Challenge",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:3283"
+      "src/views/AdminView.vue:3284"
     ]
   },
   "m_57398562": {
@@ -3279,7 +3279,7 @@
     "en": "Filter by title, slug, category",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2421",
+      "src/views/AdminView.vue:2422",
       "src/views/AdminView.vue:638"
     ]
   },
@@ -3303,7 +3303,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1871",
-      "src/views/AdminView.vue:2691"
+      "src/views/AdminView.vue:2692"
     ]
   },
   "m_59a6510c": {
@@ -3327,7 +3327,7 @@
     "en": "Description",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2578",
+      "src/views/AdminView.vue:2579",
       "src/views/AdminView.vue:991"
     ]
   },
@@ -3338,7 +3338,7 @@
     "en": "Failed to load runtime alerts",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2554",
+      "src/views/AdminView.vue:2555",
       "src/views/AdminView.vue:4305"
     ]
   },
@@ -3350,7 +3350,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1731",
-      "src/views/AdminView.vue:2702"
+      "src/views/AdminView.vue:2703"
     ]
   },
   "m_5a8d2ab7": {
@@ -3371,7 +3371,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1732",
-      "src/views/AdminView.vue:2414"
+      "src/views/AdminView.vue:2415"
     ]
   },
   "m_5c662ba2": {
@@ -3422,7 +3422,7 @@
     "en": "This challenge is now immediately visible in contest.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2488"
+      "src/views/AdminView.vue:2489"
     ]
   },
   "m_5da74e51": {
@@ -3534,7 +3534,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1062",
-      "src/views/AdminView.vue:2480"
+      "src/views/AdminView.vue:2481"
     ]
   },
   "m_61206794": {
@@ -3710,7 +3710,7 @@
       "src/views/AdminView.vue:1929",
       "src/views/AdminView.vue:1962",
       "src/views/AdminView.vue:2301",
-      "src/views/AdminView.vue:2555"
+      "src/views/AdminView.vue:2556"
     ]
   },
   "m_65e8ead7": {
@@ -3721,7 +3721,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1737",
-      "src/views/AdminView.vue:2414"
+      "src/views/AdminView.vue:2415"
     ]
   },
   "m_6687665a": {
@@ -3733,9 +3733,9 @@
     "sources": [
       "src/views/AdminView.vue:1556",
       "src/views/AdminView.vue:242",
-      "src/views/AdminView.vue:2431",
-      "src/views/AdminView.vue:3288",
-      "src/views/AdminView.vue:3397",
+      "src/views/AdminView.vue:2432",
+      "src/views/AdminView.vue:3289",
+      "src/views/AdminView.vue:3398",
       "src/views/ProfileView.vue:26",
       "src/views/SiteSettingsView.vue:68",
       "src/views/TeamsView.vue:123"
@@ -3748,7 +3748,7 @@
     "en": "result",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2559",
+      "src/views/AdminView.vue:2560",
       "src/views/AdminView.vue:450",
       "src/views/AdminView.vue:496"
     ]
@@ -3760,7 +3760,7 @@
     "en": "Role unchanged",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2556"
+      "src/views/AdminView.vue:2557"
     ]
   },
   "m_6751b0e5": {
@@ -3782,7 +3782,7 @@
     "sources": [
       "src/views/AdminView.vue:1644",
       "src/views/AdminView.vue:1965",
-      "src/views/AdminView.vue:2448"
+      "src/views/AdminView.vue:2449"
     ]
   },
   "m_6776744b": {
@@ -3814,7 +3814,7 @@
     "en": "Expired instance reaper executed",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2525"
+      "src/views/AdminView.vue:2526"
     ]
   },
   "m_688903fc": {
@@ -3844,7 +3844,7 @@
     "en": "dynamic: per-team flag issued from runtime flow.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:3314"
+      "src/views/AdminView.vue:3315"
     ]
   },
   "m_69ce9e3a": {
@@ -3865,7 +3865,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1388",
-      "src/views/AdminView.vue:2501"
+      "src/views/AdminView.vue:2502"
     ]
   },
   "m_6a560c34": {
@@ -3875,7 +3875,7 @@
     "en": "Failed to load bindings",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2543",
+      "src/views/AdminView.vue:2544",
       "src/views/AdminView.vue:4086"
     ]
   },
@@ -3916,7 +3916,7 @@
     "en": "Failed to run runtime alert scan",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2460",
+      "src/views/AdminView.vue:2461",
       "src/views/AdminView.vue:4339"
     ]
   },
@@ -3937,7 +3937,7 @@
     "en": "Challenge updated",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2644"
+      "src/views/AdminView.vue:2645"
     ]
   },
   "m_6c7cbcc9": {
@@ -3957,7 +3957,7 @@
     "en": "information",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2676",
+      "src/views/AdminView.vue:2677",
       "src/views/AdminView.vue:895"
     ]
   },
@@ -3989,7 +3989,7 @@
     "en": "No contest selected",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2654"
+      "src/views/AdminView.vue:2655"
     ]
   },
   "m_6e23569b": {
@@ -4019,7 +4019,7 @@
     "en": "No matching challenges.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2575",
+      "src/views/AdminView.vue:2576",
       "src/views/AdminView.vue:713"
     ]
   },
@@ -4031,7 +4031,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1861",
-      "src/views/AdminView.vue:2630"
+      "src/views/AdminView.vue:2631"
     ]
   },
   "m_6eb83832": {
@@ -4061,7 +4061,7 @@
     "en": "edit",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2441",
+      "src/views/AdminView.vue:2442",
       "src/views/AdminView.vue:674"
     ]
   },
@@ -4112,7 +4112,7 @@
     "en": "Contest config loaded",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2683"
+      "src/views/AdminView.vue:2684"
     ]
   },
   "m_7122e4c0": {
@@ -4143,7 +4143,7 @@
     "en": "subnet",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2730"
+      "src/views/AdminView.vue:2731"
     ]
   },
   "m_71bed88c": {
@@ -4163,7 +4163,7 @@
     "en": "Solution content (optional)",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2639",
+      "src/views/AdminView.vue:2640",
       "src/views/AdminView.vue:539"
     ]
   },
@@ -4174,7 +4174,7 @@
     "en": "Announcement status updated",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2514"
+      "src/views/AdminView.vue:2515"
     ]
   },
   "m_72a25657": {
@@ -4184,7 +4184,7 @@
     "en": "Image test passed",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2566"
+      "src/views/AdminView.vue:2567"
     ]
   },
   "m_72a9a920": {
@@ -4195,7 +4195,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1137",
-      "src/views/AdminView.vue:2486"
+      "src/views/AdminView.vue:2487"
     ]
   },
   "m_72ba36fa": {
@@ -4235,7 +4235,7 @@
     "en": "New password must contain at least 8 characters.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2674",
+      "src/views/AdminView.vue:2675",
       "src/views/AdminView.vue:5265"
     ]
   },
@@ -4297,7 +4297,7 @@
     "en": "You can continue with versions, attachments, or contest bindings.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2572"
+      "src/views/AdminView.vue:2573"
     ]
   },
   "m_7578fa45": {
@@ -4307,7 +4307,7 @@
     "en": "ssh_bastion (default)",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2757",
+      "src/views/AdminView.vue:2758",
       "src/views/AdminView.vue:379"
     ]
   },
@@ -4350,7 +4350,7 @@
     "sources": [
       "src/views/AdminView.vue:2204",
       "src/views/AdminView.vue:2228",
-      "src/views/AdminView.vue:2583"
+      "src/views/AdminView.vue:2584"
     ]
   },
   "m_76dab22d": {
@@ -4370,7 +4370,7 @@
     "en": "Visible strategies for solving problems",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2637",
+      "src/views/AdminView.vue:2638",
       "src/views/AdminView.vue:522"
     ]
   },
@@ -4383,7 +4383,7 @@
     "sources": [
       "src/views/AdminView.vue:1359",
       "src/views/AdminView.vue:1444",
-      "src/views/AdminView.vue:2462"
+      "src/views/AdminView.vue:2463"
     ]
   },
   "m_771df5d0": {
@@ -4413,7 +4413,7 @@
     "en": "Challenges, contests, instances, audit logs, and runtime overview are synced.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2737"
+      "src/views/AdminView.vue:2738"
     ]
   },
   "m_77b385c8": {
@@ -4445,7 +4445,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1560",
-      "src/views/AdminView.vue:2715"
+      "src/views/AdminView.vue:2716"
     ]
   },
   "m_78105a42": {
@@ -4455,7 +4455,7 @@
     "en": "template",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2580",
+      "src/views/AdminView.vue:2581",
       "src/views/AdminView.vue:495",
       "src/views/AdminView.vue:892"
     ]
@@ -4468,7 +4468,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1350",
-      "src/views/AdminView.vue:2595"
+      "src/views/AdminView.vue:2596"
     ]
   },
   "m_78ead2ae": {
@@ -4478,7 +4478,7 @@
     "en": "Runtime alert: expired instance not destroyed",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2695"
+      "src/views/AdminView.vue:2696"
     ]
   },
   "m_78ecacdb": {
@@ -4510,7 +4510,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1587",
-      "src/views/AdminView.vue:2599"
+      "src/views/AdminView.vue:2600"
     ]
   },
   "m_79dc2644": {
@@ -4520,7 +4520,7 @@
     "en": "Rollback notes (optional)",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2531",
+      "src/views/AdminView.vue:2532",
       "src/views/AdminView.vue:729"
     ]
   },
@@ -4541,7 +4541,7 @@
     "en": "Entry protocol",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2604",
+      "src/views/AdminView.vue:2605",
       "src/views/AdminView.vue:412"
     ]
   },
@@ -4555,7 +4555,7 @@
       "src/views/AdminView.vue:1751",
       "src/views/AdminView.vue:2115",
       "src/views/AdminView.vue:2174",
-      "src/views/AdminView.vue:2473"
+      "src/views/AdminView.vue:2474"
     ]
   },
   "m_7a2eec85": {
@@ -4575,7 +4575,7 @@
     "en": "flag/hash",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2751",
+      "src/views/AdminView.vue:2752",
       "src/views/AdminView.vue:364"
     ]
   },
@@ -4587,7 +4587,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2202",
-      "src/views/AdminView.vue:2748"
+      "src/views/AdminView.vue:2749"
     ]
   },
   "m_7a907cf1": {
@@ -4607,7 +4607,7 @@
     "en": "Failed to update sort",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2494",
+      "src/views/AdminView.vue:2495",
       "src/views/AdminView.vue:5576"
     ]
   },
@@ -4619,7 +4619,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2201",
-      "src/views/AdminView.vue:2729"
+      "src/views/AdminView.vue:2730"
     ]
   },
   "m_7bf93c43": {
@@ -4640,7 +4640,7 @@
     "en": "Binding updated",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2516"
+      "src/views/AdminView.vue:2517"
     ]
   },
   "m_7c4cf02e": {
@@ -4670,7 +4670,7 @@
     "en": "Failed to acknowledge runtime alert",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2602",
+      "src/views/AdminView.vue:2603",
       "src/views/AdminView.vue:4412"
     ]
   },
@@ -4682,7 +4682,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2059",
-      "src/views/AdminView.vue:2614",
+      "src/views/AdminView.vue:2615",
       "src/views/AdminView.vue:5316"
     ]
   },
@@ -4693,7 +4693,7 @@
     "en": "Points",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2480",
+      "src/views/AdminView.vue:2481",
       "src/views/AdminView.vue:325",
       "src/views/AdminView.vue:655"
     ]
@@ -4726,7 +4726,7 @@
     "en": "single_image mode requires an image registry address.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2752",
+      "src/views/AdminView.vue:2753",
       "src/views/AdminView.vue:4707"
     ]
   },
@@ -4747,7 +4747,7 @@
     "en": "Challenge bound/updated for the current contest.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2644"
+      "src/views/AdminView.vue:2645"
     ]
   },
   "m_7ecebde2": {
@@ -4758,7 +4758,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1898",
-      "src/views/AdminView.vue:2443"
+      "src/views/AdminView.vue:2444"
     ]
   },
   "m_7edd4eae": {
@@ -4773,7 +4773,7 @@
       "src/views/AdminView.vue:2085",
       "src/views/AdminView.vue:2126",
       "src/views/AdminView.vue:2269",
-      "src/views/AdminView.vue:2555"
+      "src/views/AdminView.vue:2556"
     ]
   },
   "m_7f47735d": {
@@ -4783,7 +4783,7 @@
     "en": "Contest deleted",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2438"
+      "src/views/AdminView.vue:2439"
     ]
   },
   "m_7f7c1072": {
@@ -4794,7 +4794,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2001",
-      "src/views/AdminView.vue:2586"
+      "src/views/AdminView.vue:2587"
     ]
   },
   "m_7f7c27e3": {
@@ -4917,7 +4917,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1242",
-      "src/views/AdminView.vue:2677"
+      "src/views/AdminView.vue:2678"
     ]
   },
   "m_82b9f29d": {
@@ -4937,7 +4937,7 @@
     "en": "Poster uploaded",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2527"
+      "src/views/AdminView.vue:2528"
     ]
   },
   "m_82db4fbe": {
@@ -4948,7 +4948,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1468",
-      "src/views/AdminView.vue:2706"
+      "src/views/AdminView.vue:2707"
     ]
   },
   "m_82db9172": {
@@ -4978,7 +4978,7 @@
     "en": "Alert acknowledged",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2490"
+      "src/views/AdminView.vue:2491"
     ]
   },
   "m_83a2602b": {
@@ -5071,7 +5071,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1960",
-      "src/views/AdminView.vue:2688"
+      "src/views/AdminView.vue:2689"
     ]
   },
   "m_86baab6a": {
@@ -5092,7 +5092,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1765",
-      "src/views/AdminView.vue:2709"
+      "src/views/AdminView.vue:2710"
     ]
   },
   "m_86d67ad8": {
@@ -5112,7 +5112,7 @@
     "en": "flag mode",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2751",
+      "src/views/AdminView.vue:2752",
       "src/views/AdminView.vue:355"
     ]
   },
@@ -5126,7 +5126,7 @@
       "src/App.vue:21",
       "src/views/AdminView.vue:1727",
       "src/views/AdminView.vue:1747",
-      "src/views/AdminView.vue:2432"
+      "src/views/AdminView.vue:2433"
     ]
   },
   "m_878f864f": {
@@ -5136,7 +5136,7 @@
     "en": "Failed to delete challenge attachment",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2612",
+      "src/views/AdminView.vue:2613",
       "src/views/AdminView.vue:4951"
     ]
   },
@@ -5158,7 +5158,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1012",
-      "src/views/AdminView.vue:2536"
+      "src/views/AdminView.vue:2537"
     ]
   },
   "m_8839e665": {
@@ -5168,7 +5168,7 @@
     "en": "single_image: single-image runtime for lightweight dynamic challenges.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:3333"
+      "src/views/AdminView.vue:3334"
     ]
   },
   "m_8841b5b5": {
@@ -5309,7 +5309,7 @@
     "en": "Delete attachment",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2609",
+      "src/views/AdminView.vue:2610",
       "src/views/AdminView.vue:606",
       "src/views/AdminView.vue:794"
     ]
@@ -5344,7 +5344,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1293",
-      "src/views/AdminView.vue:2664"
+      "src/views/AdminView.vue:2665"
     ]
   },
   "m_8d14bd4c": {
@@ -5355,7 +5355,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1915",
-      "src/views/AdminView.vue:2686"
+      "src/views/AdminView.vue:2687"
     ]
   },
   "m_8d4d17d5": {
@@ -5396,7 +5396,7 @@
     "en": "Failed to save contest",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2428",
+      "src/views/AdminView.vue:2429",
       "src/views/AdminView.vue:5061"
     ]
   },
@@ -5428,7 +5428,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1735",
-      "src/views/AdminView.vue:2627"
+      "src/views/AdminView.vue:2628"
     ]
   },
   "m_8e3c7a14": {
@@ -5439,7 +5439,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1599",
-      "src/views/AdminView.vue:2609"
+      "src/views/AdminView.vue:2610"
     ]
   },
   "m_8e4b1eb4": {
@@ -5459,7 +5459,7 @@
     "en": "Failed to create announcement",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2462",
+      "src/views/AdminView.vue:2463",
       "src/views/AdminView.vue:5403"
     ]
   },
@@ -5501,7 +5501,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1776",
-      "src/views/AdminView.vue:2459"
+      "src/views/AdminView.vue:2460"
     ]
   },
   "m_8fbf9fb2": {
@@ -5511,7 +5511,7 @@
     "en": "Runtime template lint",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2700",
+      "src/views/AdminView.vue:2701",
       "src/views/AdminView.vue:807"
     ]
   },
@@ -5522,7 +5522,7 @@
     "en": "Failed to run stale-heartbeat reaper",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2721",
+      "src/views/AdminView.vue:2722",
       "src/views/AdminView.vue:4391"
     ]
   },
@@ -5584,7 +5584,7 @@
     "en": "Failed to upload contest poster",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2617",
+      "src/views/AdminView.vue:2618",
       "src/views/AdminView.vue:5159"
     ]
   },
@@ -5626,7 +5626,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1019",
-      "src/views/AdminView.vue:2473"
+      "src/views/AdminView.vue:2474"
     ]
   },
   "m_92054f69": {
@@ -5646,7 +5646,7 @@
     "en": "Image is empty",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2567"
+      "src/views/AdminView.vue:2568"
     ]
   },
   "m_9235c04f": {
@@ -5666,7 +5666,7 @@
     "en": "static: no runtime instance is required; only flag verification is used.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:3306"
+      "src/views/AdminView.vue:3307"
     ]
   },
   "m_936b4b45": {
@@ -5686,7 +5686,7 @@
     "en": "Failed to rollback challenge version",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2533",
+      "src/views/AdminView.vue:2534",
       "src/views/AdminView.vue:4870"
     ]
   },
@@ -5718,7 +5718,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1961",
-      "src/views/AdminView.vue:2693"
+      "src/views/AdminView.vue:2694"
     ]
   },
   "m_9590d5da": {
@@ -5748,7 +5748,7 @@
     "en": "Failed to reset password",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2725",
+      "src/views/AdminView.vue:2726",
       "src/views/AdminView.vue:5279"
     ]
   },
@@ -5865,7 +5865,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1563",
-      "src/views/AdminView.vue:2663"
+      "src/views/AdminView.vue:2664"
     ]
   },
   "m_99b0afa6": {
@@ -5917,7 +5917,7 @@
     "en": "Refresh lint",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2634",
+      "src/views/AdminView.vue:2635",
       "src/views/AdminView.vue:814"
     ]
   },
@@ -5938,7 +5938,7 @@
     "en": "Release time cleared",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2477"
+      "src/views/AdminView.vue:2478"
     ]
   },
   "m_9b381724": {
@@ -6010,7 +6010,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2027",
-      "src/views/AdminView.vue:2494"
+      "src/views/AdminView.vue:2495"
     ]
   },
   "m_9d508c41": {
@@ -6049,7 +6049,7 @@
     "en": "Invalid role",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2555"
+      "src/views/AdminView.vue:2556"
     ]
   },
   "m_9e15a808": {
@@ -6079,7 +6079,7 @@
     "en": "check",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2671",
+      "src/views/AdminView.vue:2672",
       "src/views/AdminView.vue:893"
     ]
   },
@@ -6090,7 +6090,7 @@
     "en": "Image",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2563",
+      "src/views/AdminView.vue:2564",
       "src/views/AdminView.vue:449"
     ]
   },
@@ -6121,7 +6121,7 @@
     "en": "difficulty",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2581",
+      "src/views/AdminView.vue:2582",
       "src/views/AdminView.vue:316"
     ]
   },
@@ -6164,7 +6164,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1738",
-      "src/views/AdminView.vue:2681"
+      "src/views/AdminView.vue:2682"
     ]
   },
   "m_a0a1eca2": {
@@ -6185,7 +6185,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1718",
-      "src/views/AdminView.vue:2735"
+      "src/views/AdminView.vue:2736"
     ]
   },
   "m_a1138156": {
@@ -6206,7 +6206,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1695",
-      "src/views/AdminView.vue:2500"
+      "src/views/AdminView.vue:2501"
     ]
   },
   "m_a17fa3ca": {
@@ -6217,7 +6217,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1925",
-      "src/views/AdminView.vue:2520",
+      "src/views/AdminView.vue:2521",
       "src/views/AdminView.vue:840"
     ]
   },
@@ -6228,7 +6228,7 @@
     "en": "internal port",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2581",
+      "src/views/AdminView.vue:2582",
       "src/views/AdminView.vue:408"
     ]
   },
@@ -6260,7 +6260,7 @@
     "en": "Challenge removed from current contest.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2642"
+      "src/views/AdminView.vue:2643"
     ]
   },
   "m_a2b8d211": {
@@ -6271,7 +6271,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2198",
-      "src/views/AdminView.vue:2447"
+      "src/views/AdminView.vue:2448"
     ]
   },
   "m_a2d68c21": {
@@ -6314,7 +6314,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1842",
-      "src/views/AdminView.vue:2420"
+      "src/views/AdminView.vue:2421"
     ]
   },
   "m_a3332d82": {
@@ -6334,7 +6334,7 @@
     "en": "Template is empty",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2743",
+      "src/views/AdminView.vue:2744",
       "src/views/AdminView.vue:4626"
     ]
   },
@@ -6365,7 +6365,7 @@
     "en": "Alert resolved",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2489"
+      "src/views/AdminView.vue:2490"
     ]
   },
   "m_a5aab354": {
@@ -6406,7 +6406,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2033",
-      "src/views/AdminView.vue:2674"
+      "src/views/AdminView.vue:2675"
     ]
   },
   "m_a69a56c7": {
@@ -6427,7 +6427,7 @@
     "en": "Description (optional)",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2579",
+      "src/views/AdminView.vue:2580",
       "src/views/AdminView.vue:531",
       "src/views/TeamsView.vue:210"
     ]
@@ -6440,7 +6440,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2071",
-      "src/views/AdminView.vue:2625"
+      "src/views/AdminView.vue:2626"
     ]
   },
   "m_a75c1310": {
@@ -6450,7 +6450,7 @@
     "en": "Edit Contest",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:3392"
+      "src/views/AdminView.vue:3393"
     ]
   },
   "m_a7bc0615": {
@@ -6470,7 +6470,7 @@
     "en": "Announcement published",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2508"
+      "src/views/AdminView.vue:2509"
     ]
   },
   "m_a86e7a09": {
@@ -6500,7 +6500,7 @@
     "en": "Compose test passed",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2745",
+      "src/views/AdminView.vue:2746",
       "src/views/AdminView.vue:4679"
     ]
   },
@@ -6511,7 +6511,7 @@
     "en": "Please select a question in \"Question Bank Configuration\" first, and then switch to version management.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2596",
+      "src/views/AdminView.vue:2597",
       "src/views/AdminView.vue:802"
     ]
   },
@@ -6544,7 +6544,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1803",
-      "src/views/AdminView.vue:2489"
+      "src/views/AdminView.vue:2490"
     ]
   },
   "m_a94feb79": {
@@ -6657,7 +6657,7 @@
     "en": "direct: no bastion/VPN injection; only expose the challenge entrypoint.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:3358"
+      "src/views/AdminView.vue:3359"
     ]
   },
   "m_ac903d7b": {
@@ -6680,7 +6680,7 @@
     "en": "Failed to load challenge versions",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2548",
+      "src/views/AdminView.vue:2549",
       "src/views/AdminView.vue:3990"
     ]
   },
@@ -6702,7 +6702,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2269",
-      "src/views/AdminView.vue:2632"
+      "src/views/AdminView.vue:2633"
     ]
   },
   "m_acfbdc6a": {
@@ -6722,7 +6722,7 @@
     "en": "No challenge selected",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2656"
+      "src/views/AdminView.vue:2657"
     ]
   },
   "m_ad04daf0": {
@@ -6754,7 +6754,7 @@
     "en": "Announcement updated",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2509"
+      "src/views/AdminView.vue:2510"
     ]
   },
   "m_adc7df6a": {
@@ -6794,7 +6794,7 @@
     "en": "static: compare against fixed flag/hash.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:3325"
+      "src/views/AdminView.vue:3326"
     ]
   },
   "m_ae91cc78": {
@@ -6804,7 +6804,7 @@
     "en": "Announcement unpinned",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2510"
+      "src/views/AdminView.vue:2511"
     ]
   },
   "m_aef1b531": {
@@ -6815,7 +6815,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1604",
-      "src/views/AdminView.vue:2468"
+      "src/views/AdminView.vue:2469"
     ]
   },
   "m_af01f5ef": {
@@ -6826,7 +6826,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1232",
-      "src/views/AdminView.vue:2597"
+      "src/views/AdminView.vue:2598"
     ]
   },
   "m_af50a2a8": {
@@ -6890,7 +6890,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2066",
-      "src/views/AdminView.vue:2711"
+      "src/views/AdminView.vue:2712"
     ]
   },
   "m_b11c6a3a": {
@@ -6953,7 +6953,7 @@
       "src/views/AdminView.vue:1807",
       "src/views/AdminView.vue:1946",
       "src/views/AdminView.vue:2285",
-      "src/views/AdminView.vue:2649",
+      "src/views/AdminView.vue:2650",
       "src/views/AdminView.vue:844"
     ]
   },
@@ -6965,7 +6965,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1196",
-      "src/views/AdminView.vue:2524"
+      "src/views/AdminView.vue:2525"
     ]
   },
   "m_b369a6b8": {
@@ -6985,7 +6985,7 @@
     "en": "Failed to load team details",
     "review": false,
     "sources": [
-      "src/views/TeamsView.vue:465"
+      "src/views/TeamsView.vue:466"
     ]
   },
   "m_b39b0f9f": {
@@ -7005,7 +7005,7 @@
     "en": "No poster selected",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2655"
+      "src/views/AdminView.vue:2656"
     ]
   },
   "m_b43896c9": {
@@ -7037,7 +7037,7 @@
     "en": "Challenge config loaded",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2684"
+      "src/views/AdminView.vue:2685"
     ]
   },
   "m_b4cabecb": {
@@ -7049,7 +7049,7 @@
     "sources": [
       "src/views/AdminView.vue:1476",
       "src/views/AdminView.vue:1587",
-      "src/views/AdminView.vue:2722"
+      "src/views/AdminView.vue:2723"
     ]
   },
   "m_b514887f": {
@@ -7070,7 +7070,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1301",
-      "src/views/AdminView.vue:2540"
+      "src/views/AdminView.vue:2541"
     ]
   },
   "m_b58ebf29": {
@@ -7112,7 +7112,7 @@
     "en": "Failed to resolve runtime alert",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2529",
+      "src/views/AdminView.vue:2530",
       "src/views/AdminView.vue:4433"
     ]
   },
@@ -7124,7 +7124,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1137",
-      "src/views/AdminView.vue:2472"
+      "src/views/AdminView.vue:2473"
     ]
   },
   "m_b6536d5f": {
@@ -7134,7 +7134,7 @@
     "en": "dynamic/internal challenges in compose mode require a compose template.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2750"
+      "src/views/AdminView.vue:2751"
     ]
   },
   "m_b690b78e": {
@@ -7144,7 +7144,7 @@
     "en": "Contest created",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2436"
+      "src/views/AdminView.vue:2437"
     ]
   },
   "m_b743f462": {
@@ -7154,7 +7154,7 @@
     "en": "compose template (optional)",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2739"
+      "src/views/AdminView.vue:2740"
     ]
   },
   "m_b751033a": {
@@ -7186,7 +7186,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1263",
-      "src/views/AdminView.vue:2680"
+      "src/views/AdminView.vue:2681"
     ]
   },
   "m_b7c41d65": {
@@ -7206,7 +7206,7 @@
     "en": "Error",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2470",
+      "src/views/AdminView.vue:2471",
       "src/views/AdminView.vue:874"
     ]
   },
@@ -7239,7 +7239,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1844",
-      "src/views/AdminView.vue:2712"
+      "src/views/AdminView.vue:2713"
     ]
   },
   "m_b9744b05": {
@@ -7250,7 +7250,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2225",
-      "src/views/AdminView.vue:2482"
+      "src/views/AdminView.vue:2483"
     ]
   },
   "m_bac1c00c": {
@@ -7290,7 +7290,7 @@
     "en": "Rollback version number",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2531",
+      "src/views/AdminView.vue:2532",
       "src/views/AdminView.vue:725"
     ]
   },
@@ -7302,7 +7302,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1439",
-      "src/views/AdminView.vue:2722"
+      "src/views/AdminView.vue:2723"
     ]
   },
   "m_bc088033": {
@@ -7324,7 +7324,7 @@
     "sources": [
       "src/views/AdminView.vue:1639",
       "src/views/AdminView.vue:2166",
-      "src/views/AdminView.vue:2475",
+      "src/views/AdminView.vue:2476",
       "src/views/ContestDetailView.vue:349"
     ]
   },
@@ -7335,7 +7335,7 @@
     "en": "Failed to update user role",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2497",
+      "src/views/AdminView.vue:2498",
       "src/views/AdminView.vue:5307"
     ]
   },
@@ -7370,7 +7370,7 @@
     "en": "Announcement deleted",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2511"
+      "src/views/AdminView.vue:2512"
     ]
   },
   "m_bcc0fd65": {
@@ -7400,7 +7400,7 @@
     "en": "Poster deleted",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2527"
+      "src/views/AdminView.vue:2528"
     ]
   },
   "m_bdd4152e": {
@@ -7421,7 +7421,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1228",
-      "src/views/AdminView.vue:2435"
+      "src/views/AdminView.vue:2436"
     ]
   },
   "m_be487257": {
@@ -7451,7 +7451,7 @@
     "en": "Account deleted",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2715",
+      "src/views/AdminView.vue:2716",
       "src/views/ProfileView.vue:250"
     ]
   },
@@ -7473,7 +7473,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1732",
-      "src/views/AdminView.vue:2733"
+      "src/views/AdminView.vue:2734"
     ]
   },
   "m_bf873b90": {
@@ -7484,7 +7484,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1259",
-      "src/views/AdminView.vue:2517"
+      "src/views/AdminView.vue:2518"
     ]
   },
   "m_bfd32621": {
@@ -7515,9 +7515,9 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1556",
-      "src/views/AdminView.vue:2430",
-      "src/views/AdminView.vue:3290",
-      "src/views/AdminView.vue:3399",
+      "src/views/AdminView.vue:2431",
+      "src/views/AdminView.vue:3291",
+      "src/views/AdminView.vue:3400",
       "src/views/TeamsView.vue:123"
     ]
   },
@@ -7531,7 +7531,7 @@
       "src/views/AdminView.vue:1167",
       "src/views/AdminView.vue:1599",
       "src/views/AdminView.vue:2059",
-      "src/views/AdminView.vue:2615",
+      "src/views/AdminView.vue:2616",
       "src/views/AdminView.vue:278",
       "src/views/AdminView.vue:606",
       "src/views/AdminView.vue:794",
@@ -7555,7 +7555,7 @@
     "en": "direct (direct entrance)",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2748",
+      "src/views/AdminView.vue:2749",
       "src/views/AdminView.vue:381"
     ]
   },
@@ -7587,7 +7587,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1727",
-      "src/views/AdminView.vue:2417"
+      "src/views/AdminView.vue:2418"
     ]
   },
   "m_c150cbf0": {
@@ -7618,7 +7618,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1863",
-      "src/views/AdminView.vue:2601"
+      "src/views/AdminView.vue:2602"
     ]
   },
   "m_c303b868": {
@@ -7639,7 +7639,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1210",
-      "src/views/AdminView.vue:2667"
+      "src/views/AdminView.vue:2668"
     ]
   },
   "m_c33a7bc5": {
@@ -7649,7 +7649,7 @@
     "en": "Any file type is supported, up to {maxSize}. If a .zip includes docker-compose.yml, compose is auto-imported and remaining files are saved as runtime/....",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:3385"
+      "src/views/AdminView.vue:3386"
     ]
   },
   "m_c35278f5": {
@@ -7659,7 +7659,7 @@
     "en": "Version number must be an integer greater than or equal to 1.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2425",
+      "src/views/AdminView.vue:2426",
       "src/views/AdminView.vue:4849"
     ]
   },
@@ -7671,7 +7671,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1435",
-      "src/views/AdminView.vue:2573"
+      "src/views/AdminView.vue:2574"
     ]
   },
   "m_c4f43f6c": {
@@ -7681,7 +7681,7 @@
     "en": "Runtime alert scan completed",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2699"
+      "src/views/AdminView.vue:2700"
     ]
   },
   "m_c50b4607": {
@@ -7692,7 +7692,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1904",
-      "src/views/AdminView.vue:2713"
+      "src/views/AdminView.vue:2714"
     ]
   },
   "m_c525f433": {
@@ -7712,7 +7712,7 @@
     "en": "Runtime alert: instance expiring soon",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2697"
+      "src/views/AdminView.vue:2698"
     ]
   },
   "m_c53d6066": {
@@ -7722,7 +7722,7 @@
     "en": "Challenge created",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2641"
+      "src/views/AdminView.vue:2642"
     ]
   },
   "m_c56f30e9": {
@@ -7742,7 +7742,7 @@
     "en": "Failed to delete announcement",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2610",
+      "src/views/AdminView.vue:2611",
       "src/views/AdminView.vue:5518"
     ]
   },
@@ -7753,7 +7753,7 @@
     "en": "Create Contest",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:3392"
+      "src/views/AdminView.vue:3393"
     ]
   },
   "m_c6c4ac59": {
@@ -7763,7 +7763,7 @@
     "en": "Contest Management",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2435",
+      "src/views/AdminView.vue:2436",
       "src/views/AdminView.vue:926"
     ]
   },
@@ -7784,7 +7784,7 @@
     "en": "Challenge Library Overview",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2640",
+      "src/views/AdminView.vue:2641",
       "src/views/AdminView.vue:633"
     ]
   },
@@ -7796,7 +7796,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1346",
-      "src/views/AdminView.vue:2433"
+      "src/views/AdminView.vue:2434"
     ]
   },
   "m_c88a4b42": {
@@ -7816,7 +7816,7 @@
     "en": "Passed",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2650",
+      "src/views/AdminView.vue:2651",
       "src/views/AdminView.vue:870"
     ]
   },
@@ -7838,7 +7838,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1726",
-      "src/views/AdminView.vue:2686"
+      "src/views/AdminView.vue:2687"
     ]
   },
   "m_c8f3eed0": {
@@ -7858,7 +7858,7 @@
     "en": "Announcement unpublished",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2506"
+      "src/views/AdminView.vue:2507"
     ]
   },
   "m_c90e211b": {
@@ -7878,7 +7878,7 @@
     "en": "Admin console refreshed",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2523"
+      "src/views/AdminView.vue:2524"
     ]
   },
   "m_c984bd79": {
@@ -7919,7 +7919,7 @@
     "en": "Failed to delete account",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2614",
+      "src/views/AdminView.vue:2615",
       "src/views/AdminView.vue:5337",
       "src/views/ProfileView.vue:256",
       "src/views/ProfileView.vue:258"
@@ -7973,7 +7973,7 @@
     "en": "Tags (comma separated)",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2444",
+      "src/views/AdminView.vue:2445",
       "src/views/AdminView.vue:518"
     ]
   },
@@ -7985,7 +7985,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1776",
-      "src/views/AdminView.vue:2605",
+      "src/views/AdminView.vue:2606",
       "src/views/AdminView.vue:814"
     ]
   },
@@ -7996,7 +7996,7 @@
     "en": "compose (multiple containers)",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2746",
+      "src/views/AdminView.vue:2747",
       "src/views/AdminView.vue:371"
     ]
   },
@@ -8008,7 +8008,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1736",
-      "src/views/AdminView.vue:2732"
+      "src/views/AdminView.vue:2733"
     ]
   },
   "m_cc547060": {
@@ -8060,7 +8060,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1199",
-      "src/views/AdminView.vue:2522"
+      "src/views/AdminView.vue:2523"
     ]
   },
   "m_cdf02ee1": {
@@ -8101,7 +8101,7 @@
     "en": "Compose test failed",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2744",
+      "src/views/AdminView.vue:2745",
       "src/views/AdminView.vue:4681",
       "src/views/AdminView.vue:4684",
       "src/views/AdminView.vue:4685"
@@ -8124,7 +8124,7 @@
     "en": "Announcement created",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2507"
+      "src/views/AdminView.vue:2508"
     ]
   },
   "m_cea5113f": {
@@ -8134,7 +8134,7 @@
     "en": "Attachment uploaded",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2485"
+      "src/views/AdminView.vue:2486"
     ]
   },
   "m_ceb71036": {
@@ -8155,7 +8155,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1737",
-      "src/views/AdminView.vue:2623"
+      "src/views/AdminView.vue:2624"
     ]
   },
   "m_cf2b1c1b": {
@@ -8195,7 +8195,7 @@
     "en": "contests",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2454",
+      "src/views/AdminView.vue:2455",
       "src/views/AdminView.vue:927"
     ]
   },
@@ -8207,7 +8207,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1210",
-      "src/views/AdminView.vue:2670",
+      "src/views/AdminView.vue:2671",
       "src/views/AdminView.vue:707"
     ]
   },
@@ -8259,7 +8259,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1078",
-      "src/views/AdminView.vue:2573",
+      "src/views/AdminView.vue:2574",
       "src/views/AdminView.vue:637"
     ]
   },
@@ -8270,7 +8270,7 @@
     "en": "Draft",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2449",
+      "src/views/AdminView.vue:2450",
       "src/views/AdminView.vue:694"
     ]
   },
@@ -8322,7 +8322,7 @@
     "en": "Testing...",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2453",
+      "src/views/AdminView.vue:2454",
       "src/views/AdminView.vue:427",
       "src/views/AdminView.vue:473"
     ]
@@ -8335,7 +8335,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1167",
-      "src/views/AdminView.vue:2612"
+      "src/views/AdminView.vue:2613"
     ]
   },
   "m_d39922fa": {
@@ -8346,7 +8346,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1239",
-      "src/views/AdminView.vue:2516"
+      "src/views/AdminView.vue:2517"
     ]
   },
   "m_d39e3919": {
@@ -8386,7 +8386,7 @@
     "en": "There is currently no matching template verification record.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2706",
+      "src/views/AdminView.vue:2707",
       "src/views/AdminView.vue:920"
     ]
   },
@@ -8400,7 +8400,7 @@
       "src/views/AdminView.vue:1259",
       "src/views/AdminView.vue:1887",
       "src/views/AdminView.vue:1898",
-      "src/views/AdminView.vue:2458",
+      "src/views/AdminView.vue:2459",
       "src/views/ContestsView.vue:141",
       "src/views/LoginView.vue:225",
       "src/views/TeamsView.vue:173",
@@ -8433,7 +8433,7 @@
       "src/views/AdminView.vue:1938",
       "src/views/AdminView.vue:1963",
       "src/views/AdminView.vue:2226",
-      "src/views/AdminView.vue:2727",
+      "src/views/AdminView.vue:2728",
       "src/views/AdminView.vue:329",
       "src/views/AdminView.vue:831",
       "src/views/AdminView.vue:891"
@@ -8518,9 +8518,9 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1444",
-      "src/views/AdminView.vue:2464",
-      "src/views/AdminView.vue:3288",
-      "src/views/AdminView.vue:3397"
+      "src/views/AdminView.vue:2465",
+      "src/views/AdminView.vue:3289",
+      "src/views/AdminView.vue:3398"
     ]
   },
   "m_d6ed17cd": {
@@ -8623,7 +8623,7 @@
     "en": "Upload attachment",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2619",
+      "src/views/AdminView.vue:2620",
       "src/views/AdminView.vue:565",
       "src/views/AdminView.vue:581",
       "src/views/AdminView.vue:762",
@@ -8670,7 +8670,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1276",
-      "src/views/AdminView.vue:2470"
+      "src/views/AdminView.vue:2471"
     ]
   },
   "m_dc8eef60": {
@@ -8680,7 +8680,7 @@
     "en": "Edit Challenge",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:3283"
+      "src/views/AdminView.vue:3284"
     ]
   },
   "m_dcf7e7a3": {
@@ -8690,7 +8690,7 @@
     "en": "Total number of scans",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2606",
+      "src/views/AdminView.vue:2607",
       "src/views/AdminView.vue:866"
     ]
   },
@@ -8711,7 +8711,7 @@
     "en": "Contest updated",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2437"
+      "src/views/AdminView.vue:2438"
     ]
   },
   "m_dd60e109": {
@@ -8721,7 +8721,7 @@
     "en": "destroy",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2666",
+      "src/views/AdminView.vue:2667",
       "src/views/AdminView.vue:707"
     ]
   },
@@ -8765,7 +8765,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1987",
-      "src/views/AdminView.vue:2629"
+      "src/views/AdminView.vue:2630"
     ]
   },
   "m_de0dd27f": {
@@ -8776,7 +8776,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1725",
-      "src/views/AdminView.vue:2537"
+      "src/views/AdminView.vue:2538"
     ]
   },
   "m_de245eff": {
@@ -8806,7 +8806,7 @@
     "en": "Contest status updated",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2440"
+      "src/views/AdminView.vue:2441"
     ]
   },
   "m_dfadd166": {
@@ -8839,7 +8839,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2196",
-      "src/views/AdminView.vue:2731"
+      "src/views/AdminView.vue:2732"
     ]
   },
   "m_e108053f": {
@@ -8880,7 +8880,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1255",
-      "src/views/AdminView.vue:2475"
+      "src/views/AdminView.vue:2476"
     ]
   },
   "m_e2c587eb": {
@@ -8943,7 +8943,7 @@
     "en": "Failed to update user status",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2499",
+      "src/views/AdminView.vue:2500",
       "src/views/AdminView.vue:5255"
     ]
   },
@@ -8955,7 +8955,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2046",
-      "src/views/AdminView.vue:2726"
+      "src/views/AdminView.vue:2727"
     ]
   },
   "m_e5e3b268": {
@@ -8965,7 +8965,7 @@
     "en": "Failed to load instance metrics",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2546",
+      "src/views/AdminView.vue:2547",
       "src/views/AdminView.vue:4218"
     ]
   },
@@ -9048,7 +9048,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1726",
-      "src/views/AdminView.vue:2416"
+      "src/views/AdminView.vue:2417"
     ]
   },
   "m_e7fa9ac5": {
@@ -9069,7 +9069,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1244",
-      "src/views/AdminView.vue:2598"
+      "src/views/AdminView.vue:2599"
     ]
   },
   "m_e94eabd5": {
@@ -9109,7 +9109,7 @@
     "en": "Failed to update contest status",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2491",
+      "src/views/AdminView.vue:2492",
       "src/views/AdminView.vue:5077"
     ]
   },
@@ -9210,7 +9210,7 @@
     "en": "Runtime mode",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2700",
+      "src/views/AdminView.vue:2701",
       "src/views/AdminView.vue:368"
     ]
   },
@@ -9232,7 +9232,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1333",
-      "src/views/AdminView.vue:2678"
+      "src/views/AdminView.vue:2679"
     ]
   },
   "m_eda3fa71": {
@@ -9242,7 +9242,7 @@
     "en": "Category",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2479",
+      "src/views/AdminView.vue:2480",
       "src/views/AdminView.vue:303",
       "src/views/ContestDetailView.vue:66"
     ]
@@ -9254,7 +9254,7 @@
     "en": "ssh_bastion: inject an SSH bastion, suitable for internal scan and lateral testing.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:3363"
+      "src/views/AdminView.vue:3364"
     ]
   },
   "m_edb470c0": {
@@ -9264,7 +9264,7 @@
     "en": "only errors",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2560",
+      "src/views/AdminView.vue:2561",
       "src/views/AdminView.vue:848"
     ]
   },
@@ -9296,7 +9296,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:2151",
-      "src/views/AdminView.vue:2628"
+      "src/views/AdminView.vue:2629"
     ]
   },
   "m_efc8d1be": {
@@ -9307,7 +9307,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1099",
-      "src/views/AdminView.vue:2574"
+      "src/views/AdminView.vue:2575"
     ]
   },
   "m_efce9ebf": {
@@ -9402,7 +9402,7 @@
     "sources": [
       "src/views/ContestDetailView.vue:1355",
       "src/views/ContestsView.vue:318",
-      "src/views/ProfileView.vue:146",
+      "src/views/ProfileView.vue:147",
       "src/views/ScoreboardWallView.vue:525",
       "src/views/TeamsView.vue:524"
     ]
@@ -9444,7 +9444,7 @@
     "en": "Failed to save challenge",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2429",
+      "src/views/AdminView.vue:2430",
       "src/views/AdminView.vue:4770"
     ]
   },
@@ -9455,7 +9455,7 @@
     "en": "Pin status updated",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2513"
+      "src/views/AdminView.vue:2514"
     ]
   },
   "m_f2ad2b4f": {
@@ -9476,7 +9476,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1964",
-      "src/views/AdminView.vue:2464"
+      "src/views/AdminView.vue:2465"
     ]
   },
   "m_f3ea5f90": {
@@ -9507,7 +9507,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1218",
-      "src/views/AdminView.vue:2465"
+      "src/views/AdminView.vue:2466"
     ]
   },
   "m_f4169021": {
@@ -9518,7 +9518,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1868",
-      "src/views/AdminView.vue:2457"
+      "src/views/AdminView.vue:2458"
     ]
   },
   "m_f4afd30f": {
@@ -9540,7 +9540,7 @@
     "sources": [
       "src/views/AdminView.vue:1702",
       "src/views/AdminView.vue:1710",
-      "src/views/AdminView.vue:2535"
+      "src/views/AdminView.vue:2536"
     ]
   },
   "m_f539d012": {
@@ -9581,7 +9581,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1451",
-      "src/views/AdminView.vue:2502"
+      "src/views/AdminView.vue:2503"
     ]
   },
   "m_f5a8faeb": {
@@ -9611,7 +9611,7 @@
     "en": "Challenge rolled back",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2646"
+      "src/views/AdminView.vue:2647"
     ]
   },
   "m_f70ecbc6": {
@@ -9621,7 +9621,7 @@
     "en": "script: verify via script for complex validation.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:3320"
+      "src/views/AdminView.vue:3321"
     ]
   },
   "m_f7312e10": {
@@ -9632,7 +9632,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1794",
-      "src/views/AdminView.vue:2538"
+      "src/views/AdminView.vue:2539"
     ]
   },
   "m_f79663f9": {
@@ -9653,7 +9653,7 @@
     "en": "Failed to clear release time",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2589",
+      "src/views/AdminView.vue:2590",
       "src/views/AdminView.vue:5601"
     ]
   },
@@ -9747,7 +9747,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1876",
-      "src/views/AdminView.vue:2662"
+      "src/views/AdminView.vue:2663"
     ]
   },
   "m_fb5c7740": {
@@ -9778,7 +9778,7 @@
     "en": "There is no version record yet.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2703",
+      "src/views/AdminView.vue:2704",
       "src/views/AdminView.vue:757"
     ]
   },
@@ -9800,7 +9800,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1908",
-      "src/views/AdminView.vue:2467"
+      "src/views/AdminView.vue:2468"
     ]
   },
   "m_fc9a3603": {
@@ -9810,7 +9810,7 @@
     "en": "Binding failed",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2518",
+      "src/views/AdminView.vue:2519",
       "src/views/AdminView.vue:5551"
     ]
   },
@@ -9831,7 +9831,7 @@
     "en": "Failed to upload challenge attachment",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2620",
+      "src/views/AdminView.vue:2621",
       "src/views/AdminView.vue:4926"
     ]
   },
@@ -9873,7 +9873,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1325",
-      "src/views/AdminView.vue:2588"
+      "src/views/AdminView.vue:2589"
     ]
   },
   "m_fd785681": {
@@ -9893,7 +9893,7 @@
     "en": "Roll back to this version",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2532",
+      "src/views/AdminView.vue:2533",
       "src/views/AdminView.vue:753"
     ]
   },
@@ -9905,7 +9905,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:184",
-      "src/views/AdminView.vue:3290"
+      "src/views/AdminView.vue:3291"
     ]
   },
   "m_fe316a8f": {
@@ -9925,7 +9925,7 @@
     "en": "internal: runtime is intended for internal/judge-controlled scenarios.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:3301"
+      "src/views/AdminView.vue:3302"
     ]
   },
   "m_fe582bef": {
@@ -9935,7 +9935,7 @@
     "en": "Please provide image registry address first.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2591",
+      "src/views/AdminView.vue:2592",
       "src/views/AdminView.vue:4549"
     ]
   },
@@ -9968,7 +9968,7 @@
     "review": false,
     "sources": [
       "src/views/AdminView.vue:1002",
-      "src/views/AdminView.vue:2456"
+      "src/views/AdminView.vue:2457"
     ]
   },
   "m_fff3360e": {
@@ -9978,7 +9978,7 @@
     "en": "You can continue binding challenges and adjusting status.",
     "review": false,
     "sources": [
-      "src/views/AdminView.vue:2570"
+      "src/views/AdminView.vue:2571"
     ]
   }
 }

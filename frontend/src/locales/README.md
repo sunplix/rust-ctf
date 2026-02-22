@@ -31,6 +31,7 @@ npm run i18n:extract
 - Edit `src/locales/catalog.json` fields:
   - `zh`: Chinese display copy
   - `en`: English display copy
+  - other locale fields if configured (for example `ja`)
 
 ## Where To Edit (Author Workflow)
 
@@ -40,7 +41,7 @@ If you want frontend text to change, edit this file only:
 
 Rules:
 
-- Only change `zh` / `en` fields.
+- Only change language fields (for example `zh` / `en` / `ja`).
 - Do not change `source_zh` / `source_en` (they are extraction anchors).
 - Do not edit `runtime.json` manually (auto-generated).
 - Keep placeholders such as `{username}`, `{maxSize}`, `{teamName}` unchanged.
@@ -66,32 +67,41 @@ This updates:
 
 ## Add More Languages (beyond zh/en)
 
-Current implementation is bilingual by design (`zh` + `en`).  
-To add a third language (for example `ja`), update these parts:
+Current runtime is locale-config driven.
 
-1. Locale state and language switch
+1. Edit locale config
 
-- Add new locale option in app store / UI switcher (currently `zh` / `en`).
+```bash
+src/locales/i18n.config.json
+```
 
-2. Catalog and runtime schema
+- Add one item under `supported_locales`:
+  - `code`: locale id (for example `ja`)
+  - `label`: full label
+  - `short_label`: short button label shown in top bar
+  - `html_lang`: HTML `lang` value
+  - `date_locale`: `Intl.DateTimeFormat` locale tag
+- Ensure `default_locale` and `fallback_locale` are valid locale codes in `supported_locales`.
 
-- Extend `catalog.json` item shape to include the new field (for example `ja`).
-- Extend `runtime.json` generation in `scripts/i18n_extract.mjs` so each key includes new language text.
-
-3. Runtime translator
-
-- Update `src/composables/useL10n.ts`:
-  - `tr()` should select by current locale (`zh` / `en` / `ja` ...).
-  - `tl()` fallback map should support non-zh locales, or be replaced with a generic locale lookup.
-
-4. Review export
-
-- Add a new column in `catalog.review.csv` output for the new language to support copy review.
-
-5. Fill translations and regenerate
+2. Regenerate catalog/runtime
 
 ```bash
 npm run i18n:extract
 ```
 
-If you want, we can do this refactor in code directly next (make i18n locale-agnostic instead of hardcoded zh/en).
+3. Fill translation text
+
+- Open `src/locales/catalog.json`.
+- New locale field (for example `ja`) will appear in each entry.
+- Fill translated copy for that field.
+
+4. Regenerate again after edits
+
+```bash
+npm run i18n:extract
+```
+
+5. Verify in UI
+
+- Use top bar language switch button to cycle locales.
+- Check date/time formatting and key pages for missing copy.

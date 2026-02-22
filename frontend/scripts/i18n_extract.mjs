@@ -13,9 +13,30 @@ const CATALOG_PATH = path.join(LOCALES_DIR, "catalog.json");
 const REVIEW_PATH = path.join(LOCALES_DIR, "catalog.review.csv");
 const DYNAMIC_PATH = path.join(LOCALES_DIR, "dynamic_tr.review.csv");
 const RUNTIME_PATH = path.join(LOCALES_DIR, "runtime.json");
+const I18N_CONFIG_PATH = path.join(LOCALES_DIR, "i18n.config.json");
 
 const SOURCE_EXTENSIONS = new Set([".vue", ".ts"]);
 const SOURCE_IGNORED_DIRS = new Set(["assets", "locales"]);
+const FALLBACK_I18N_CONFIG = {
+  default_locale: "zh",
+  fallback_locale: "en",
+  supported_locales: [
+    {
+      code: "zh",
+      label: "中文",
+      short_label: "中文",
+      html_lang: "zh-CN",
+      date_locale: "zh-CN"
+    },
+    {
+      code: "en",
+      label: "English",
+      short_label: "EN",
+      html_lang: "en",
+      date_locale: "en-US"
+    }
+  ]
+};
 
 function fnv1a32(input) {
   let hash = 0x811c9dc5;
@@ -206,18 +227,80 @@ async function loadExistingCatalog() {
   return {};
 }
 
-function upsertEntry(catalog, entry, reviewFlag = false) {
+function normalizeLocaleCode(value) {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+async function loadI18nConfig() {
+  let parsed = FALLBACK_I18N_CONFIG;
+  try {
+    const raw = await fs.readFile(I18N_CONFIG_PATH, "utf8");
+    parsed = JSON.parse(raw);
+  } catch {
+    // use fallback config
+  }
+
+  const supportedLocales = [];
+  const seen = new Set();
+  for (const item of Array.isArray(parsed.supported_locales) ? parsed.supported_locales : []) {
+    const code = normalizeLocaleCode(item?.code);
+    if (!code || seen.has(code)) {
+      continue;
+    }
+    seen.add(code);
+    supportedLocales.push(code);
+  }
+
+  if (supportedLocales.length === 0) {
+    supportedLocales.push("zh", "en");
+  }
+
+  const defaultLocaleRaw = normalizeLocaleCode(parsed.default_locale);
+  const defaultLocale = supportedLocales.includes(defaultLocaleRaw)
+    ? defaultLocaleRaw
+    : supportedLocales[0];
+  const fallbackLocaleRaw = normalizeLocaleCode(parsed.fallback_locale);
+  const fallbackLocale = supportedLocales.includes(fallbackLocaleRaw)
+    ? fallbackLocaleRaw
+    : defaultLocale;
+
+  return {
+    supportedLocales,
+    defaultLocale,
+    fallbackLocale
+  };
+}
+
+function defaultLocaleText(localeCode, entry, config) {
+  if (localeCode === config.defaultLocale) {
+    return entry.sourceZh;
+  }
+  if (localeCode === config.fallbackLocale) {
+    return entry.sourceEn;
+  }
+  return entry.sourceEn;
+}
+
+function upsertEntry(catalog, entry, config, reviewFlag = false) {
   const key = messageKey(entry.sourceZh, entry.sourceEn);
   const existing = catalog[key] ?? {};
 
   const nextSources = new Set(Array.isArray(existing.sources) ? existing.sources : []);
   nextSources.add(entry.source);
 
+  const nextLocaleValues = {};
+  for (const localeCode of config.supportedLocales) {
+    const existingValue =
+      typeof existing[localeCode] === "string" && existing[localeCode].length > 0
+        ? existing[localeCode]
+        : "";
+    nextLocaleValues[localeCode] = existingValue || defaultLocaleText(localeCode, entry, config);
+  }
+
   catalog[key] = {
     source_zh: entry.sourceZh,
     source_en: entry.sourceEn,
-    zh: typeof existing.zh === "string" && existing.zh.length > 0 ? existing.zh : entry.sourceZh,
-    en: typeof existing.en === "string" && existing.en.length > 0 ? existing.en : entry.sourceEn,
+    ...nextLocaleValues,
     review:
       typeof existing.review === "boolean"
         ? existing.review
@@ -238,6 +321,7 @@ function toCsvRow(columns) {
 }
 
 async function main() {
+  const i18nConfig = await loadI18nConfig();
   const sourceFiles = await walkSourceFiles(SRC_ROOT);
   const existingCatalog = await loadExistingCatalog();
   const nextCatalog = {};
@@ -277,10 +361,10 @@ async function main() {
   }
 
   for (const entry of adminMapEntries) {
-    upsertEntry(nextCatalog, entry, false);
+    upsertEntry(nextCatalog, entry, i18nConfig, false);
   }
   for (const entry of trEntries) {
-    upsertEntry(nextCatalog, entry, false);
+    upsertEntry(nextCatalog, entry, i18nConfig, false);
   }
   for (const entry of tlEntries) {
     const hintedEn = zhToEnHints.get(entry.sourceZh) ?? entry.sourceZh;
@@ -291,6 +375,7 @@ async function main() {
         sourceEn: hintedEn,
         source: entry.source
       },
+      i18nConfig,
       hintedEn === entry.sourceZh
     );
   }
@@ -301,11 +386,10 @@ async function main() {
       continue;
     }
 
-    if (typeof previous.zh === "string" && previous.zh.length > 0) {
-      entry.zh = previous.zh;
-    }
-    if (typeof previous.en === "string" && previous.en.length > 0) {
-      entry.en = previous.en;
+    for (const localeCode of i18nConfig.supportedLocales) {
+      if (typeof previous[localeCode] === "string" && previous[localeCode].length > 0) {
+        entry[localeCode] = previous[localeCode];
+      }
     }
     if (typeof previous.review === "boolean") {
       entry.review = previous.review;
@@ -315,49 +399,81 @@ async function main() {
   const orderedCatalog = Object.fromEntries(
     Object.entries(nextCatalog)
       .sort((left, right) => left[0].localeCompare(right[0]))
-      .map(([key, value]) => [
-        key,
-        {
+      .map(([key, value]) => {
+        const entry = {
           source_zh: value.source_zh,
-          source_en: value.source_en,
-          zh: value.zh,
-          en: value.en,
-          review: Boolean(value.review),
-          sources: [...value.sources].sort()
+          source_en: value.source_en
+        };
+        for (const localeCode of i18nConfig.supportedLocales) {
+          entry[localeCode] = value[localeCode];
         }
-      ])
+        entry.review = Boolean(value.review);
+        entry.sources = [...value.sources].sort();
+        return [key, entry];
+      })
   );
 
   await fs.mkdir(LOCALES_DIR, { recursive: true });
   await fs.writeFile(CATALOG_PATH, `${JSON.stringify(orderedCatalog, null, 2)}\n`, "utf8");
 
   const runtimePairs = {};
+  const runtimeBySourceZh = {};
   const runtimeZhToEn = {};
   for (const [key, value] of Object.entries(orderedCatalog)) {
-    runtimePairs[key] = {
-      zh: value.zh,
-      en: value.en
-    };
+    const localeTextMap = {};
+    for (const localeCode of i18nConfig.supportedLocales) {
+      localeTextMap[localeCode] =
+        typeof value[localeCode] === "string"
+          ? value[localeCode]
+          : defaultLocaleText(localeCode, { sourceZh: value.source_zh, sourceEn: value.source_en }, i18nConfig);
+    }
+    runtimePairs[key] = localeTextMap;
+    if (!runtimeBySourceZh[value.source_zh]) {
+      runtimeBySourceZh[value.source_zh] = { ...localeTextMap };
+    }
     if (!runtimeZhToEn[value.source_zh]) {
-      runtimeZhToEn[value.source_zh] = value.en;
+      runtimeZhToEn[value.source_zh] =
+        localeTextMap.en ??
+        localeTextMap[i18nConfig.fallbackLocale] ??
+        localeTextMap[i18nConfig.defaultLocale] ??
+        value.source_en;
     }
   }
 
   await fs.writeFile(
     RUNTIME_PATH,
-    `${JSON.stringify({ pairs: runtimePairs, zh_to_en: runtimeZhToEn }, null, 2)}\n`,
+    `${JSON.stringify(
+      {
+        supported_locales: i18nConfig.supportedLocales,
+        default_locale: i18nConfig.defaultLocale,
+        fallback_locale: i18nConfig.fallbackLocale,
+        pairs: runtimePairs,
+        by_source_zh: runtimeBySourceZh,
+        zh_to_en: runtimeZhToEn
+      },
+      null,
+      2
+    )}\n`,
     "utf8"
   );
 
   let reviewCsv = "";
-  reviewCsv += toCsvRow(["key", "source_zh", "source_en", "zh", "en", "review", "source_count", "sources"]);
+  reviewCsv += toCsvRow([
+    "key",
+    "source_zh",
+    "source_en",
+    ...i18nConfig.supportedLocales,
+    "review",
+    "source_count",
+    "sources"
+  ]);
   for (const [key, value] of Object.entries(orderedCatalog)) {
+    const localeColumns = i18nConfig.supportedLocales.map((localeCode) => value[localeCode] ?? "");
     reviewCsv += toCsvRow([
       key,
       value.source_zh,
       value.source_en,
-      value.zh,
-      value.en,
+      ...localeColumns,
       value.review ? "true" : "false",
       value.sources.length,
       value.sources.join(" | ")

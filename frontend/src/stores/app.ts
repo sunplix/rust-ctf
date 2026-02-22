@@ -1,8 +1,17 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
 import { getPublicSiteSettings, type SiteSettings } from "../api/client";
+import {
+  getLocaleHtmlLang,
+  getLocaleOption,
+  getNextLocale,
+  I18N_DEFAULT_LOCALE,
+  I18N_LOCALE_OPTIONS,
+  isSupportedLocale,
+  normalizeLocale
+} from "../locales/i18n";
 
-export type AppLocale = "zh" | "en";
+export type AppLocale = string;
 export type AppTheme = "light" | "dark";
 
 type AppPreferences = {
@@ -22,17 +31,13 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
 
 const APP_PREFERENCES_STORAGE_KEY = "rust-ctf.preferences";
 
-function isAppLocale(value: unknown): value is AppLocale {
-  return value === "zh" || value === "en";
-}
-
 function isAppTheme(value: unknown): value is AppTheme {
   return value === "light" || value === "dark";
 }
 
 export const useAppStore = defineStore("app", () => {
   const backendBaseUrl = ref(import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080");
-  const locale = ref<AppLocale>("zh");
+  const locale = ref<AppLocale>(I18N_DEFAULT_LOCALE);
   const theme = ref<AppTheme>("light");
   const hydrated = ref(false);
   const siteSettings = ref<SiteSettings>({ ...DEFAULT_SITE_SETTINGS });
@@ -40,10 +45,13 @@ export const useAppStore = defineStore("app", () => {
 
   const isDarkTheme = computed(() => theme.value === "dark");
   const isEnglish = computed(() => locale.value === "en");
+  const localeOptions = computed(() => I18N_LOCALE_OPTIONS);
+  const currentLocaleOption = computed(() => getLocaleOption(locale.value));
+  const nextLocaleOption = computed(() => getLocaleOption(getNextLocale(locale.value)));
 
   function applyDocumentPreferences() {
     document.documentElement.setAttribute("data-theme", theme.value);
-    document.documentElement.setAttribute("lang", locale.value === "zh" ? "zh-CN" : "en");
+    document.documentElement.setAttribute("lang", getLocaleHtmlLang(locale.value));
   }
 
   function persistPreferences() {
@@ -68,8 +76,8 @@ export const useAppStore = defineStore("app", () => {
 
     try {
       const parsed = JSON.parse(raw) as Partial<AppPreferences>;
-      if (isAppLocale(parsed.locale)) {
-        locale.value = parsed.locale;
+      if (isSupportedLocale(parsed.locale)) {
+        locale.value = normalizeLocale(parsed.locale);
       }
       if (isAppTheme(parsed.theme)) {
         theme.value = parsed.theme;
@@ -82,16 +90,17 @@ export const useAppStore = defineStore("app", () => {
   }
 
   function setLocale(nextLocale: AppLocale) {
-    if (locale.value === nextLocale) {
+    const normalized = normalizeLocale(nextLocale);
+    if (locale.value === normalized) {
       return;
     }
-    locale.value = nextLocale;
+    locale.value = normalized;
     persistPreferences();
     applyDocumentPreferences();
   }
 
   function toggleLocale() {
-    setLocale(locale.value === "zh" ? "en" : "zh");
+    setLocale(getNextLocale(locale.value));
   }
 
   function setTheme(nextTheme: AppTheme) {
@@ -138,6 +147,9 @@ export const useAppStore = defineStore("app", () => {
     siteSettingsLoaded,
     isDarkTheme,
     isEnglish,
+    localeOptions,
+    currentLocaleOption,
+    nextLocaleOption,
     hydrateFromStorage,
     setLocale,
     toggleLocale,

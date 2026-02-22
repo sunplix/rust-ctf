@@ -1,13 +1,14 @@
 import { computed } from "vue";
 
 import { useAppStore } from "../stores/app";
+import { getLocaleDateLocale } from "../locales/i18n";
 import { useL10n } from "./useL10n";
 
 export function useTimeFormat() {
   const appStore = useAppStore();
   const { locale } = useL10n();
 
-  const localeTag = computed(() => (locale.value === "en" ? "en-US" : "zh-CN"));
+  const localeTag = computed(() => getLocaleDateLocale(locale.value));
   const isUtcMode = computed(() => appStore.siteSettings.time_display_mode === "utc");
 
   function formatTime(

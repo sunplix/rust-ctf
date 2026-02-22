@@ -1,0 +1,20 @@
+{
+  "default_locale": "zh",
+  "fallback_locale": "en",
+  "supported_locales": [
+    {
+      "code": "zh",
+      "label": "中文",
+      "short_label": "中文",
+      "html_lang": "zh-CN",
+      "date_locale": "zh-CN"
+    },
+    {
+      "code": "en",
+      "label": "English",
+      "short_label": "EN",
+      "html_lang": "en",
+      "date_locale": "en-US"
+    }
+  ]
+}

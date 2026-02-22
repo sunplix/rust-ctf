@@ -1,13 +1,13 @@
 key,source_zh,source_en,zh,en,review,source_count,sources
 m_0014d0f3,成员已移除,Member removed,成员已移除,Member removed,false,1,src/views/TeamsView.vue:933
-m_00269f97,刷新失败,Refresh failed,刷新失败,Refresh failed,false,2,src/views/AdminView.vue:2633 | src/views/AdminView.vue:4484
-m_0041fe19,下移,move down,下移,move down,false,2,src/views/AdminView.vue:1317 | src/views/AdminView.vue:2660
-m_00492b40,访问模式,access mode,访问模式,access mode,false,1,src/views/AdminView.vue:2478
-m_004dcf1e,密码过短,Password too short,密码过短,Password too short,false,1,src/views/AdminView.vue:2576
+m_00269f97,刷新失败,Refresh failed,刷新失败,Refresh failed,false,2,src/views/AdminView.vue:2634 | src/views/AdminView.vue:4484
+m_0041fe19,下移,move down,下移,move down,false,2,src/views/AdminView.vue:1317 | src/views/AdminView.vue:2661
+m_00492b40,访问模式,access mode,访问模式,access mode,false,1,src/views/AdminView.vue:2479
+m_004dcf1e,密码过短,Password too short,密码过短,Password too short,false,1,src/views/AdminView.vue:2577
 m_00595bb6,无重复字符序列,No repeating run,无重复字符序列,No repeating run,false,1,src/views/LoginView.vue:199
 m_009667e9,显示确认密码,Show confirm password,显示确认密码,Show confirm password,false,1,src/views/LoginView.vue:168
 m_0122ceb0,较弱,Weak,较弱,Weak,false,1,src/views/LoginView.vue:565
-m_01bbe0ec,请先选择一个附件文件,Please select an attachment file first.,请先选择一个附件文件,Please select an attachment file first.,false,2,src/views/AdminView.vue:2594 | src/views/AdminView.vue:4890
+m_01bbe0ec,请先选择一个附件文件,Please select an attachment file first.,请先选择一个附件文件,Please select an attachment file first.,false,2,src/views/AdminView.vue:2595 | src/views/AdminView.vue:4890
 m_027b4288,创建队伍,Create team,创建队伍,Create team,false,1,src/views/TeamsView.vue:214
 m_02c5ee29,账户设置,Account Settings,账户设置,Account Settings,false,1,src/views/ProfileView.vue:6
 m_02f8238a,密码,Password,密码,Password,false,2,src/views/ContestDetailView.vue:229 | src/views/LoginView.vue:130
@@ -15,90 +15,90 @@ m_035d13cd,保存题目类别失败,Failed to save challenge category,保存题�
 m_0363a785,分,pts,分,pts,false,1,src/views/ContestDetailView.vue:1614
 m_04114707,三血加成(%),Third blood bonus (%),三血加成(%),Third blood bonus (%),false,1,src/views/AdminView.vue:1041
 m_044a2437,加载题目附件失败,Failed to load challenge files,加载题目附件失败,Failed to load challenge files,false,1,src/views/ContestDetailView.vue:1437
-m_0463511a,更新题目失败,Failed to update challenge,更新题目失败,Failed to update challenge,false,2,src/views/AdminView.vue:2496 | src/views/AdminView.vue:4799
+m_0463511a,更新题目失败,Failed to update challenge,更新题目失败,Failed to update challenge,false,2,src/views/AdminView.vue:2497 | src/views/AdminView.vue:4799
 m_04af0993,确认中...,Confirming...,确认中...,Confirming...,false,1,src/views/LoginView.vue:267
 m_04bf8b3c,加粗,Bold,加粗,Bold,false,2,src/views/AdminView.vue:1403 | src/views/AdminView.vue:1528
 m_05061322,公告标题和内容不能为空,公告标题和内容不能为空,公告标题和内容不能为空,公告标题和内容不能为空,true,2,src/views/AdminView.vue:5375 | src/views/AdminView.vue:5448
-m_0544870a,请先填写 compose 模板,Please fill in the compose template first.,请先填写 compose 模板,Please fill in the compose template first.,false,2,src/views/AdminView.vue:2742 | src/views/AdminView.vue:4625
+m_0544870a,请先填写 compose 模板,Please fill in the compose template first.,请先填写 compose 模板,Please fill in the compose template first.,false,2,src/views/AdminView.vue:2743 | src/views/AdminView.vue:4625
 m_05a3691f,加入时间,Joined at,加入时间,Joined at,false,1,src/views/TeamsView.vue:162
 m_05b983ca,确认重置密码,Confirm Password Reset,确认重置密码,Confirm Password Reset,false,1,src/views/LoginView.vue:349
-m_05ece329,测试镜像（拉取+构建探测）,Test image (pull + build probe),测试镜像（拉取+构建探测）,Test image (pull + build probe),false,2,src/views/AdminView.vue:2450 | src/views/AdminView.vue:427
-m_06301325,选择并管理,Select and manage,选择并管理,Select and manage,false,2,src/views/AdminView.vue:2676 | src/views/AdminView.vue:663
+m_05ece329,测试镜像（拉取+构建探测）,Test image (pull + build probe),测试镜像（拉取+构建探测）,Test image (pull + build probe),false,2,src/views/AdminView.vue:2451 | src/views/AdminView.vue:427
+m_06301325,选择并管理,Select and manage,选择并管理,Select and manage,false,2,src/views/AdminView.vue:2677 | src/views/AdminView.vue:663
 m_065234bd,队伍大厅,Team Lobby,队伍大厅,Team Lobby,false,1,src/views/TeamsView.vue:18
-m_0683f7b9,管理该账号,Manage this account,管理该账号,Manage this account,false,2,src/views/AdminView.vue:1987 | src/views/AdminView.vue:2521
+m_0683f7b9,管理该账号,Manage this account,管理该账号,Manage this account,false,2,src/views/AdminView.vue:1987 | src/views/AdminView.vue:2522
 m_070fdd67,包含数字,Contains digit,包含数字,Contains digit,false,1,src/views/LoginView.vue:194
 m_074e39c3,配置题型、flag 策略和运行环境。,"Configure challenge type, flag strategy, and runtime.",配置题型、flag 策略和运行环境。,"Configure challenge type, flag strategy, and runtime.",false,1,src/views/AdminView.vue:342
 m_0784b499,估算破解时间：{crackTime},Estimated crack time: {crackTime},估算破解时间：{crackTime},Estimated crack time: {crackTime},false,2,src/views/LoginView.vue:497 | src/views/LoginView.vue:500
 m_0894367f,测试日志会实时显示（默认最长 300 秒），适合镜像拉取/构建较慢场景。,Live logs are streamed in real time (default timeout: 300s).,测试日志会实时显示（默认最长 300 秒），适合镜像拉取/构建较慢场景。,Live logs are streamed in real time (default timeout: 300s).,false,1,src/views/AdminView.vue:432
 m_08abf5d1,加载排行榜失败,Failed to load scoreboard wall,加载排行榜失败,Failed to load scoreboard wall,false,1,src/views/ScoreboardWallView.vue:549
-m_08c1db3c,加载实例失败,Failed to load instances,加载实例失败,Failed to load instances,false,2,src/views/AdminView.vue:2545 | src/views/AdminView.vue:4197
+m_08c1db3c,加载实例失败,Failed to load instances,加载实例失败,Failed to load instances,false,2,src/views/AdminView.vue:2546 | src/views/AdminView.vue:4197
 m_094bf85e,会话已清理。,Session cleared.,会话已清理。,Session cleared.,false,1,src/App.vue:336
-m_0958cae5,执行过期回收,Execute expiration recycling,执行过期回收,Execute expiration recycling,false,2,src/views/AdminView.vue:1702 | src/views/AdminView.vue:2716
+m_0958cae5,执行过期回收,Execute expiration recycling,执行过期回收,Execute expiration recycling,false,2,src/views/AdminView.vue:1702 | src/views/AdminView.vue:2717
 m_095bfdbe,{username} 已退出登录。,{username} signed out.,{username} 已退出登录。,{username} signed out.,false,1,src/App.vue:335
 m_0a13e71b,浏览与筛选,Browse & filter,浏览与筛选,Browse & filter,false,1,src/views/AdminView.vue:197
-m_0a144ea8,暂无审计记录。,There is no audit record yet.,暂无审计记录。,There is no audit record yet.,false,2,src/views/AdminView.vue:2318 | src/views/AdminView.vue:2708
+m_0a144ea8,暂无审计记录。,There is no audit record yet.,暂无审计记录。,There is no audit record yet.,false,2,src/views/AdminView.vue:2318 | src/views/AdminView.vue:2709
 m_0a313cc1,你已加入 {teamName},You joined {teamName}.,你已加入 {teamName},You joined {teamName}.,false,1,src/views/TeamsView.vue:877
 m_0a70c7a5,队伍已解散,Team disbanded,队伍已解散,Team disbanded,false,1,src/views/TeamsView.vue:765
-m_0a7adaf0,按标题、slug、状态筛选,"Filter by title, slug, status",按标题、slug、状态筛选,"Filter by title, slug, status",false,2,src/views/AdminView.vue:1079 | src/views/AdminView.vue:2423
+m_0a7adaf0,按标题、slug、状态筛选,"Filter by title, slug, status",按标题、slug、状态筛选,"Filter by title, slug, status",false,2,src/views/AdminView.vue:1079 | src/views/AdminView.vue:2424
 m_0a7b00b8,首页主标题,Home Title,首页主标题,Home Title,false,1,src/views/SiteSettingsView.vue:26
-m_0aaf6356,无法测试镜像,Cannot test image,无法测试镜像,Cannot test image,false,1,src/views/AdminView.vue:2658
-m_0bb69211,运行概览,Runtime Overview,运行概览,Runtime Overview,false,2,src/views/AdminView.vue:1693 | src/views/AdminView.vue:2693
+m_0aaf6356,无法测试镜像,Cannot test image,无法测试镜像,Cannot test image,false,1,src/views/AdminView.vue:2659
+m_0bb69211,运行概览,Runtime Overview,运行概览,Runtime Overview,false,2,src/views/AdminView.vue:1693 | src/views/AdminView.vue:2694
 m_0bbf7363,报名状态已更新,Registration status updated,报名状态已更新,Registration status updated,false,1,src/views/AdminView.vue:5114
 m_0be9d53f,全部,All,全部,All,false,2,src/views/AdminView.vue:1622 | src/views/ContestsView.vue:28
-m_0c203026,· 运行中,· running,· 运行中,· running,false,2,src/views/AdminView.vue:1736 | src/views/AdminView.vue:2418
-m_0c4ebfa3,未登录或会话过期,Not signed in or session expired,未登录或会话过期,Not signed in or session expired,false,2,src/views/AdminView.vue:2652 | src/views/AdminView.vue:3748
+m_0c203026,· 运行中,· running,· 运行中,· running,false,2,src/views/AdminView.vue:1736 | src/views/AdminView.vue:2419
+m_0c4ebfa3,未登录或会话过期,Not signed in or session expired,未登录或会话过期,Not signed in or session expired,false,2,src/views/AdminView.vue:2653 | src/views/AdminView.vue:3748
 m_0cbac248,进入比赛空间,Open Contest Workspace,进入比赛空间,Open Contest Workspace,false,1,src/views/ContestsView.vue:141
-m_0cbe80f6,运行中,Running,运行中,Running,false,2,src/views/AdminView.vue:2197 | src/views/AdminView.vue:2701
-m_0cccf76f,移除挂载失败,Failed to remove binding,移除挂载失败,Failed to remove binding,false,2,src/views/AdminView.vue:2679 | src/views/AdminView.vue:5621
+m_0cbe80f6,运行中,Running,运行中,Running,false,2,src/views/AdminView.vue:2197 | src/views/AdminView.vue:2702
+m_0cccf76f,移除挂载失败,Failed to remove binding,移除挂载失败,Failed to remove binding,false,2,src/views/AdminView.vue:2680 | src/views/AdminView.vue:5621
 m_0ccfd26d,暂无队伍描述。,No team description.,暂无队伍描述。,No team description.,false,2,src/views/TeamsView.vue:56 | src/views/TeamsView.vue:95
-m_0cfc5917,· 状态,· status,· 状态,· status,false,2,src/views/AdminView.vue:2419 | src/views/AdminView.vue:655
-m_0d2900bf,镜像测试失败,Image test failed,镜像测试失败,Image test failed,false,2,src/views/AdminView.vue:2565 | src/views/AdminView.vue:4606
-m_0d681512,公告内容,Announcement content,公告内容,Announcement content,false,1,src/views/AdminView.vue:2503
+m_0cfc5917,· 状态,· status,· 状态,· status,false,2,src/views/AdminView.vue:2420 | src/views/AdminView.vue:655
+m_0d2900bf,镜像测试失败,Image test failed,镜像测试失败,Image test failed,false,2,src/views/AdminView.vue:2566 | src/views/AdminView.vue:4606
+m_0d681512,公告内容,Announcement content,公告内容,Announcement content,false,1,src/views/AdminView.vue:2504
 m_0dd20335,实例信息,Instance overview,实例信息,Instance overview,false,1,src/views/AdminView.vue:2164
 m_0dea37b7,导出实时动图(WebM),Export realtime animation (WebM),导出实时动图(WebM),Export realtime animation (WebM),false,1,src/views/ContestDetailView.vue:312
 m_0e4d50d2,账号入口,Account Access,账号入口,Account Access,false,1,src/views/LoginView.vue:79
 m_0e8c3d5c,积分动态曲线,Score trend,积分动态曲线,Score trend,false,1,src/views/ContestDetailView.vue:1157
 m_0f19e4a4,当前不满足参赛条件，请稍后重试。,Contest entry requirements are not met yet.,当前不满足参赛条件，请稍后重试。,Contest entry requirements are not met yet.,false,1,src/views/ContestsView.vue:385
-m_0f39de54,更新时间,Update time,更新时间,Update time,false,4,src/views/AdminView.vue:1746 | src/views/AdminView.vue:2495 | src/views/AdminView.vue:878 | src/views/AdminView.vue:894
+m_0f39de54,更新时间,Update time,更新时间,Update time,false,4,src/views/AdminView.vue:1746 | src/views/AdminView.vue:2496 | src/views/AdminView.vue:878 | src/views/AdminView.vue:894
 m_0f4b78e9,提交完成,Submitted,提交完成,Submitted,false,1,src/views/ContestDetailView.vue:1618
 m_0f532178,收到的邀请,Received Invitations,收到的邀请,Received Invitations,false,1,src/views/TeamsView.vue:243
 m_0f81a13e,compose 模板（可选，可由压缩包自动导入）,"compose template (optional, can be auto-imported from zip)",compose 模板（可选，可由压缩包自动导入）,"compose template (optional, can be auto-imported from zip)",false,1,src/views/AdminView.vue:462
 m_0f88f239,导出折线图,Export chart,导出折线图,Export chart,false,1,src/views/ContestDetailView.vue:301
-m_0fd3a167,版本/附件,Version/Attachment,版本/附件,Version/Attachment,false,2,src/views/AdminView.vue:2424 | src/views/AdminView.vue:682
+m_0fd3a167,版本/附件,Version/Attachment,版本/附件,Version/Attachment,false,2,src/views/AdminView.vue:2425 | src/views/AdminView.vue:682
 m_0fe1fde8,加载登录历史失败,Failed to load login history,加载登录历史失败,Failed to load login history,false,1,src/views/ProfileView.vue:233
-m_0fe38bc7,发布,Publish,发布,Publish,false,3,src/views/AdminView.vue:1575 | src/views/AdminView.vue:2475 | src/views/AdminView.vue:688
-m_100e63c1,题目已销毁,Challenge deleted,题目已销毁,Challenge deleted,false,1,src/views/AdminView.vue:2646
+m_0fe38bc7,发布,Publish,发布,Publish,false,3,src/views/AdminView.vue:1575 | src/views/AdminView.vue:2476 | src/views/AdminView.vue:688
+m_100e63c1,题目已销毁,Challenge deleted,题目已销毁,Challenge deleted,false,1,src/views/AdminView.vue:2647
 m_10239abc,至少 {minUniqueChars} 个唯一字符,At least {minUniqueChars} unique chars,至少 {minUniqueChars} 个唯一字符,At least {minUniqueChars} unique chars,false,1,src/views/LoginView.vue:506
-m_10524332,加载运行概览失败,Failed to load runtime overview,加载运行概览失败,Failed to load runtime overview,false,2,src/views/AdminView.vue:2552 | src/views/AdminView.vue:4268
-m_1069461a,结束时间,end time,结束时间,end time,false,2,src/views/AdminView.vue:1058 | src/views/AdminView.vue:2560
-m_111b0037,公告内容不完整,Announcement content incomplete,公告内容不完整,Announcement content incomplete,false,1,src/views/AdminView.vue:2504
+m_10524332,加载运行概览失败,Failed to load runtime overview,加载运行概览失败,Failed to load runtime overview,false,2,src/views/AdminView.vue:2553 | src/views/AdminView.vue:4268
+m_1069461a,结束时间,end time,结束时间,end time,false,2,src/views/AdminView.vue:1058 | src/views/AdminView.vue:2561
+m_111b0037,公告内容不完整,Announcement content incomplete,公告内容不完整,Announcement content incomplete,false,1,src/views/AdminView.vue:2505
 m_11270e01,取消解散,Cancel disband,取消解散,Cancel disband,false,1,src/views/TeamsView.vue:101
 m_1217532d,类别保存失败,Category save failed,类别保存失败,Category save failed,false,1,src/views/AdminView.vue:3800
 m_12395a86,公告内容（Markdown）,Announcement Content (Markdown),公告内容（Markdown）,Announcement Content (Markdown),false,1,src/views/AdminView.vue:1398
 m_12e4e87b,确认销毁比赛「{title}」？该操作将删除比赛、公告、挂载、提交与实例数据。,"Destroy contest ""{title}""? This will remove contest data, announcements, bindings, submissions, and instances.",确认销毁比赛「{title}」？该操作将删除比赛、公告、挂载、提交与实例数据。,"Destroy contest ""{title}""? This will remove contest data, announcements, bindings, submissions, and instances.",false,1,src/views/AdminView.vue:5203
 m_1343acbf,复制比赛 ID,Copy Contest ID,复制比赛 ID,Copy Contest ID,false,1,src/views/ContestsView.vue:144
 m_143d2784,选中队伍,Selected Team,选中队伍,Selected Team,false,1,src/views/TeamsView.vue:52
-m_146407ea,编辑比赛配置,Edit match configuration,编辑比赛配置,Edit match configuration,false,2,src/views/AdminView.vue:1193 | src/views/AdminView.vue:2442
-m_14c8a36e,撤回发布,Withdraw publication,撤回发布,Withdraw publication,false,2,src/views/AdminView.vue:1575 | src/views/AdminView.vue:2455
+m_146407ea,编辑比赛配置,Edit match configuration,编辑比赛配置,Edit match configuration,false,2,src/views/AdminView.vue:1193 | src/views/AdminView.vue:2443
+m_14c8a36e,撤回发布,Withdraw publication,撤回发布,Withdraw publication,false,2,src/views/AdminView.vue:1575 | src/views/AdminView.vue:2456
 m_14e5b72a,未选择图片文件,未选择图片文件,未选择图片文件,未选择图片文件,true,1,src/views/AdminView.vue:1149
 m_14ffd56c,题目模块,Challenges,题目模块,Challenges,false,1,src/views/AdminView.vue:30
 m_153c6475,无弱口令模式,No weak/common pattern,无弱口令模式,No weak/common pattern,false,1,src/views/LoginView.vue:197
 m_1544178e,提交正确,Accepted,提交正确,Accepted,false,1,src/views/ContestDetailView.vue:1614
-m_15522831,挂载已移除,Binding removed,挂载已移除,Binding removed,false,1,src/views/AdminView.vue:2519
+m_15522831,挂载已移除,Binding removed,挂载已移除,Binding removed,false,1,src/views/AdminView.vue:2520
 m_159a8f4e,加载中...,Loading...,加载中...,Loading...,false,2,src/views/ProfileView.vue:59 | src/views/TeamsView.vue:20
 m_159eb477,实时变化动图已导出。,Realtime animated chart exported.,实时变化动图已导出。,Realtime animated chart exported.,false,1,src/views/ContestDetailView.vue:1340
 m_15cd57fe,置顶,Pinned,置顶,Pinned,false,2,src/views/ContestDetailView.vue:393 | src/views/ContestDetailView.vue:437
 m_15f93c38,再次点击执行不可恢复的解散操作：,Click again to run irreversible disband action:,再次点击执行不可恢复的解散操作：,Click again to run irreversible disband action:,false,1,src/views/TeamsView.vue:104
-m_164a2da6,操作人,Actor,操作人,Actor,false,2,src/views/AdminView.vue:2300 | src/views/AdminView.vue:2448
-m_165b1edb,公告已保存。,Announcement saved.,公告已保存。,Announcement saved.,false,1,src/views/AdminView.vue:2506
-m_165c42c1,题目状态已更新,Challenge status updated,题目状态已更新,Challenge status updated,false,1,src/views/AdminView.vue:2647
-m_16e77afe,用户名或邮箱,Username or email,用户名或邮箱,Username or email,false,4,src/views/AdminView.vue:1926 | src/views/AdminView.vue:2689 | src/views/LoginView.vue:118 | src/views/LoginView.vue:125
+m_164a2da6,操作人,Actor,操作人,Actor,false,2,src/views/AdminView.vue:2300 | src/views/AdminView.vue:2449
+m_165b1edb,公告已保存。,Announcement saved.,公告已保存。,Announcement saved.,false,1,src/views/AdminView.vue:2507
+m_165c42c1,题目状态已更新,Challenge status updated,题目状态已更新,Challenge status updated,false,1,src/views/AdminView.vue:2648
+m_16e77afe,用户名或邮箱,Username or email,用户名或邮箱,Username or email,false,4,src/views/AdminView.vue:1926 | src/views/AdminView.vue:2690 | src/views/LoginView.vue:118 | src/views/LoginView.vue:125
 m_1735ab18,请选择一个题目进入解题流程。,Select a challenge to continue.,请选择一个题目进入解题流程。,Select a challenge to continue.,false,1,src/views/ContestDetailView.vue:284
 m_17f3b97d,比赛总览,Contest Overview,比赛总览,Contest Overview,false,1,src/views/ContestsView.vue:6
 m_17f53274,登录,Sign In,登录,Sign In,false,4,src/App.vue:68 | src/views/LoginView.vue:227 | src/views/LoginView.vue:80 | src/views/LoginView.vue:90
-m_1800eeda,服务状态,Service status,服务状态,Service status,false,2,src/views/AdminView.vue:2195 | src/views/AdminView.vue:2483
-m_183042c1,暂无实例记录。,There is no instance record yet.,暂无实例记录。,There is no instance record yet.,false,2,src/views/AdminView.vue:2145 | src/views/AdminView.vue:2710
-m_183a4087,确认告警,Confirm alarm,确认告警,Confirm alarm,false,2,src/views/AdminView.vue:1887 | src/views/AdminView.vue:2600
+m_1800eeda,服务状态,Service status,服务状态,Service status,false,2,src/views/AdminView.vue:2195 | src/views/AdminView.vue:2484
+m_183042c1,暂无实例记录。,There is no instance record yet.,暂无实例记录。,There is no instance record yet.,false,2,src/views/AdminView.vue:2145 | src/views/AdminView.vue:2711
+m_183a4087,确认告警,Confirm alarm,确认告警,Confirm alarm,false,2,src/views/AdminView.vue:1887 | src/views/AdminView.vue:2601
 m_18833119,移除成员失败,Failed to remove member,移除成员失败,Failed to remove member,false,2,src/views/TeamsView.vue:939 | src/views/TeamsView.vue:941
 m_18a099b4,账户入口,Account Entry,账户入口,Account Entry,false,1,src/views/LoginView.vue:9
 m_18a929df,暂无题目描述。,No challenge description.,暂无题目描述。,No challenge description.,false,1,src/views/ContestDetailView.vue:72
@@ -108,60 +108,60 @@ m_19a7f679,报名审核,Registrations,报名审核,Registrations,false,1,src/vie
 m_19f43844,复制 SSH 密码,Copy SSH password,复制 SSH 密码,Copy SSH password,false,1,src/views/ContestDetailView.vue:249
 m_1b59043c,报名需管理员审批,Registration requires admin approval,报名需管理员审批,Registration requires admin approval,false,1,src/views/AdminView.vue:1051
 m_1b6d1043,复制失败,Copy failed,复制失败,Copy failed,false,3,src/views/ContestDetailView.vue:1370 | src/views/ContestsView.vue:308 | src/views/TeamsView.vue:548
-m_1c6b959e,从左侧选择一个挂载题目查看详情。,Select a bound challenge on the left to view details.,从左侧选择一个挂载题目查看详情。,Select a bound challenge on the left to view details.,false,2,src/views/AdminView.vue:1338 | src/views/AdminView.vue:2469
-m_1cd15757,未发布,Unpublished,未发布,Unpublished,false,3,src/views/AdminView.vue:1465 | src/views/AdminView.vue:1480 | src/views/AdminView.vue:2654
-m_1d01abee,状态过滤,Status filtering,状态过滤,Status filtering,false,2,src/views/AdminView.vue:2074 | src/views/AdminView.vue:2728
-m_1d1af2d7,角色已更新,Role updated,角色已更新,Role updated,false,1,src/views/AdminView.vue:2558
-m_1d53b967,加载题目详情失败,Failed to load challenge details,加载题目详情失败,Failed to load challenge details,false,2,src/views/AdminView.vue:2550 | src/views/AdminView.vue:4508
+m_1c6b959e,从左侧选择一个挂载题目查看详情。,Select a bound challenge on the left to view details.,从左侧选择一个挂载题目查看详情。,Select a bound challenge on the left to view details.,false,2,src/views/AdminView.vue:1338 | src/views/AdminView.vue:2470
+m_1cd15757,未发布,Unpublished,未发布,Unpublished,false,3,src/views/AdminView.vue:1465 | src/views/AdminView.vue:1480 | src/views/AdminView.vue:2655
+m_1d01abee,状态过滤,Status filtering,状态过滤,Status filtering,false,2,src/views/AdminView.vue:2074 | src/views/AdminView.vue:2729
+m_1d1af2d7,角色已更新,Role updated,角色已更新,Role updated,false,1,src/views/AdminView.vue:2559
+m_1d53b967,加载题目详情失败,Failed to load challenge details,加载题目详情失败,Failed to load challenge details,false,2,src/views/AdminView.vue:2551 | src/views/AdminView.vue:4508
 m_1d946633,判题与部署,Validation & Runtime,判题与部署,Validation & Runtime,false,1,src/views/AdminView.vue:341
-m_1d9bd946,重置密码,reset password,重置密码,reset password,false,2,src/views/AdminView.vue:2046 | src/views/AdminView.vue:2724
-m_1daed537,wireguard：下发 VPN 配置，选手可从本机直接访问队伍子网。,wireguard: issue VPN config so teams can access their subnet from local machine.,wireguard：下发 VPN 配置，选手可从本机直接访问队伍子网。,wireguard: issue VPN config so teams can access their subnet from local machine.,false,1,src/views/AdminView.vue:3352
+m_1d9bd946,重置密码,reset password,重置密码,reset password,false,2,src/views/AdminView.vue:2046 | src/views/AdminView.vue:2725
+m_1daed537,wireguard：下发 VPN 配置，选手可从本机直接访问队伍子网。,wireguard: issue VPN config so teams can access their subnet from local machine.,wireguard：下发 VPN 配置，选手可从本机直接访问队伍子网。,wireguard: issue VPN config so teams can access their subnet from local machine.,false,1,src/views/AdminView.vue:3353
 m_1ef6cbe6,登录成功，正在跳转...,"Signed in, redirecting...",登录成功，正在跳转...,"Signed in, redirecting...",false,1,src/views/LoginView.vue:770
-m_1f1aec54,标题或 slug,title or slug,标题或 slug,title or slug,false,2,src/views/AdminView.vue:2446 | src/views/AdminView.vue:841
+m_1f1aec54,标题或 slug,title or slug,标题或 slug,title or slug,false,2,src/views/AdminView.vue:2447 | src/views/AdminView.vue:841
 m_1f1dad1a,用户名和邮箱已保存。,Username and email saved.,用户名和邮箱已保存。,Username and email saved.,false,1,src/views/ProfileView.vue:186
-m_1f416534,开始时间,start time,开始时间,start time,false,2,src/views/AdminView.vue:1054 | src/views/AdminView.vue:2568
+m_1f416534,开始时间,start time,开始时间,start time,false,2,src/views/AdminView.vue:1054 | src/views/AdminView.vue:2569
 m_1f98a5ec,进入登录,Sign In,进入登录,Sign In,false,1,src/views/HomeView.vue:47
-m_1fa71d9f,single_image（单镜像）,single_image (single image),single_image（单镜像）,single_image (single image),false,2,src/views/AdminView.vue:2756 | src/views/AdminView.vue:372
+m_1fa71d9f,single_image（单镜像）,single_image (single image),single_image（单镜像）,single_image (single image),false,2,src/views/AdminView.vue:2757 | src/views/AdminView.vue:372
 m_1fd3773b,确认销毁题目「{title}」？该操作会删除题目、挂载关系、提交记录与运行实例。,"Destroy challenge ""{title}""? This will remove challenge data, bindings, submissions, and instances.",确认销毁题目「{title}」？该操作会删除题目、挂载关系、提交记录与运行实例。,"Destroy challenge ""{title}""? This will remove challenge data, bindings, submissions, and instances.",false,1,src/views/AdminView.vue:4809
 m_200865ae,管理控制台,Admin Console,管理控制台,Admin Console,false,1,src/views/AdminView.vue:5
-m_202836b9,取消编辑,Cancel edit,取消编辑,Cancel edit,false,4,src/views/AdminView.vue:214 | src/views/AdminView.vue:254 | src/views/AdminView.vue:2598 | src/views/AdminView.vue:977
+m_202836b9,取消编辑,Cancel edit,取消编辑,Cancel edit,false,4,src/views/AdminView.vue:214 | src/views/AdminView.vue:254 | src/views/AdminView.vue:2599 | src/views/AdminView.vue:977
 m_204656e7,SSH 命令已复制,SSH command copied,SSH 命令已复制,SSH command copied,false,1,src/views/ContestDetailView.vue:1378
-m_206ddac1,销毁题目失败,Failed to delete challenge,销毁题目失败,Failed to delete challenge,false,2,src/views/AdminView.vue:2669 | src/views/AdminView.vue:4834
+m_206ddac1,销毁题目失败,Failed to delete challenge,销毁题目失败,Failed to delete challenge,false,2,src/views/AdminView.vue:2670 | src/views/AdminView.vue:4834
 m_209b9919,创建公告编辑模式,Create announcement editor mode,创建公告编辑模式,Create announcement editor mode,false,1,src/views/AdminView.vue:1363
 m_20c0bed0,题目操作,Actions,题目操作,Actions,false,1,src/views/ContestDetailView.vue:116
 m_2144ffcd,人机验证脚本加载失败。,Failed to load human verification script.,人机验证脚本加载失败。,Failed to load human verification script.,false,1,src/views/LoginView.vue:733
 m_214f537d,下载配置,Download config,下载配置,Download config,false,1,src/views/ContestDetailView.vue:266
 m_21a78d58,发送失败,Failed to send,发送失败,Failed to send,false,2,src/views/LoginView.vue:852 | src/views/LoginView.vue:902
 m_225d7147,题目挂载,Bindings,题目挂载,Bindings,false,1,src/views/AdminView.vue:110
-m_229bcaee,附件已删除,Attachment deleted,附件已删除,Attachment deleted,false,1,src/views/AdminView.vue:2484
-m_22d9593f,显示题目操作菜单,Show challenge actions,显示题目操作菜单,Show challenge actions,false,2,src/views/AdminView.vue:2665 | src/views/AdminView.vue:667
-m_23328cc7,禁用,disabled,禁用,disabled,false,2,src/views/AdminView.vue:2001 | src/views/AdminView.vue:2562
-m_2340bcd7,刷新告警,Refresh alerts,刷新告警,Refresh alerts,false,2,src/views/AdminView.vue:1773 | src/views/AdminView.vue:2631
-m_2373da40,single_image 模式仅支持 dynamic 或 internal 题型,single_image mode only supports dynamic/internal challenge types.,single_image 模式仅支持 dynamic 或 internal 题型,single_image mode only supports dynamic/internal challenge types.,false,2,src/views/AdminView.vue:2754 | src/views/AdminView.vue:4719
+m_229bcaee,附件已删除,Attachment deleted,附件已删除,Attachment deleted,false,1,src/views/AdminView.vue:2485
+m_22d9593f,显示题目操作菜单,Show challenge actions,显示题目操作菜单,Show challenge actions,false,2,src/views/AdminView.vue:2666 | src/views/AdminView.vue:667
+m_23328cc7,禁用,disabled,禁用,disabled,false,2,src/views/AdminView.vue:2001 | src/views/AdminView.vue:2563
+m_2340bcd7,刷新告警,Refresh alerts,刷新告警,Refresh alerts,false,2,src/views/AdminView.vue:1773 | src/views/AdminView.vue:2632
+m_2373da40,single_image 模式仅支持 dynamic 或 internal 题型,single_image mode only supports dynamic/internal challenge types.,single_image 模式仅支持 dynamic 或 internal 题型,single_image mode only supports dynamic/internal challenge types.,false,2,src/views/AdminView.vue:2755 | src/views/AdminView.vue:4719
 m_23ada321,请填写类别 slug。,Please provide a category slug.,请填写类别 slug。,Please provide a category slug.,false,1,src/views/AdminView.vue:3799
 m_23e734c9,轻量 · 稳定,Clean · Stable,轻量 · 稳定,Clean · Stable,false,1,src/views/HomeView.vue:24
-m_246d6ccc,排序已更新,Sort updated,排序已更新,Sort updated,false,1,src/views/AdminView.vue:2585
+m_246d6ccc,排序已更新,Sort updated,排序已更新,Sort updated,false,1,src/views/AdminView.vue:2586
 m_24eff94d,尚未创建动态环境实例。,No runtime instance yet.,尚未创建动态环境实例。,No runtime instance yet.,false,1,src/views/ContestDetailView.vue:279
 m_2501646a,赛事管理,Contest Hub,赛事管理,Contest Hub,false,1,src/views/HomeView.vue:12
 m_25102041,类别已更新,Category updated,类别已更新,Category updated,false,1,src/views/AdminView.vue:3821
 m_2543ca11,动态衰减,Dynamic decay,动态衰减,Dynamic decay,false,1,src/views/AdminView.vue:1110
 m_25e98085,重置邮箱,Reset Email,重置邮箱,Reset Email,false,1,src/views/LoginView.vue:280
-m_25f9c546,更新公告失败,Failed to update announcement,更新公告失败,Failed to update announcement,false,4,src/views/AdminView.vue:2493 | src/views/AdminView.vue:5431 | src/views/AdminView.vue:5466 | src/views/AdminView.vue:5494
+m_25f9c546,更新公告失败,Failed to update announcement,更新公告失败,Failed to update announcement,false,4,src/views/AdminView.vue:2494 | src/views/AdminView.vue:5431 | src/views/AdminView.vue:5466 | src/views/AdminView.vue:5494
 m_26367f72,编辑公告内容模式,Edit announcement content mode,编辑公告内容模式,Edit announcement content mode,false,1,src/views/AdminView.vue:1503
 m_264acbb0,确认新密码,Confirm New Password,确认新密码,Confirm New Password,false,1,src/views/LoginView.vue:314
-m_28171ba8,用户状态已更新,User status updated,用户状态已更新,User status updated,false,1,src/views/AdminView.vue:2690
+m_28171ba8,用户状态已更新,User status updated,用户状态已更新,User status updated,false,1,src/views/AdminView.vue:2691
 m_2872b7ba,来源信息,Source,来源信息,Source,false,1,src/views/ProfileView.vue:70
 m_28a141b7,题目管理,Challenge Management,题目管理,Challenge Management,false,1,src/views/AdminView.vue:163
 m_28db53ea,心跳,Heartbeat,心跳,Heartbeat,false,1,src/views/AdminView.vue:2178
 m_2a565d62,监控子导航,Operations Tabs,监控子导航,Operations Tabs,false,1,src/views/AdminView.vue:131
-m_2a755655,心跳超时实例回收已执行,Stale-heartbeat reaper executed,心跳超时实例回收已执行,Stale-heartbeat reaper executed,false,1,src/views/AdminView.vue:2672
-m_2aa114ab,显示比赛操作菜单,Show contest actions,显示比赛操作菜单,Show contest actions,false,2,src/views/AdminView.vue:1173 | src/views/AdminView.vue:2660
+m_2a755655,心跳超时实例回收已执行,Stale-heartbeat reaper executed,心跳超时实例回收已执行,Stale-heartbeat reaper executed,false,1,src/views/AdminView.vue:2673
+m_2aa114ab,显示比赛操作菜单,Show contest actions,显示比赛操作菜单,Show contest actions,false,2,src/views/AdminView.vue:1173 | src/views/AdminView.vue:2661
 m_2aa949f3,刷新榜单,Refresh scoreboard,刷新榜单,Refresh scoreboard,false,1,src/views/ContestDetailView.vue:129
-m_2aacf3d7,已选中,selected,已选中,selected,false,2,src/views/AdminView.vue:2682 | src/views/AdminView.vue:663
+m_2aacf3d7,已选中,selected,已选中,selected,false,2,src/views/AdminView.vue:2683 | src/views/AdminView.vue:663
 m_2ab7cec0,实时看板,Live Board,实时看板,Live Board,false,1,src/views/HomeView.vue:14
-m_2b0f8cb3,重启中服务,Restarting service,重启中服务,Restarting service,false,2,src/views/AdminView.vue:2207 | src/views/AdminView.vue:2723
-m_2b9740b0,运行告警：实例失败,Runtime alert: instance failure,运行告警：实例失败,Runtime alert: instance failure,false,1,src/views/AdminView.vue:2698
-m_2bb67eb7,刷新指标,Refresh metrics,刷新指标,Refresh metrics,false,2,src/views/AdminView.vue:2128 | src/views/AdminView.vue:2636
+m_2b0f8cb3,重启中服务,Restarting service,重启中服务,Restarting service,false,2,src/views/AdminView.vue:2207 | src/views/AdminView.vue:2724
+m_2b9740b0,运行告警：实例失败,Runtime alert: instance failure,运行告警：实例失败,Runtime alert: instance failure,false,1,src/views/AdminView.vue:2699
+m_2bb67eb7,刷新指标,Refresh metrics,刷新指标,Refresh metrics,false,2,src/views/AdminView.vue:2128 | src/views/AdminView.vue:2637
 m_2bccf299,比赛列表,Contest Directory,比赛列表,Contest Directory,false,1,src/views/ContestsView.vue:18
 m_2be5180e,请联系管理员处理报名审核。,Contact admins for registration review.,请联系管理员处理报名审核。,Contact admins for registration review.,false,1,src/views/ContestsView.vue:369
 m_2bf2c365,暂无比赛描述。,No contest description.,暂无比赛描述。,No contest description.,false,1,src/views/ContestsView.vue:113
@@ -170,125 +170,125 @@ m_2c68820f,SSH 密码已复制,SSH password copied,SSH 密码已复制,SSH passw
 m_2c871c1e,{username} 已被删除并退出登录。,{username} was deleted and signed out.,{username} 已被删除并退出登录。,{username} was deleted and signed out.,false,1,src/views/ProfileView.vue:251
 m_2ca2fc68,关闭,Close,关闭,Close,false,3,src/views/ContestDetailView.vue:439 | src/views/ContestDetailView.vue:465 | src/views/LoginView.vue:275
 m_2cd6c99d,运行概览,Overview,运行概览,Overview,false,1,src/views/AdminView.vue:138
-m_2d845457,赛事列表,Contest list,赛事列表,Contest list,false,3,src/views/AdminView.vue:1074 | src/views/AdminView.vue:2604 | src/views/AdminView.vue:938
+m_2d845457,赛事列表,Contest list,赛事列表,Contest list,false,3,src/views/AdminView.vue:1074 | src/views/AdminView.vue:2605 | src/views/AdminView.vue:938
 m_2e521f2e,请选择一个比赛查看详情。,Select a contest to view details.,请选择一个比赛查看详情。,Select a contest to view details.,false,1,src/views/ContestsView.vue:153
-m_2eb410f2,加载题目附件失败,Failed to load challenge attachments,加载题目附件失败,Failed to load challenge attachments,false,2,src/views/AdminView.vue:2549 | src/views/AdminView.vue:4010
+m_2eb410f2,加载题目附件失败,Failed to load challenge attachments,加载题目附件失败,Failed to load challenge attachments,false,2,src/views/AdminView.vue:2550 | src/views/AdminView.vue:4010
 m_2f40ea9a,退出队伍失败,Failed to leave team,退出队伍失败,Failed to leave team,false,2,src/views/TeamsView.vue:742 | src/views/TeamsView.vue:744
 m_2f683754,重置,Reset,重置,Reset,false,1,src/views/ContestDetailView.vue:190
 m_2f6e2521,验证失败,Verification failed,验证失败,Verification failed,false,1,src/views/LoginView.vue:880
 m_2fead4f5,很强,Very strong,很强,Very strong,false,1,src/views/LoginView.vue:573
-m_301cc31c,镜像仓库地址,Image registry URL,镜像仓库地址,Image registry URL,false,2,src/views/AdminView.vue:2563 | src/views/AdminView.vue:404
-m_30359f8f,暂无附件。,There are no attachments yet.,暂无附件。,There are no attachments yet.,false,3,src/views/AdminView.vue:2705 | src/views/AdminView.vue:610 | src/views/AdminView.vue:798
+m_301cc31c,镜像仓库地址,Image registry URL,镜像仓库地址,Image registry URL,false,2,src/views/AdminView.vue:2564 | src/views/AdminView.vue:404
+m_30359f8f,暂无附件。,There are no attachments yet.,暂无附件。,There are no attachments yet.,false,3,src/views/AdminView.vue:2706 | src/views/AdminView.vue:610 | src/views/AdminView.vue:798
 m_30407de4,加载题目类别失败,Failed to load challenge categories,加载题目类别失败,Failed to load challenge categories,false,2,src/views/AdminView.vue:3780 | src/views/AdminView.vue:3782
 m_3050f465,确认删除,Confirm delete,确认删除,Confirm delete,false,1,src/views/ProfileView.vue:93
 m_30c55f78,销毁比赛,Destroy contest,销毁比赛,Destroy contest,false,1,src/views/AdminView.vue:5202
-m_30ca028e,加载模板校验结果失败,Failed to load template lint results,加载模板校验结果失败,Failed to load template lint results,false,2,src/views/AdminView.vue:2543 | src/views/AdminView.vue:4033
-m_30f83df7,加载用户列表失败,Failed to load users,加载用户列表失败,Failed to load users,false,2,src/views/AdminView.vue:2552 | src/views/AdminView.vue:4248
-m_31bd3334,上传海报,Upload poster,上传海报,Upload poster,false,2,src/views/AdminView.vue:1159 | src/views/AdminView.vue:2619
+m_30ca028e,加载模板校验结果失败,Failed to load template lint results,加载模板校验结果失败,Failed to load template lint results,false,2,src/views/AdminView.vue:2544 | src/views/AdminView.vue:4033
+m_30f83df7,加载用户列表失败,Failed to load users,加载用户列表失败,Failed to load users,false,2,src/views/AdminView.vue:2553 | src/views/AdminView.vue:4248
+m_31bd3334,上传海报,Upload poster,上传海报,Upload poster,false,2,src/views/AdminView.vue:1159 | src/views/AdminView.vue:2620
 m_31ed1b1c,包含符号,Contains symbol,包含符号,Contains symbol,false,1,src/views/LoginView.vue:195
-m_32601cdc,版本备注（可选）,Version notes (optional),版本备注（可选）,Version notes (optional),false,2,src/views/AdminView.vue:2424 | src/views/AdminView.vue:543
+m_32601cdc,版本备注（可选）,Version notes (optional),版本备注（可选）,Version notes (optional),false,2,src/views/AdminView.vue:2425 | src/views/AdminView.vue:543
 m_3274f71e,编辑选中,Edit selected,编辑选中,Edit selected,false,2,src/views/AdminView.vue:193 | src/views/AdminView.vue:955
 m_3279a105,趋势维度,Trend metric,趋势维度,Trend metric,false,1,src/views/ContestDetailView.vue:318
-m_32f9f723,审计日志,Audit log,审计日志,Audit log,false,2,src/views/AdminView.vue:2267 | src/views/AdminView.vue:2623
+m_32f9f723,审计日志,Audit log,审计日志,Audit log,false,2,src/views/AdminView.vue:2267 | src/views/AdminView.vue:2624
 m_337bc844,请输入重置令牌。,Please enter reset token.,请输入重置令牌。,Please enter reset token.,false,1,src/views/LoginView.vue:913
 m_340289e4,解题,Solved,解题,Solved,false,1,src/views/ContestDetailView.vue:351
-m_3430041f,运行告警,Runtime Alerts,运行告警,Runtime Alerts,false,2,src/views/AdminView.vue:1770 | src/views/AdminView.vue:2694
-m_3468f9f1,删除比赛海报失败,Failed to delete contest poster,删除比赛海报失败,Failed to delete contest poster,false,2,src/views/AdminView.vue:2607 | src/views/AdminView.vue:5193
+m_3430041f,运行告警,Runtime Alerts,运行告警,Runtime Alerts,false,2,src/views/AdminView.vue:1770 | src/views/AdminView.vue:2695
+m_3468f9f1,删除比赛海报失败,Failed to delete contest poster,删除比赛海报失败,Failed to delete contest poster,false,2,src/views/AdminView.vue:2608 | src/views/AdminView.vue:5193
 m_34c5aaaf,浏览与运维,Browse & operate,浏览与运维,Browse & operate,false,1,src/views/AdminView.vue:959
-m_3529c2b3,时间,time,时间,time,false,4,src/views/AdminView.vue:2299 | src/views/AdminView.vue:2624 | src/views/AdminView.vue:451 | src/views/AdminView.vue:497
+m_3529c2b3,时间,time,时间,time,false,4,src/views/AdminView.vue:2299 | src/views/AdminView.vue:2625 | src/views/AdminView.vue:451 | src/views/AdminView.vue:497
 m_3550af31,刷新附件,Refresh files,刷新附件,Refresh files,false,1,src/views/ContestDetailView.vue:79
 m_35547bd6,解出,Solved,解出,Solved,false,1,src/views/ScoreboardWallView.vue:80
 m_35637b95,请先保存题目，再上传附件。,"Save this challenge first, then upload attachments.",请先保存题目，再上传附件。,"Save this challenge first, then upload attachments.",false,1,src/views/AdminView.vue:617
-m_3647c275,下线,offline,下线,offline,false,2,src/views/AdminView.vue:2659 | src/views/AdminView.vue:700
+m_3647c275,下线,offline,下线,offline,false,2,src/views/AdminView.vue:2660 | src/views/AdminView.vue:700
 m_365ea0b9,深色,Dark,深色,Dark,false,1,src/App.vue:247
 m_36acf58c,发布时间,Release at,发布时间,Release at,false,1,src/views/AdminView.vue:1289
 m_36d1fc56,比赛 ID 已复制到剪贴板。,Contest ID copied to clipboard.,比赛 ID 已复制到剪贴板。,Contest ID copied to clipboard.,false,1,src/views/ContestsView.vue:305
-m_36f806f7,题目,Challenge,题目,Challenge,false,4,src/views/AdminView.vue:1749 | src/views/AdminView.vue:2167 | src/views/AdminView.vue:2640 | src/views/AdminView.vue:889
-m_37f02fbf,比赛与提交,Contests & Submissions,比赛与提交,Contests & Submissions,false,2,src/views/AdminView.vue:1730 | src/views/AdminView.vue:2439
-m_381a0334,上传中...,Uploading...,上传中...,Uploading...,false,4,src/views/AdminView.vue:1159 | src/views/AdminView.vue:2622 | src/views/AdminView.vue:581 | src/views/AdminView.vue:773
+m_36f806f7,题目,Challenge,题目,Challenge,false,4,src/views/AdminView.vue:1749 | src/views/AdminView.vue:2167 | src/views/AdminView.vue:2641 | src/views/AdminView.vue:889
+m_37f02fbf,比赛与提交,Contests & Submissions,比赛与提交,Contests & Submissions,false,2,src/views/AdminView.vue:1730 | src/views/AdminView.vue:2440
+m_381a0334,上传中...,Uploading...,上传中...,Uploading...,false,4,src/views/AdminView.vue:1159 | src/views/AdminView.vue:2623 | src/views/AdminView.vue:581 | src/views/AdminView.vue:773
 m_3853c4ac,输入 Flag,Enter flag,输入 Flag,Enter flag,false,1,src/views/ContestDetailView.vue:149
 m_388010cd,发布时间,Published at,发布时间,Published at,false,2,src/views/ContestDetailView.vue:396 | src/views/ContestDetailView.vue:428
 m_388e428a,一二三血加成,Blood bonuses,一二三血加成,Blood bonuses,false,1,src/views/AdminView.vue:1113
 m_38964c56,个人资料,Profile,个人资料,Profile,false,1,src/views/ProfileView.vue:15
 m_393ec1ae,最后提交,Last submission,最后提交,Last submission,false,1,src/views/ContestDetailView.vue:352
 m_39586b53,注册成功,Registration succeeded,注册成功,Registration succeeded,false,2,src/views/LoginView.vue:804 | src/views/LoginView.vue:817
-m_39a14738,题型,Challenge type,题型,Challenge type,false,4,src/views/AdminView.vue:2648 | src/views/AdminView.vue:346 | src/views/AdminView.vue:822 | src/views/AdminView.vue:890
+m_39a14738,题型,Challenge type,题型,Challenge type,false,4,src/views/AdminView.vue:2649 | src/views/AdminView.vue:346 | src/views/AdminView.vue:822 | src/views/AdminView.vue:890
 m_3b14bc0c,入口,Entry,入口,Entry,false,1,src/views/AdminView.vue:2140
 m_3bc3f92f,验证令牌,Verification Token,验证令牌,Verification Token,false,1,src/views/LoginView.vue:258
 m_3bc85adb,标题,H2,标题,H2,false,2,src/views/AdminView.vue:1402 | src/views/AdminView.vue:1527
-m_3bc97e51,销毁比赛失败,Failed to delete contest,销毁比赛失败,Failed to delete contest,false,2,src/views/AdminView.vue:2668 | src/views/AdminView.vue:5234
-m_3c6543bb,加载公告失败,Failed to load announcements,加载公告失败,Failed to load announcements,false,3,src/views/AdminView.vue:2541 | src/views/AdminView.vue:4127 | src/views/ContestDetailView.vue:1497
+m_3bc97e51,销毁比赛失败,Failed to delete contest,销毁比赛失败,Failed to delete contest,false,2,src/views/AdminView.vue:2669 | src/views/AdminView.vue:5234
+m_3c6543bb,加载公告失败,Failed to load announcements,加载公告失败,Failed to load announcements,false,3,src/views/AdminView.vue:2542 | src/views/AdminView.vue:4127 | src/views/ContestDetailView.vue:1497
 m_3c7ee600,三血,Third blood,三血,Third blood,false,1,src/views/ScoreboardWallView.vue:79
-m_3c93b7db,compose：多服务编排，支持复杂依赖场景。,compose: multi-service orchestration for complex runtimes.,compose：多服务编排，支持复杂依赖场景。,compose: multi-service orchestration for complex runtimes.,false,1,src/views/AdminView.vue:3339
+m_3c93b7db,compose：多服务编排，支持复杂依赖场景。,compose: multi-service orchestration for complex runtimes.,compose：多服务编排，支持复杂依赖场景。,compose: multi-service orchestration for complex runtimes.,false,1,src/views/AdminView.vue:3340
 m_3cb674b7,更新密码,Update password,更新密码,Update password,false,1,src/views/ProfileView.vue:49
 m_3cc00f05,请输入被邀请用户名。,Please enter invitee username.,请输入被邀请用户名。,Please enter invitee username.,false,1,src/views/TeamsView.vue:814
 m_3cf479bc,危险操作,Danger Zone,危险操作,Danger Zone,false,1,src/views/ProfileView.vue:86
-m_3d6fa7bd,上传比赛海报,Upload contest poster,上传比赛海报,Upload contest poster,false,2,src/views/AdminView.vue:1142 | src/views/AdminView.vue:2616
-m_3d939718,版本与附件：,Versions & Files:,版本与附件：,Versions & Files:,false,2,src/views/AdminView.vue:2427 | src/views/AdminView.vue:719
+m_3d6fa7bd,上传比赛海报,Upload contest poster,上传比赛海报,Upload contest poster,false,2,src/views/AdminView.vue:1142 | src/views/AdminView.vue:2617
+m_3d939718,版本与附件：,Versions & Files:,版本与附件：,Versions & Files:,false,2,src/views/AdminView.vue:2428 | src/views/AdminView.vue:719
 m_3e68eff3,创建类别,Create category,创建类别,Create category,false,1,src/views/AdminView.vue:245
 m_3e9337da,两次输入的密码不一致。,Passwords do not match.,两次输入的密码不一致。,Passwords do not match.,false,4,src/views/LoginView.vue:203 | src/views/LoginView.vue:344 | src/views/LoginView.vue:783 | src/views/LoginView.vue:918
 m_3ea8707e,dynamic_decay 必须为大于等于 1 的整数,dynamic_decay 必须为大于等于 1 的整数,dynamic_decay 必须为大于等于 1 的整数,dynamic_decay 必须为大于等于 1 的整数,true,1,src/views/AdminView.vue:4992
-m_3eb84b3d,刷新用户,Refresh users,刷新用户,Refresh users,false,2,src/views/AdminView.vue:1917 | src/views/AdminView.vue:2635
-m_3f15c5aa,最近失败实例,Recent failed instances,最近失败实例,Recent failed instances,false,2,src/views/AdminView.vue:1742 | src/views/AdminView.vue:2736
-m_3fd1ba38,创建比赛,Create contest,创建比赛,Create contest,false,2,src/views/AdminView.vue:3399 | src/views/AdminView.vue:946
+m_3eb84b3d,刷新用户,Refresh users,刷新用户,Refresh users,false,2,src/views/AdminView.vue:1917 | src/views/AdminView.vue:2636
+m_3f15c5aa,最近失败实例,Recent failed instances,最近失败实例,Recent failed instances,false,2,src/views/AdminView.vue:1742 | src/views/AdminView.vue:2737
+m_3fd1ba38,创建比赛,Create contest,创建比赛,Create contest,false,2,src/views/AdminView.vue:3400 | src/views/AdminView.vue:946
 m_405ce874,角色必须是 player / judge / admin,角色必须是 player / judge / admin,角色必须是 player / judge / admin,角色必须是 player / judge / admin,true,1,src/views/AdminView.vue:5289
 m_40855434,接受,Accept,接受,Accept,false,1,src/views/TeamsView.vue:269
 m_408617f5,当前没有报名记录。,No registration records yet.,当前没有报名记录。,No registration records yet.,false,1,src/views/AdminView.vue:1686
-m_40a4b698,恢复人：,Restoration Person:,恢复人：,Restoration Person:,false,2,src/views/AdminView.vue:1864 | src/views/AdminView.vue:2528
+m_40a4b698,恢复人：,Restoration Person:,恢复人：,Restoration Person:,false,2,src/views/AdminView.vue:1864 | src/views/AdminView.vue:2529
 m_40a8c128,实时反馈密码强度与规则达成情况。,Realtime feedback for password strength and policy checks.,实时反馈密码强度与规则达成情况。,Realtime feedback for password strength and policy checks.,false,1,src/views/LoginView.vue:43
 m_410d4519,请先完成人机验证。,Please complete human verification first.,请先完成人机验证。,Please complete human verification first.,false,1,src/views/LoginView.vue:757
-m_413f5542,最近发现：,Recently discovered:,最近发现：,Recently discovered:,false,2,src/views/AdminView.vue:1862 | src/views/AdminView.vue:2734
+m_413f5542,最近发现：,Recently discovered:,最近发现：,Recently discovered:,false,2,src/views/AdminView.vue:1862 | src/views/AdminView.vue:2735
 m_417a9700,账户模块,Account module,账户模块,Account module,false,1,src/views/ProfileView.vue:191
-m_419cf225,请先选择要管理的题目,Please select a challenge to manage first.,请先选择要管理的题目,Please select a challenge to manage first.,false,3,src/views/AdminView.vue:2593 | src/views/AdminView.vue:4843 | src/views/AdminView.vue:4884
-m_430c1bcd,可见性,Visibility,可见性,Visibility,false,2,src/views/AdminView.vue:2569 | src/views/AdminView.vue:995
+m_419cf225,请先选择要管理的题目,Please select a challenge to manage first.,请先选择要管理的题目,Please select a challenge to manage first.,false,3,src/views/AdminView.vue:2594 | src/views/AdminView.vue:4843 | src/views/AdminView.vue:4884
+m_430c1bcd,可见性,Visibility,可见性,Visibility,false,2,src/views/AdminView.vue:2570 | src/views/AdminView.vue:995
 m_431ed67d,下载配置失败,Failed to download config,下载配置失败,Failed to download config,false,1,src/views/ContestDetailView.vue:1408
-m_4387df7d,可选两种方式：1）直接填写 compose 模板；2）在“版本与附件”上传 .zip（内含 docker-compose.yml 和相关文件），系统会自动写入 compose，并把其余文件保存为 runtime/...。若只上传单个文件而非 zip，请把文件名写成 runtime/ 开头（如 runtime/Dockerfile）。,"Two options: (1) fill compose template directly; (2) upload a .zip in Versions & Files (contains docker-compose.yml and related files). The system auto-imports compose and stores remaining files as runtime/.... For single-file uploads (non-zip), use runtime/ prefix (e.g. runtime/Dockerfile).",可选两种方式：1）直接填写 compose 模板；2）在“版本与附件”上传 .zip（内含 docker-compose.yml 和相关文件），系统会自动写入 compose，并把其余文件保存为 runtime/...。若只上传单个文件而非 zip，请把文件名写成 runtime/ 开头（如 runtime/Dockerfile）。,"Two options: (1) fill compose template directly; (2) upload a .zip in Versions & Files (contains docker-compose.yml and related files). The system auto-imports compose and stores remaining files as runtime/.... For single-file uploads (non-zip), use runtime/ prefix (e.g. runtime/Dockerfile).",false,1,src/views/AdminView.vue:3370
+m_4387df7d,可选两种方式：1）直接填写 compose 模板；2）在“版本与附件”上传 .zip（内含 docker-compose.yml 和相关文件），系统会自动写入 compose，并把其余文件保存为 runtime/...。若只上传单个文件而非 zip，请把文件名写成 runtime/ 开头（如 runtime/Dockerfile）。,"Two options: (1) fill compose template directly; (2) upload a .zip in Versions & Files (contains docker-compose.yml and related files). The system auto-imports compose and stores remaining files as runtime/.... For single-file uploads (non-zip), use runtime/ prefix (e.g. runtime/Dockerfile).",可选两种方式：1）直接填写 compose 模板；2）在“版本与附件”上传 .zip（内含 docker-compose.yml 和相关文件），系统会自动写入 compose，并把其余文件保存为 runtime/...。若只上传单个文件而非 zip，请把文件名写成 runtime/ 开头（如 runtime/Dockerfile）。,"Two options: (1) fill compose template directly; (2) upload a .zip in Versions & Files (contains docker-compose.yml and related files). The system auto-imports compose and stores remaining files as runtime/.... For single-file uploads (non-zip), use runtime/ prefix (e.g. runtime/Dockerfile).",false,1,src/views/AdminView.vue:3371
 m_43aeb4c9,选手,Player,选手,Player,false,1,src/App.vue:237
-m_43b0f4b0,仅 compose 模式支持模板测试,Only compose mode supports template testing.,仅 compose 模式支持模板测试,Only compose mode supports template testing.,false,2,src/views/AdminView.vue:2741 | src/views/AdminView.vue:4619
-m_43d6ee87,加载题目失败,Failed to load challenges,加载题目失败,Failed to load challenges,false,3,src/views/AdminView.vue:2550 | src/views/AdminView.vue:3956 | src/views/ContestDetailView.vue:1480
+m_43b0f4b0,仅 compose 模式支持模板测试,Only compose mode supports template testing.,仅 compose 模式支持模板测试,Only compose mode supports template testing.,false,2,src/views/AdminView.vue:2742 | src/views/AdminView.vue:4619
+m_43d6ee87,加载题目失败,Failed to load challenges,加载题目失败,Failed to load challenges,false,3,src/views/AdminView.vue:2551 | src/views/AdminView.vue:3956 | src/views/ContestDetailView.vue:1480
 m_44460f78,重置邮件,Reset Email,重置邮件,Reset Email,false,1,src/views/LoginView.vue:899
-m_4451fdbe,执行回滚,perform rollback,执行回滚,perform rollback,false,2,src/views/AdminView.vue:2719 | src/views/AdminView.vue:733
+m_4451fdbe,执行回滚,perform rollback,执行回滚,perform rollback,false,2,src/views/AdminView.vue:2720 | src/views/AdminView.vue:733
 m_44742ec5,队伍协作,Team Collaboration,队伍协作,Team Collaboration,false,1,src/views/TeamsView.vue:6
 m_44747a0b,密码长度,Password Length,密码长度,Password Length,false,1,src/views/LoginView.vue:62
 m_4487e56a,我的队伍,My Team,我的队伍,My Team,false,1,src/views/TeamsView.vue:80
 m_4492fc9c,队伍排名,Team ranking,队伍排名,Team ranking,false,1,src/views/ScoreboardWallView.vue:85
-m_44dd12f5,未选择文件,No file selected,未选择文件,No file selected,false,3,src/views/AdminView.vue:2657 | src/views/AdminView.vue:571 | src/views/AdminView.vue:768
-m_456919e6,· 版本 v,· version v,· 版本 v,· version v,false,2,src/views/AdminView.vue:2415 | src/views/AdminView.vue:655
-m_45c41db6,密码已重置,Password reset,密码已重置,Password reset,false,1,src/views/AdminView.vue:2577
+m_44dd12f5,未选择文件,No file selected,未选择文件,No file selected,false,3,src/views/AdminView.vue:2658 | src/views/AdminView.vue:571 | src/views/AdminView.vue:768
+m_456919e6,· 版本 v,· version v,· 版本 v,· version v,false,2,src/views/AdminView.vue:2416 | src/views/AdminView.vue:655
+m_45c41db6,密码已重置,Password reset,密码已重置,Password reset,false,1,src/views/AdminView.vue:2578
 m_4600650d,查看提示,Show hints,查看提示,Show hints,false,1,src/views/ContestDetailView.vue:137
-m_461cf285,测试 compose（config+build探测）,Test compose (config + build probe),测试 compose（config+build探测）,Test compose (config + build probe),false,2,src/views/AdminView.vue:2740 | src/views/AdminView.vue:473
+m_461cf285,测试 compose（config+build探测）,Test compose (config + build probe),测试 compose（config+build探测）,Test compose (config + build probe),false,2,src/views/AdminView.vue:2741 | src/views/AdminView.vue:473
 m_467d6b2b,认证错误,Authentication error,认证错误,Authentication error,false,1,src/views/LoginView.vue:827
-m_46fb8d10,执行心跳超时回收,Execute heartbeat timeout recycling,执行心跳超时回收,Execute heartbeat timeout recycling,false,2,src/views/AdminView.vue:1710 | src/views/AdminView.vue:2719
+m_46fb8d10,执行心跳超时回收,Execute heartbeat timeout recycling,执行心跳超时回收,Execute heartbeat timeout recycling,false,2,src/views/AdminView.vue:1710 | src/views/AdminView.vue:2720
 m_4724dadb,加载站点设置失败,Failed to load site settings,加载站点设置失败,Failed to load site settings,false,1,src/views/AdminView.vue:3971
 m_47cb88a6,你已退出当前队伍。,You left the team.,你已退出当前队伍。,You left the team.,false,1,src/views/TeamsView.vue:738
-m_48f2d1c5,上移,move up,上移,move up,false,2,src/views/AdminView.vue:1309 | src/views/AdminView.vue:2622
-m_490b3b0d,展开筛选条件,Expand filters,展开筛选条件,Expand filters,false,5,src/views/AdminView.vue:1782 | src/views/AdminView.vue:1922 | src/views/AdminView.vue:2274 | src/views/AdminView.vue:2713 | src/views/AdminView.vue:819
-m_49587159,排序,sort,排序,sort,false,2,src/views/AdminView.vue:1251 | src/views/AdminView.vue:2584
-m_49615c2b,加载比赛失败,Failed to load contests,加载比赛失败,Failed to load contests,false,3,src/views/AdminView.vue:2538 | src/views/AdminView.vue:4056 | src/views/ContestsView.vue:403
+m_48f2d1c5,上移,move up,上移,move up,false,2,src/views/AdminView.vue:1309 | src/views/AdminView.vue:2623
+m_490b3b0d,展开筛选条件,Expand filters,展开筛选条件,Expand filters,false,5,src/views/AdminView.vue:1782 | src/views/AdminView.vue:1922 | src/views/AdminView.vue:2274 | src/views/AdminView.vue:2714 | src/views/AdminView.vue:819
+m_49587159,排序,sort,排序,sort,false,2,src/views/AdminView.vue:1251 | src/views/AdminView.vue:2585
+m_49615c2b,加载比赛失败,Failed to load contests,加载比赛失败,Failed to load contests,false,3,src/views/AdminView.vue:2539 | src/views/AdminView.vue:4056 | src/views/ContestsView.vue:403
 m_49836ca4,已退出队伍,Left team,已退出队伍,Left team,false,1,src/views/TeamsView.vue:737
-m_498dad43,应用筛选,Apply filters,应用筛选,Apply filters,false,5,src/views/AdminView.vue:1811 | src/views/AdminView.vue:1950 | src/views/AdminView.vue:2289 | src/views/AdminView.vue:2685 | src/views/AdminView.vue:857
-m_4a8066b6,single_image 模式内部端口必须在 1~65535,single_image internal port must be between 1 and 65535.,single_image 模式内部端口必须在 1~65535,single_image internal port must be between 1 and 65535.,false,2,src/views/AdminView.vue:2755 | src/views/AdminView.vue:4715
+m_498dad43,应用筛选,Apply filters,应用筛选,Apply filters,false,5,src/views/AdminView.vue:1811 | src/views/AdminView.vue:1950 | src/views/AdminView.vue:2289 | src/views/AdminView.vue:2686 | src/views/AdminView.vue:857
+m_4a8066b6,single_image 模式内部端口必须在 1~65535,single_image internal port must be between 1 and 65535.,single_image 模式内部端口必须在 1~65535,single_image internal port must be between 1 and 65535.,false,2,src/views/AdminView.vue:2756 | src/views/AdminView.vue:4715
 m_4acda218,刷新,Refresh,刷新,Refresh,false,10,src/views/AdminView.vue:1629 | src/views/ContestDetailView.vue:20 | src/views/ContestDetailView.vue:293 | src/views/ContestDetailView.vue:375 | src/views/ContestsView.vue:9 | src/views/ProfileView.vue:59 | src/views/ScoreboardWallView.vue:27 | src/views/SiteSettingsView.vue:10 | src/views/TeamsView.vue:20 | src/views/TeamsView.vue:238
-m_4ba1dc6f,内容,content,内容,content,false,1,src/views/AdminView.vue:2584
-m_4bbf9aca,查看指标,View metrics,查看指标,View metrics,false,2,src/views/AdminView.vue:2129 | src/views/AdminView.vue:2453
-m_4bee959b,dynamic：每队可创建独立运行实例，适合隔离容器题。,dynamic: each team can start an isolated runtime instance.,dynamic：每队可创建独立运行实例，适合隔离容器题。,dynamic: each team can start an isolated runtime instance.,false,1,src/views/AdminView.vue:3295
-m_4c5ee0e3,加载审计日志失败,Failed to load audit logs,加载审计日志失败,Failed to load audit logs,false,2,src/views/AdminView.vue:2545 | src/views/AdminView.vue:4451
-m_4c9b527e,无法测试 compose,Cannot test compose,无法测试 compose,Cannot test compose,false,2,src/views/AdminView.vue:2743 | src/views/AdminView.vue:4620
-m_4d04a160,请先选择海报文件,Please select a poster file first.,请先选择海报文件,Please select a poster file first.,false,2,src/views/AdminView.vue:2592 | src/views/AdminView.vue:5134
-m_4d470de2,版本号非法,Invalid version number,版本号非法,Invalid version number,false,1,src/views/AdminView.vue:2427
+m_4ba1dc6f,内容,content,内容,content,false,1,src/views/AdminView.vue:2585
+m_4bbf9aca,查看指标,View metrics,查看指标,View metrics,false,2,src/views/AdminView.vue:2129 | src/views/AdminView.vue:2454
+m_4bee959b,dynamic：每队可创建独立运行实例，适合隔离容器题。,dynamic: each team can start an isolated runtime instance.,dynamic：每队可创建独立运行实例，适合隔离容器题。,dynamic: each team can start an isolated runtime instance.,false,1,src/views/AdminView.vue:3296
+m_4c5ee0e3,加载审计日志失败,Failed to load audit logs,加载审计日志失败,Failed to load audit logs,false,2,src/views/AdminView.vue:2546 | src/views/AdminView.vue:4451
+m_4c9b527e,无法测试 compose,Cannot test compose,无法测试 compose,Cannot test compose,false,2,src/views/AdminView.vue:2744 | src/views/AdminView.vue:4620
+m_4d04a160,请先选择海报文件,Please select a poster file first.,请先选择海报文件,Please select a poster file first.,false,2,src/views/AdminView.vue:2593 | src/views/AdminView.vue:5134
+m_4d470de2,版本号非法,Invalid version number,版本号非法,Invalid version number,false,1,src/views/AdminView.vue:2428
 m_4da3b942,请先加入队伍,Join a team first,请先加入队伍,Join a team first,false,2,src/views/ContestsView.vue:340 | src/views/ContestsView.vue:376
-m_4da8e6b7,网络 RX/TX,Network RX/TX,网络 RX/TX,Network RX/TX,false,2,src/views/AdminView.vue:2229 | src/views/AdminView.vue:2651
+m_4da8e6b7,网络 RX/TX,Network RX/TX,网络 RX/TX,Network RX/TX,false,2,src/views/AdminView.vue:2229 | src/views/AdminView.vue:2652
 m_4db82d6c,二血,Second blood,二血,Second blood,false,1,src/views/ScoreboardWallView.vue:78
 m_4e02000d,当前账号,Current account,当前账号,Current account,false,1,src/views/ProfileView.vue:246
-m_4e4ced61,公告已置顶,Announcement pinned,公告已置顶,Announcement pinned,false,1,src/views/AdminView.vue:2512
+m_4e4ced61,公告已置顶,Announcement pinned,公告已置顶,Announcement pinned,false,1,src/views/AdminView.vue:2513
 m_4e587c3b,没有账号？去注册,No account? Register,没有账号？去注册,No account? Register,false,1,src/views/LoginView.vue:238
-m_4e8f120d,标题,title,标题,title,false,4,src/views/AdminView.vue:1489 | src/views/AdminView.vue:2445 | src/views/AdminView.vue:295 | src/views/AdminView.vue:983
+m_4e8f120d,标题,title,标题,title,false,4,src/views/AdminView.vue:1489 | src/views/AdminView.vue:2446 | src/views/AdminView.vue:295 | src/views/AdminView.vue:983
 m_4f0b38ff,附件超过大小限制（最大 {maxSize}）。,Attachment exceeds size limit (max {maxSize}).,附件超过大小限制（最大 {maxSize}）。,Attachment exceeds size limit (max {maxSize}).,false,1,src/views/AdminView.vue:4897
 m_501ef068,时间显示模式,Time display mode,时间显示模式,Time display mode,false,1,src/views/SiteSettingsView.vue:53
 m_504dde5a,导出成功,Export completed,导出成功,Export completed,false,2,src/views/ContestDetailView.vue:1236 | src/views/ContestDetailView.vue:1339
 m_5059a4d7,暂无公告。,No announcements.,暂无公告。,No announcements.,false,1,src/views/ContestDetailView.vue:409
 m_508ea417,你当前不在任何队伍中。可以创建新队伍或按名称加入。,You are not in a team. Create one or join by team name.,你当前不在任何队伍中。可以创建新队伍或按名称加入。,You are not in a team. Create one or join by team name.,false,1,src/views/TeamsView.vue:200
-m_50d673df,更新中...,Updating...,更新中...,Updating...,false,2,src/views/AdminView.vue:2027 | src/views/AdminView.vue:2500
+m_50d673df,更新中...,Updating...,更新中...,Updating...,false,2,src/views/AdminView.vue:2027 | src/views/AdminView.vue:2501
 m_50fba5af,长度至少 {minLength} 位,Length >= {minLength},长度至少 {minLength} 位,Length >= {minLength},false,1,src/views/LoginView.vue:503
 m_513484b2,下载成功,Download succeeded,下载成功,Download succeeded,false,2,src/views/ContestDetailView.vue:1406 | src/views/ContestDetailView.vue:1460
 m_5151b973,进行中,Running,进行中,Running,false,2,src/views/ContestsView.vue:270 | src/views/ContestsView.vue:37
@@ -300,29 +300,29 @@ m_5387b69d,正在加载附件...,Loading files...,正在加载附件...,Loading 
 m_53af64d8,保存类别,Save category,保存类别,Save category,false,1,src/views/AdminView.vue:244
 m_541ee58b,动态环境已停止。,Runtime instance stopped.,动态环境已停止。,Runtime instance stopped.,false,1,src/views/ContestDetailView.vue:1677
 m_544160b5,暂无登录历史记录。,No login history records.,暂无登录历史记录。,No login history records.,false,1,src/views/ProfileView.vue:82
-m_545d698d,回滚中...,Rolling back...,回滚中...,Rolling back...,false,2,src/views/AdminView.vue:2535 | src/views/AdminView.vue:733
+m_545d698d,回滚中...,Rolling back...,回滚中...,Rolling back...,false,2,src/views/AdminView.vue:2536 | src/views/AdminView.vue:733
 m_5495a4b5,当前密码,Current password,当前密码,Current password,false,1,src/views/ProfileView.vue:35
-m_5589bfd3,no_runtime：不启动容器，适用于纯静态题。,"no_runtime: no container runtime, suited for static challenges.",no_runtime：不启动容器，适用于纯静态题。,"no_runtime: no container runtime, suited for static challenges.",false,1,src/views/AdminView.vue:3344
+m_5589bfd3,no_runtime：不启动容器，适用于纯静态题。,"no_runtime: no container runtime, suited for static challenges.",no_runtime：不启动容器，适用于纯静态题。,"no_runtime: no container runtime, suited for static challenges.",false,1,src/views/AdminView.vue:3345
 m_55e9dbe2,删除题目类别,Delete challenge category,删除题目类别,Delete challenge category,false,1,src/views/AdminView.vue:3847
 m_560617c6,保存后，前台时间将统一按 UTC 展示。,Save to apply UTC display mode in player views.,保存后，前台时间将统一按 UTC 展示。,Save to apply UTC display mode in player views.,false,1,src/views/SiteSettingsView.vue:140
-m_56331fa4,执行过期实例回收失败,Failed to run expired instance reaper,执行过期实例回收失败,Failed to run expired instance reaper,false,2,src/views/AdminView.vue:2718 | src/views/AdminView.vue:4365
+m_56331fa4,执行过期实例回收失败,Failed to run expired instance reaper,执行过期实例回收失败,Failed to run expired instance reaper,false,2,src/views/AdminView.vue:2719 | src/views/AdminView.vue:4365
 m_569db49f,实例已销毁，连接信息已隐藏。可点击“启动”重新创建新实例。,Instance is destroyed and access details are hidden. Click Start to create a new one.,实例已销毁，连接信息已隐藏。可点击“启动”重新创建新实例。,Instance is destroyed and access details are hidden. Click Start to create a new one.,false,1,src/views/ContestDetailView.vue:217
-m_571f1414,创建题目,Create Challenge,创建题目,Create Challenge,false,1,src/views/AdminView.vue:3283
+m_571f1414,创建题目,Create Challenge,创建题目,Create Challenge,false,1,src/views/AdminView.vue:3284
 m_57398562,入口,Entrypoint,入口,Entrypoint,false,1,src/views/ContestDetailView.vue:210
-m_5799a650,按标题、slug、分类筛选,"Filter by title, slug, category",按标题、slug、分类筛选,"Filter by title, slug, category",false,2,src/views/AdminView.vue:2421 | src/views/AdminView.vue:638
+m_5799a650,按标题、slug、分类筛选,"Filter by title, slug, category",按标题、slug、分类筛选,"Filter by title, slug, category",false,2,src/views/AdminView.vue:2422 | src/views/AdminView.vue:638
 m_58427b35,提交中...,Submitting...,提交中...,Submitting...,false,3,src/views/ContestDetailView.vue:152 | src/views/LoginView.vue:349 | src/views/ProfileView.vue:49
-m_588fde3f,用于 ack / resolve 审计记录,for ack / resolve audit records,用于 ack / resolve 审计记录,for ack / resolve audit records,false,2,src/views/AdminView.vue:1871 | src/views/AdminView.vue:2691
+m_588fde3f,用于 ack / resolve 审计记录,for ack / resolve audit records,用于 ack / resolve 审计记录,for ack / resolve audit records,false,2,src/views/AdminView.vue:1871 | src/views/AdminView.vue:2692
 m_59a6510c,取消,Cancel,取消,Cancel,false,5,src/views/AdminView.vue:3853 | src/views/AdminView.vue:4814 | src/views/AdminView.vue:5178 | src/views/AdminView.vue:5208 | src/views/AdminView.vue:5322
-m_59db56f5,描述,Description,描述,Description,false,2,src/views/AdminView.vue:2578 | src/views/AdminView.vue:991
-m_59e0839c,加载运行告警失败,Failed to load runtime alerts,加载运行告警失败,Failed to load runtime alerts,false,2,src/views/AdminView.vue:2554 | src/views/AdminView.vue:4305
-m_59e5e034,运行中比赛,Running contests,运行中比赛,Running contests,false,2,src/views/AdminView.vue:1731 | src/views/AdminView.vue:2702
+m_59db56f5,描述,Description,描述,Description,false,2,src/views/AdminView.vue:2579 | src/views/AdminView.vue:991
+m_59e0839c,加载运行告警失败,Failed to load runtime alerts,加载运行告警失败,Failed to load runtime alerts,false,2,src/views/AdminView.vue:2555 | src/views/AdminView.vue:4305
+m_59e5e034,运行中比赛,Running contests,运行中比赛,Running contests,false,2,src/views/AdminView.vue:1731 | src/views/AdminView.vue:2703
 m_5a8d2ab7,站点副标题,Site Subtitle,站点副标题,Site Subtitle,false,1,src/views/SiteSettingsView.vue:22
-m_5b749587,· 24h 提交,· 24h submissions,· 24h 提交,· 24h submissions,false,2,src/views/AdminView.vue:1732 | src/views/AdminView.vue:2414
+m_5b749587,· 24h 提交,· 24h submissions,· 24h 提交,· 24h submissions,false,2,src/views/AdminView.vue:1732 | src/views/AdminView.vue:2415
 m_5c662ba2,总积分,Total score,总积分,Total score,false,2,src/views/ScoreboardWallView.vue:100 | src/views/ScoreboardWallView.vue:159
 m_5d243c84,报名审核,Registration Review,报名审核,Registration Review,false,1,src/views/AdminView.vue:1612
 m_5d514884,邮箱找回,Email Recovery,邮箱找回,Email Recovery,false,1,src/views/LoginView.vue:54
 m_5d6a99f1,未分类,Uncategorized,未分类,Uncategorized,false,1,src/views/ContestDetailView.vue:589
-m_5d6f637e,该题将在比赛内即时可见。,This challenge is now immediately visible in contest.,该题将在比赛内即时可见。,This challenge is now immediately visible in contest.,false,1,src/views/AdminView.vue:2488
+m_5d6f637e,该题将在比赛内即时可见。,This challenge is now immediately visible in contest.,该题将在比赛内即时可见。,This challenge is now immediately visible in contest.,false,1,src/views/AdminView.vue:2489
 m_5da74e51,登录历史,Login History,登录历史,Login History,false,1,src/views/ProfileView.vue:57
 m_5e530f8e,暂无已发送邀请。,No sent invitations.,暂无已发送邀请。,No sent invitations.,false,1,src/views/TeamsView.vue:302
 m_5e680a9c,管理,Admin,管理,Admin,false,1,src/App.vue:40
@@ -333,7 +333,7 @@ m_5ef37c49,确认后将立即退出并删除账号数据。,This action will sig
 m_5efbc81b,重置失败,Reset failed,重置失败,Reset failed,false,1,src/views/LoginView.vue:947
 m_5f9b36c9,题目列表,Challenges,题目列表,Challenges,false,1,src/views/ContestDetailView.vue:18
 m_6000e0ac,分数,Score,分数,Score,false,1,src/views/ContestDetailView.vue:350
-m_60649a8f,封榜时间（可选）,Closing time (optional),封榜时间（可选）,Closing time (optional),false,2,src/views/AdminView.vue:1062 | src/views/AdminView.vue:2480
+m_60649a8f,封榜时间（可选）,Closing time (optional),封榜时间（可选）,Closing time (optional),false,2,src/views/AdminView.vue:1062 | src/views/AdminView.vue:2481
 m_61206794,实时排名趋势,Live rank trend,实时排名趋势,Live rank trend,false,1,src/views/ScoreboardWallView.vue:44
 m_61e0e005,邮箱验证成功,Email verified,邮箱验证成功,Email verified,false,1,src/views/LoginView.vue:873
 m_61eae72d,体验,Experience,体验,Experience,false,1,src/views/HomeView.vue:23
@@ -350,109 +350,109 @@ m_64ab0649,暂无公告内容。,No announcement content.,暂无公告内容。,
 m_64cf0eb5,暂无可见题目。,No visible challenges.,暂无可见题目。,No visible challenges.,false,1,src/views/ContestDetailView.vue:25
 m_6513e68b,用户名为空,Username required,用户名为空,Username required,false,1,src/views/TeamsView.vue:814
 m_65b1e1d5,最后更新,Last updated,最后更新,Last updated,false,1,src/views/SiteSettingsView.vue:73
-m_65b203f4,角色,Role,角色,Role,false,4,src/views/AdminView.vue:1929 | src/views/AdminView.vue:1962 | src/views/AdminView.vue:2301 | src/views/AdminView.vue:2555
-m_65e8ead7,· 30 分钟内到期,· expiring within 30m,· 30 分钟内到期,· expiring within 30m,false,2,src/views/AdminView.vue:1737 | src/views/AdminView.vue:2414
-m_6687665a,保存中...,Saving...,保存中...,Saving...,false,8,src/views/AdminView.vue:1556 | src/views/AdminView.vue:242 | src/views/AdminView.vue:2431 | src/views/AdminView.vue:3288 | src/views/AdminView.vue:3397 | src/views/ProfileView.vue:26 | src/views/SiteSettingsView.vue:68 | src/views/TeamsView.vue:123
-m_6730b7b0,结果,result,结果,result,false,3,src/views/AdminView.vue:2559 | src/views/AdminView.vue:450 | src/views/AdminView.vue:496
-m_673c49cf,角色未变化,Role unchanged,角色未变化,Role unchanged,false,1,src/views/AdminView.vue:2556
+m_65b203f4,角色,Role,角色,Role,false,4,src/views/AdminView.vue:1929 | src/views/AdminView.vue:1962 | src/views/AdminView.vue:2301 | src/views/AdminView.vue:2556
+m_65e8ead7,· 30 分钟内到期,· expiring within 30m,· 30 分钟内到期,· expiring within 30m,false,2,src/views/AdminView.vue:1737 | src/views/AdminView.vue:2415
+m_6687665a,保存中...,Saving...,保存中...,Saving...,false,8,src/views/AdminView.vue:1556 | src/views/AdminView.vue:242 | src/views/AdminView.vue:2432 | src/views/AdminView.vue:3289 | src/views/AdminView.vue:3398 | src/views/ProfileView.vue:26 | src/views/SiteSettingsView.vue:68 | src/views/TeamsView.vue:123
+m_6730b7b0,结果,result,结果,result,false,3,src/views/AdminView.vue:2560 | src/views/AdminView.vue:450 | src/views/AdminView.vue:496
+m_673c49cf,角色未变化,Role unchanged,角色未变化,Role unchanged,false,1,src/views/AdminView.vue:2557
 m_6751b0e5,创建,Created,创建,Created,false,1,src/views/AdminView.vue:2172
-m_67527bda,操作,Actions,操作,Actions,false,3,src/views/AdminView.vue:1644 | src/views/AdminView.vue:1965 | src/views/AdminView.vue:2448
+m_67527bda,操作,Actions,操作,Actions,false,3,src/views/AdminView.vue:1644 | src/views/AdminView.vue:1965 | src/views/AdminView.vue:2449
 m_6776744b,发送中...,Sending...,发送中...,Sending...,false,3,src/views/LoginView.vue:252 | src/views/LoginView.vue:284 | src/views/TeamsView.vue:141
 m_677ebb32,当前题目暂无附件。,No files attached to this challenge.,当前题目暂无附件。,No files attached to this challenge.,false,1,src/views/ContestDetailView.vue:111
-m_680bbf78,过期实例回收已执行,Expired instance reaper executed,过期实例回收已执行,Expired instance reaper executed,false,1,src/views/AdminView.vue:2525
+m_680bbf78,过期实例回收已执行,Expired instance reaper executed,过期实例回收已执行,Expired instance reaper executed,false,1,src/views/AdminView.vue:2526
 m_688903fc,队伍已自动解散。,The team was automatically disbanded.,队伍已自动解散。,The team was automatically disbanded.,false,1,src/views/TeamsView.vue:738
 m_68d61495,邀请成员,Invite Members,邀请成员,Invite Members,false,1,src/views/TeamsView.vue:130
-m_69b196cc,dynamic：按队伍下发动态 flag（通常来自实例启动流程）。,dynamic: per-team flag issued from runtime flow.,dynamic：按队伍下发动态 flag（通常来自实例启动流程）。,dynamic: per-team flag issued from runtime flow.,false,1,src/views/AdminView.vue:3314
+m_69b196cc,dynamic：按队伍下发动态 flag（通常来自实例启动流程）。,dynamic: per-team flag issued from runtime flow.,dynamic：按队伍下发动态 flag（通常来自实例启动流程）。,dynamic: per-team flag issued from runtime flow.,false,1,src/views/AdminView.vue:3315
 m_69ce9e3a,下载附件,Download,下载附件,Download,false,1,src/views/ContestDetailView.vue:102
-m_6a3c825a,公告标题,Announcement title,公告标题,Announcement title,false,2,src/views/AdminView.vue:1388 | src/views/AdminView.vue:2501
-m_6a560c34,加载挂载失败,Failed to load bindings,加载挂载失败,Failed to load bindings,false,2,src/views/AdminView.vue:2543 | src/views/AdminView.vue:4086
+m_6a3c825a,公告标题,Announcement title,公告标题,Announcement title,false,2,src/views/AdminView.vue:1388 | src/views/AdminView.vue:2502
+m_6a560c34,加载挂载失败,Failed to load bindings,加载挂载失败,Failed to load bindings,false,2,src/views/AdminView.vue:2544 | src/views/AdminView.vue:4086
 m_6a915651,暂时无法进入,Unable to enter,暂时无法进入,Unable to enter,false,1,src/views/ContestsView.vue:384
 m_6adbda32,队伍信息已更新,Team updated,队伍信息已更新,Team updated,false,1,src/views/TeamsView.vue:797
 m_6b105084,登录成功,Sign in succeeded,登录成功,Sign in succeeded,false,1,src/views/LoginView.vue:771
-m_6b9cdbf9,触发运行告警扫描失败,Failed to run runtime alert scan,触发运行告警扫描失败,Failed to run runtime alert scan,false,2,src/views/AdminView.vue:2460 | src/views/AdminView.vue:4339
+m_6b9cdbf9,触发运行告警扫描失败,Failed to run runtime alert scan,触发运行告警扫描失败,Failed to run runtime alert scan,false,2,src/views/AdminView.vue:2461 | src/views/AdminView.vue:4339
 m_6c3e8515,邮箱验证,Email Verification,邮箱验证,Email Verification,false,1,src/views/LoginView.vue:250
-m_6c5b92c4,题目已更新,Challenge updated,题目已更新,Challenge updated,false,1,src/views/AdminView.vue:2644
+m_6c5b92c4,题目已更新,Challenge updated,题目已更新,Challenge updated,false,1,src/views/AdminView.vue:2645
 m_6c7cbcc9,复制题目 ID,Copy challenge ID,复制题目 ID,Copy challenge ID,false,1,src/views/ContestDetailView.vue:123
-m_6cca03f6,信息,information,信息,information,false,2,src/views/AdminView.vue:2676 | src/views/AdminView.vue:895
+m_6cca03f6,信息,information,信息,information,false,2,src/views/AdminView.vue:2677 | src/views/AdminView.vue:895
 m_6d5a625e,进入比赛失败,Failed to enter contest workspace,进入比赛失败,Failed to enter contest workspace,false,2,src/views/ContestsView.vue:388 | src/views/ContestsView.vue:389
 m_6d6f4067,未解,Unsolved,未解,Unsolved,false,1,src/views/ScoreboardWallView.vue:81
-m_6d9285c7,未选择比赛,No contest selected,未选择比赛,No contest selected,false,1,src/views/AdminView.vue:2654
+m_6d9285c7,未选择比赛,No contest selected,未选择比赛,No contest selected,false,1,src/views/AdminView.vue:2655
 m_6e23569b,无连续字符序列,No sequential run,无连续字符序列,No sequential run,false,1,src/views/LoginView.vue:198
 m_6e253afd,确认验证,Confirm,确认验证,Confirm,false,1,src/views/LoginView.vue:267
-m_6e80778a,没有匹配的题目。,No matching challenges.,没有匹配的题目。,No matching challenges.,false,2,src/views/AdminView.vue:2575 | src/views/AdminView.vue:713
-m_6ea8943a,首次发现：,First discovered:,首次发现：,First discovered:,false,2,src/views/AdminView.vue:1861 | src/views/AdminView.vue:2630
+m_6e80778a,没有匹配的题目。,No matching challenges.,没有匹配的题目。,No matching challenges.,false,2,src/views/AdminView.vue:2576 | src/views/AdminView.vue:713
+m_6ea8943a,首次发现：,First discovered:,首次发现：,First discovered:,false,2,src/views/AdminView.vue:1861 | src/views/AdminView.vue:2631
 m_6eb83832,消息,Message,消息,Message,false,1,src/views/ContestDetailView.vue:223
 m_6ff3e19e,一血,First blood,一血,First blood,false,1,src/views/ScoreboardWallView.vue:77
-m_7063b017,编辑,edit,编辑,edit,false,2,src/views/AdminView.vue:2441 | src/views/AdminView.vue:674
+m_7063b017,编辑,edit,编辑,edit,false,2,src/views/AdminView.vue:2442 | src/views/AdminView.vue:674
 m_70827177,队长已转让,Captain transferred,队长已转让,Captain transferred,false,1,src/views/TeamsView.vue:907
 m_709543a2,已启用,Enabled,已启用,Enabled,false,1,src/views/LoginView.vue:71
 m_70e0600e,选择图片,选择图片,选择图片,选择图片,true,1,src/views/AdminView.vue:1147
 m_70e75154,中等,Fair,中等,Fair,false,1,src/views/LoginView.vue:568
-m_7121504f,已载入比赛配置,Contest config loaded,已载入比赛配置,Contest config loaded,false,1,src/views/AdminView.vue:2683
+m_7121504f,已载入比赛配置,Contest config loaded,已载入比赛配置,Contest config loaded,false,1,src/views/AdminView.vue:2684
 m_7122e4c0,支持标题、列表、代码块、引用与链接。,"Supports headings, lists, code blocks, quotes and links.",支持标题、列表、代码块、引用与链接。,"Supports headings, lists, code blocks, quotes and links.",false,1,src/views/AdminView.vue:1429
 m_715254cb,刷新全部,Refresh all,刷新全部,Refresh all,false,2,src/views/AdminView.vue:13 | src/views/TeamsView.vue:9
-m_717d6494,子网,subnet,子网,subnet,false,1,src/views/AdminView.vue:2730
+m_717d6494,子网,subnet,子网,subnet,false,1,src/views/AdminView.vue:2731
 m_71bed88c,WireGuard 端点已复制,WireGuard endpoint copied,WireGuard 端点已复制,WireGuard endpoint copied,false,1,src/views/ContestDetailView.vue:271
-m_71c524f9,题解内容（可选）,Solution content (optional),题解内容（可选）,Solution content (optional),false,2,src/views/AdminView.vue:2639 | src/views/AdminView.vue:539
-m_71ff82ad,公告状态已更新,Announcement status updated,公告状态已更新,Announcement status updated,false,1,src/views/AdminView.vue:2514
-m_72a25657,镜像测试通过,Image test passed,镜像测试通过,Image test passed,false,1,src/views/AdminView.vue:2566
-m_72a9a920,该海报当前在比赛中心不可预览（仅 public 且 scheduled/running/ended 可见）。,This poster is currently not visible in contest center (only when visibility is public and status is scheduled/running/ended).,该海报当前在比赛中心不可预览（仅 public 且 scheduled/running/ended 可见）。,This poster is currently not visible in contest center (only when visibility is public and status is scheduled/running/ended).,false,2,src/views/AdminView.vue:1137 | src/views/AdminView.vue:2486
+m_71c524f9,题解内容（可选）,Solution content (optional),题解内容（可选）,Solution content (optional),false,2,src/views/AdminView.vue:2640 | src/views/AdminView.vue:539
+m_71ff82ad,公告状态已更新,Announcement status updated,公告状态已更新,Announcement status updated,false,1,src/views/AdminView.vue:2515
+m_72a25657,镜像测试通过,Image test passed,镜像测试通过,Image test passed,false,1,src/views/AdminView.vue:2567
+m_72a9a920,该海报当前在比赛中心不可预览（仅 public 且 scheduled/running/ended 可见）。,This poster is currently not visible in contest center (only when visibility is public and status is scheduled/running/ended).,该海报当前在比赛中心不可预览（仅 public 且 scheduled/running/ended 可见）。,This poster is currently not visible in contest center (only when visibility is public and status is scheduled/running/ended).,false,2,src/views/AdminView.vue:1137 | src/views/AdminView.vue:2487
 m_72ba36fa,新密码,New Password,新密码,New Password,false,1,src/views/LoginView.vue:295
 m_72d643a0,欢迎回来。,Welcome back.,欢迎回来。,Welcome back.,false,1,src/views/LoginView.vue:771
 m_739d3876,密码重置成功,Password reset succeeded,密码重置成功,Password reset succeeded,false,1,src/views/LoginView.vue:936
-m_73f0133c,新密码至少需要 8 位字符,New password must contain at least 8 characters.,新密码至少需要 8 位字符,New password must contain at least 8 characters.,false,2,src/views/AdminView.vue:2674 | src/views/AdminView.vue:5265
+m_73f0133c,新密码至少需要 8 位字符,New password must contain at least 8 characters.,新密码至少需要 8 位字符,New password must contain at least 8 characters.,false,2,src/views/AdminView.vue:2675 | src/views/AdminView.vue:5265
 m_73f12aef,已发送邀请,Sent Invitations,已发送邀请,Sent Invitations,false,1,src/views/TeamsView.vue:285
 m_73f93b76,正在加载我的队伍...,Loading my team...,正在加载我的队伍...,Loading my team...,false,1,src/views/TeamsView.vue:84
 m_7425225f,斜体,Italic,斜体,Italic,false,2,src/views/AdminView.vue:1404 | src/views/AdminView.vue:1529
 m_744f331c,题目管理、比赛控制、实例监控、用户管理与审计日志。,"Challenge management, contests, instance monitoring, users, and audit logs.",题目管理、比赛控制、实例监控、用户管理与审计日志。,"Challenge management, contests, instance monitoring, users, and audit logs.",false,1,src/views/AdminView.vue:6
 m_74ccfccb,实例监控,Instances,实例监控,Instances,false,1,src/views/AdminView.vue:154
-m_750134cc,可以继续管理版本、附件或挂载到比赛。,"You can continue with versions, attachments, or contest bindings.",可以继续管理版本、附件或挂载到比赛。,"You can continue with versions, attachments, or contest bindings.",false,1,src/views/AdminView.vue:2572
-m_7578fa45,ssh_bastion（默认）,ssh_bastion (default),ssh_bastion（默认）,ssh_bastion (default),false,2,src/views/AdminView.vue:2757 | src/views/AdminView.vue:379
+m_750134cc,可以继续管理版本、附件或挂载到比赛。,"You can continue with versions, attachments, or contest bindings.",可以继续管理版本、附件或挂载到比赛。,"You can continue with versions, attachments, or contest bindings.",false,1,src/views/AdminView.vue:2573
+m_7578fa45,ssh_bastion（默认）,ssh_bastion (default),ssh_bastion（默认）,ssh_bastion (default),false,2,src/views/AdminView.vue:2758 | src/views/AdminView.vue:379
 m_75a98d3d,已切换为 UTC,Switched to UTC,已切换为 UTC,Switched to UTC,false,1,src/views/SiteSettingsView.vue:139
 m_75f33a7a,模板校验,Template Lint,模板校验,Template Lint,false,1,src/views/AdminView.vue:90
 m_764c7341,重置令牌,Reset Token,重置令牌,Reset Token,false,1,src/views/LoginView.vue:290
-m_767f5a44,内存,Memory,内存,Memory,false,3,src/views/AdminView.vue:2204 | src/views/AdminView.vue:2228 | src/views/AdminView.vue:2583
+m_767f5a44,内存,Memory,内存,Memory,false,3,src/views/AdminView.vue:2204 | src/views/AdminView.vue:2228 | src/views/AdminView.vue:2584
 m_76dab22d,请选择题目类别。,Please select a challenge category.,请选择题目类别。,Please select a challenge category.,false,1,src/views/AdminView.vue:4728
-m_76dd3a7c,题解可见策略,Visible strategies for solving problems,题解可见策略,Visible strategies for solving problems,false,2,src/views/AdminView.vue:2637 | src/views/AdminView.vue:522
-m_76e64ee0,创建公告,Create announcement,创建公告,Create announcement,false,3,src/views/AdminView.vue:1359 | src/views/AdminView.vue:1444 | src/views/AdminView.vue:2462
+m_76dd3a7c,题解可见策略,Visible strategies for solving problems,题解可见策略,Visible strategies for solving problems,false,2,src/views/AdminView.vue:2638 | src/views/AdminView.vue:522
+m_76e64ee0,创建公告,Create announcement,创建公告,Create announcement,false,3,src/views/AdminView.vue:1359 | src/views/AdminView.vue:1444 | src/views/AdminView.vue:2463
 m_771df5d0,会话已刷新。,Session refreshed.,会话已刷新。,Session refreshed.,false,1,src/views/ProfileView.vue:214
 m_77632fa3,资料已更新,Profile updated,资料已更新,Profile updated,false,1,src/views/ProfileView.vue:186
-m_7781ccd1,最新题目、比赛、实例、审计和运行概览已同步。,"Challenges, contests, instances, audit logs, and runtime overview are synced.",最新题目、比赛、实例、审计和运行概览已同步。,"Challenges, contests, instances, audit logs, and runtime overview are synced.",false,1,src/views/AdminView.vue:2737
+m_7781ccd1,最新题目、比赛、实例、审计和运行概览已同步。,"Challenges, contests, instances, audit logs, and runtime overview are synced.",最新题目、比赛、实例、审计和运行概览已同步。,"Challenges, contests, instances, audit logs, and runtime overview are synced.",false,1,src/views/AdminView.vue:2738
 m_77b385c8,发送邀请,Send invite,发送邀请,Send invite,false,1,src/views/TeamsView.vue:141
 m_77c31046,队伍,Teams,队伍,Teams,false,2,src/App.vue:27 | src/views/AdminView.vue:1748
-m_7804796e,正在准备编辑器...,Preparing editor...,正在准备编辑器...,Preparing editor...,false,2,src/views/AdminView.vue:1560 | src/views/AdminView.vue:2715
-m_78105a42,模板,template,模板,template,false,3,src/views/AdminView.vue:2580 | src/views/AdminView.vue:495 | src/views/AdminView.vue:892
-m_783e67a6,请先在“赛事配置”中选择一个比赛。,"Please select a competition in ""Event Configuration"" first.",请先在“赛事配置”中选择一个比赛。,"Please select a competition in ""Event Configuration"" first.",false,2,src/views/AdminView.vue:1350 | src/views/AdminView.vue:2595
-m_78ead2ae,运行告警：过期实例未销毁,Runtime alert: expired instance not destroyed,运行告警：过期实例未销毁,Runtime alert: expired instance not destroyed,false,1,src/views/AdminView.vue:2695
+m_7804796e,正在准备编辑器...,Preparing editor...,正在准备编辑器...,Preparing editor...,false,2,src/views/AdminView.vue:1560 | src/views/AdminView.vue:2716
+m_78105a42,模板,template,模板,template,false,3,src/views/AdminView.vue:2581 | src/views/AdminView.vue:495 | src/views/AdminView.vue:892
+m_783e67a6,请先在“赛事配置”中选择一个比赛。,"Please select a competition in ""Event Configuration"" first.",请先在“赛事配置”中选择一个比赛。,"Please select a competition in ""Event Configuration"" first.",false,2,src/views/AdminView.vue:1350 | src/views/AdminView.vue:2596
+m_78ead2ae,运行告警：过期实例未销毁,Runtime alert: expired instance not destroyed,运行告警：过期实例未销毁,Runtime alert: expired instance not destroyed,false,1,src/views/AdminView.vue:2696
 m_78ecacdb,导出失败,Export failed,导出失败,Export failed,false,2,src/views/ContestDetailView.vue:1240 | src/views/ContestDetailView.vue:1346
 m_793f6799,公告管理,Announcements,公告管理,Announcements,false,1,src/views/AdminView.vue:118
-m_79a6c934,取消置顶,Unpin,取消置顶,Unpin,false,2,src/views/AdminView.vue:1587 | src/views/AdminView.vue:2599
-m_79dc2644,回滚备注（可选）,Rollback notes (optional),回滚备注（可选）,Rollback notes (optional),false,2,src/views/AdminView.vue:2531 | src/views/AdminView.vue:729
+m_79a6c934,取消置顶,Unpin,取消置顶,Unpin,false,2,src/views/AdminView.vue:1587 | src/views/AdminView.vue:2600
+m_79dc2644,回滚备注（可选）,Rollback notes (optional),回滚备注（可选）,Rollback notes (optional),false,2,src/views/AdminView.vue:2532 | src/views/AdminView.vue:729
 m_79fb82fd,难度,Difficulty,难度,Difficulty,false,1,src/views/ContestDetailView.vue:67
-m_7a0b57cf,入口协议,Entry protocol,入口协议,Entry protocol,false,2,src/views/AdminView.vue:2604 | src/views/AdminView.vue:412
-m_7a2e671d,到期,Expires,到期,Expires,false,4,src/views/AdminView.vue:1751 | src/views/AdminView.vue:2115 | src/views/AdminView.vue:2174 | src/views/AdminView.vue:2473
+m_7a0b57cf,入口协议,Entry protocol,入口协议,Entry protocol,false,2,src/views/AdminView.vue:2605 | src/views/AdminView.vue:412
+m_7a2e671d,到期,Expires,到期,Expires,false,4,src/views/AdminView.vue:1751 | src/views/AdminView.vue:2115 | src/views/AdminView.vue:2174 | src/views/AdminView.vue:2474
 m_7a2eec85,题库配置,Library,题库配置,Library,false,1,src/views/AdminView.vue:74
-m_7a329ade,flag/哈希,flag/hash,flag/哈希,flag/hash,false,2,src/views/AdminView.vue:2751 | src/views/AdminView.vue:364
-m_7a562222,CPU 总计,Total CPU,CPU 总计,Total CPU,false,2,src/views/AdminView.vue:2202 | src/views/AdminView.vue:2748
+m_7a329ade,flag/哈希,flag/hash,flag/哈希,flag/hash,false,2,src/views/AdminView.vue:2752 | src/views/AdminView.vue:364
+m_7a562222,CPU 总计,Total CPU,CPU 总计,Total CPU,false,2,src/views/AdminView.vue:2202 | src/views/AdminView.vue:2749
 m_7a907cf1,使用 UTC 校准显示,Use UTC display calibration,使用 UTC 校准显示,Use UTC display calibration,false,1,src/views/SiteSettingsView.vue:63
-m_7b727b3c,更新排序失败,Failed to update sort,更新排序失败,Failed to update sort,false,2,src/views/AdminView.vue:2494 | src/views/AdminView.vue:5576
-m_7b9f16b6,资源汇总,Resource summary,资源汇总,Resource summary,false,2,src/views/AdminView.vue:2201 | src/views/AdminView.vue:2729
+m_7b727b3c,更新排序失败,Failed to update sort,更新排序失败,Failed to update sort,false,2,src/views/AdminView.vue:2495 | src/views/AdminView.vue:5576
+m_7b9f16b6,资源汇总,Resource summary,资源汇总,Resource summary,false,2,src/views/AdminView.vue:2201 | src/views/AdminView.vue:2730
 m_7bf93c43,下载失败,Download failed,下载失败,Download failed,false,2,src/views/ContestDetailView.vue:1409 | src/views/ContestDetailView.vue:1466
-m_7c4c883e,挂载成功,Binding updated,挂载成功,Binding updated,false,1,src/views/AdminView.vue:2516
+m_7c4c883e,挂载成功,Binding updated,挂载成功,Binding updated,false,1,src/views/AdminView.vue:2517
 m_7c4cf02e,加入队伍,Join team,加入队伍,Join team,false,1,src/views/TeamsView.vue:227
 m_7cf66678,选手排名,Player ranking,选手排名,Player ranking,false,1,src/views/ScoreboardWallView.vue:144
-m_7cfd8c18,确认运行告警失败,Failed to acknowledge runtime alert,确认运行告警失败,Failed to acknowledge runtime alert,false,2,src/views/AdminView.vue:2602 | src/views/AdminView.vue:4412
-m_7d0ee771,删除账号,Delete account,删除账号,Delete account,false,3,src/views/AdminView.vue:2059 | src/views/AdminView.vue:2614 | src/views/AdminView.vue:5316
-m_7d26ce6d,分值,Points,分值,Points,false,3,src/views/AdminView.vue:2480 | src/views/AdminView.vue:325 | src/views/AdminView.vue:655
+m_7cfd8c18,确认运行告警失败,Failed to acknowledge runtime alert,确认运行告警失败,Failed to acknowledge runtime alert,false,2,src/views/AdminView.vue:2603 | src/views/AdminView.vue:4412
+m_7d0ee771,删除账号,Delete account,删除账号,Delete account,false,3,src/views/AdminView.vue:2059 | src/views/AdminView.vue:2615 | src/views/AdminView.vue:5316
+m_7d26ce6d,分值,Points,分值,Points,false,3,src/views/AdminView.vue:2481 | src/views/AdminView.vue:325 | src/views/AdminView.vue:655
 m_7d5f1433,提交失败,Submission failed,提交失败,Submission failed,false,2,src/views/ContestDetailView.vue:1624 | src/views/ContestDetailView.vue:1625
 m_7d6616fd,端点,Endpoint,端点,Endpoint,false,1,src/views/ContestDetailView.vue:256
-m_7d836833,single_image 模式必须填写镜像仓库地址,single_image mode requires an image registry address.,single_image 模式必须填写镜像仓库地址,single_image mode requires an image registry address.,false,2,src/views/AdminView.vue:2752 | src/views/AdminView.vue:4707
+m_7d836833,single_image 模式必须填写镜像仓库地址,single_image mode requires an image registry address.,single_image 模式必须填写镜像仓库地址,single_image mode requires an image registry address.,false,2,src/views/AdminView.vue:2753 | src/views/AdminView.vue:4707
 m_7e64c452,报名已提交,Registration submitted,报名已提交,Registration submitted,false,1,src/views/ContestsView.vue:360
-m_7eaff99b,题目已挂载/更新到当前比赛。,Challenge bound/updated for the current contest.,题目已挂载/更新到当前比赛。,Challenge bound/updated for the current contest.,false,1,src/views/AdminView.vue:2644
-m_7ecebde2,标记恢复,mark recovery,标记恢复,mark recovery,false,2,src/views/AdminView.vue:1898 | src/views/AdminView.vue:2443
-m_7edd4eae,加载中...,loading...,加载中...,loading...,false,6,src/views/AdminView.vue:1773 | src/views/AdminView.vue:1917 | src/views/AdminView.vue:2085 | src/views/AdminView.vue:2126 | src/views/AdminView.vue:2269 | src/views/AdminView.vue:2555
-m_7f47735d,比赛已销毁,Contest deleted,比赛已销毁,Contest deleted,false,1,src/views/AdminView.vue:2438
-m_7f7c1072,启用,enabled,启用,enabled,false,2,src/views/AdminView.vue:2001 | src/views/AdminView.vue:2586
+m_7eaff99b,题目已挂载/更新到当前比赛。,Challenge bound/updated for the current contest.,题目已挂载/更新到当前比赛。,Challenge bound/updated for the current contest.,false,1,src/views/AdminView.vue:2645
+m_7ecebde2,标记恢复,mark recovery,标记恢复,mark recovery,false,2,src/views/AdminView.vue:1898 | src/views/AdminView.vue:2444
+m_7edd4eae,加载中...,loading...,加载中...,loading...,false,6,src/views/AdminView.vue:1773 | src/views/AdminView.vue:1917 | src/views/AdminView.vue:2085 | src/views/AdminView.vue:2126 | src/views/AdminView.vue:2269 | src/views/AdminView.vue:2556
+m_7f47735d,比赛已销毁,Contest deleted,比赛已销毁,Contest deleted,false,1,src/views/AdminView.vue:2439
+m_7f7c1072,启用,enabled,启用,enabled,false,2,src/views/AdminView.vue:2001 | src/views/AdminView.vue:2587
 m_7f7c27e3,当前队伍已被删除。,The team has been removed.,当前队伍已被删除。,The team has been removed.,false,1,src/views/TeamsView.vue:765
 m_7fbbeeb4,注册后通过邮件完成激活。,Complete activation via email after registration.,注册后通过邮件完成激活。,Complete activation via email after registration.,false,1,src/views/LoginView.vue:31
 m_8030afd6,本地时间,Local time,本地时间,Local time,false,1,src/views/SiteSettingsView.vue:61
@@ -464,13 +464,13 @@ m_81f27140,队伍队长角色已更新。,Team captain role updated.,队伍队�
 m_821c4958,创建队伍失败,Failed to create team,创建队伍失败,Failed to create team,false,2,src/views/TeamsView.vue:653 | src/views/TeamsView.vue:655
 m_8270b669,备注,Note,备注,Note,false,1,src/views/AdminView.vue:1643
 m_8274b77a,比赛模块,Contests,比赛模块,Contests,false,1,src/views/AdminView.vue:38
-m_8276261f,选择题目,Select topic,选择题目,Select topic,false,2,src/views/AdminView.vue:1242 | src/views/AdminView.vue:2677
+m_8276261f,选择题目,Select topic,选择题目,Select topic,false,2,src/views/AdminView.vue:1242 | src/views/AdminView.vue:2678
 m_82b9f29d,更新报名状态失败,Failed to update registration status,更新报名状态失败,Failed to update registration status,false,1,src/views/AdminView.vue:5119
-m_82ce8495,海报已上传,Poster uploaded,海报已上传,Poster uploaded,false,1,src/views/AdminView.vue:2527
-m_82db4fbe,暂无公告。,No announcement yet.,暂无公告。,No announcement yet.,false,2,src/views/AdminView.vue:1468 | src/views/AdminView.vue:2706
+m_82ce8495,海报已上传,Poster uploaded,海报已上传,Poster uploaded,false,1,src/views/AdminView.vue:2528
+m_82db4fbe,暂无公告。,No announcement yet.,暂无公告。,No announcement yet.,false,2,src/views/AdminView.vue:1468 | src/views/AdminView.vue:2707
 m_82db9172,成员管理,Member Management,成员管理,Member Management,false,1,src/views/TeamsView.vue:148
 m_830d08b9,比赛子导航,Contest Tabs,比赛子导航,Contest Tabs,false,1,src/views/AdminView.vue:95
-m_83821da4,告警已确认,Alert acknowledged,告警已确认,Alert acknowledged,false,1,src/views/AdminView.vue:2490
+m_83821da4,告警已确认,Alert acknowledged,告警已确认,Alert acknowledged,false,1,src/views/AdminView.vue:2491
 m_83a2602b,定义题目身份、类别与分值。,"Define challenge identity, category, and score.",定义题目身份、类别与分值。,"Define challenge identity, category, and score.",false,1,src/views/AdminView.vue:291
 m_8456cac3,一血加成(%),First blood bonus (%),一血加成(%),First blood bonus (%),false,1,src/views/AdminView.vue:1023
 m_847b431a,用户管理,Users,用户管理,Users,false,1,src/views/AdminView.vue:54
@@ -479,16 +479,16 @@ m_850cd8f9,按标题、slug、状态检索,"Filter by title, slug, or status",�
 m_8521f7a8,创建队伍,Create Team,创建队伍,Create Team,false,1,src/views/TeamsView.vue:203
 m_85ef0245,同步最新数据,Sync Latest Data,同步最新数据,Sync Latest Data,false,1,src/views/ContestsView.vue:147
 m_86373f11,邮箱,Email,邮箱,Email,false,2,src/views/LoginView.vue:118 | src/views/ProfileView.vue:22
-m_86872266,用户名,username,用户名,username,false,2,src/views/AdminView.vue:1960 | src/views/AdminView.vue:2688
+m_86872266,用户名,username,用户名,username,false,2,src/views/AdminView.vue:1960 | src/views/AdminView.vue:2689
 m_86baab6a,运行监控,Operations,运行监控,Operations,false,1,src/views/AdminView.vue:46
-m_86c4c3ab,暂无失败实例。,There are no failed instances yet.,暂无失败实例。,There are no failed instances yet.,false,2,src/views/AdminView.vue:1765 | src/views/AdminView.vue:2709
+m_86c4c3ab,暂无失败实例。,There are no failed instances yet.,暂无失败实例。,There are no failed instances yet.,false,2,src/views/AdminView.vue:1765 | src/views/AdminView.vue:2710
 m_86d67ad8,点击查看完整公告,Click to view full announcement,点击查看完整公告,Click to view full announcement,false,1,src/views/ContestDetailView.vue:404
-m_8781f035,flag 模式,flag mode,flag 模式,flag mode,false,2,src/views/AdminView.vue:2751 | src/views/AdminView.vue:355
-m_8782ba3e,比赛,Contests,比赛,Contests,false,4,src/App.vue:21 | src/views/AdminView.vue:1727 | src/views/AdminView.vue:1747 | src/views/AdminView.vue:2432
-m_878f864f,删除题目附件失败,Failed to delete challenge attachment,删除题目附件失败,Failed to delete challenge attachment,false,2,src/views/AdminView.vue:2612 | src/views/AdminView.vue:4951
+m_8781f035,flag 模式,flag mode,flag 模式,flag mode,false,2,src/views/AdminView.vue:2752 | src/views/AdminView.vue:355
+m_8782ba3e,比赛,Contests,比赛,Contests,false,4,src/App.vue:21 | src/views/AdminView.vue:1727 | src/views/AdminView.vue:1747 | src/views/AdminView.vue:2433
+m_878f864f,删除题目附件失败,Failed to delete challenge attachment,删除题目附件失败,Failed to delete challenge attachment,false,2,src/views/AdminView.vue:2613 | src/views/AdminView.vue:4951
 m_87915466,实例已销毁,Instance destroyed,实例已销毁,Instance destroyed,false,1,src/views/ContestDetailView.vue:1687
-m_87ed1dff,积分模式,Points mode,积分模式,Points mode,false,2,src/views/AdminView.vue:1012 | src/views/AdminView.vue:2536
-m_8839e665,single_image：单镜像快速部署，适合轻量动态题。,single_image: single-image runtime for lightweight dynamic challenges.,single_image：单镜像快速部署，适合轻量动态题。,single_image: single-image runtime for lightweight dynamic challenges.,false,1,src/views/AdminView.vue:3333
+m_87ed1dff,积分模式,Points mode,积分模式,Points mode,false,2,src/views/AdminView.vue:1012 | src/views/AdminView.vue:2537
+m_8839e665,single_image：单镜像快速部署，适合轻量动态题。,single_image: single-image runtime for lightweight dynamic challenges.,single_image：单镜像快速部署，适合轻量动态题。,single_image: single-image runtime for lightweight dynamic challenges.,false,1,src/views/AdminView.vue:3334
 m_8841b5b5,赛事配置,Config,赛事配置,Config,false,1,src/views/AdminView.vue:102
 m_8841d448,最低强度,Minimum Score,最低强度,Minimum Score,false,1,src/views/LoginView.vue:66
 m_88828f2f,支持 Markdown，建议分段编写公告。,Markdown supported. Write the announcement in structured sections.,支持 Markdown，建议分段编写公告。,Markdown supported. Write the announcement in structured sections.,false,1,src/views/AdminView.vue:1418
@@ -502,49 +502,49 @@ m_8b45594c,最新公告,Latest Announcement,最新公告,Latest Announcement,fal
 m_8b4c1bdb,当前报名待管理员审核，请稍后再进入比赛空间。,Registration is pending admin approval.,当前报名待管理员审核，请稍后再进入比赛空间。,Registration is pending admin approval.,false,1,src/views/ContestsView.vue:361
 m_8bcc9e7f,配置与保存,Configure & save,配置与保存,Configure & save,false,2,src/views/AdminView.vue:197 | src/views/AdminView.vue:959
 m_8bf7f8a5,包含大写字母,Contains uppercase,包含大写字母,Contains uppercase,false,1,src/views/LoginView.vue:193
-m_8c104606,删除附件,Delete attachment,删除附件,Delete attachment,false,3,src/views/AdminView.vue:2609 | src/views/AdminView.vue:606 | src/views/AdminView.vue:794
+m_8c104606,删除附件,Delete attachment,删除附件,Delete attachment,false,3,src/views/AdminView.vue:2610 | src/views/AdminView.vue:606 | src/views/AdminView.vue:794
 m_8c863e9e,裁判,Judge,裁判,Judge,false,1,src/App.vue:234
 m_8cb5ca46,用户名,Username,用户名,Username,false,3,src/views/ContestDetailView.vue:228 | src/views/LoginView.vue:106 | src/views/ProfileView.vue:18
-m_8cfa2206,显示挂载操作菜单,Show binding actions,显示挂载操作菜单,Show binding actions,false,2,src/views/AdminView.vue:1293 | src/views/AdminView.vue:2664
-m_8d14bd4c,用户管理,User management,用户管理,User management,false,2,src/views/AdminView.vue:1915 | src/views/AdminView.vue:2686
+m_8cfa2206,显示挂载操作菜单,Show binding actions,显示挂载操作菜单,Show binding actions,false,2,src/views/AdminView.vue:1293 | src/views/AdminView.vue:2665
+m_8d14bd4c,用户管理,User management,用户管理,User management,false,2,src/views/AdminView.vue:1915 | src/views/AdminView.vue:2687
 m_8d4d17d5,审核时间,Reviewed at,审核时间,Reviewed at,false,1,src/views/AdminView.vue:1642
 m_8d4ddbbf,该实例暂无服务指标。,No service metrics for this instance yet.,该实例暂无服务指标。,No service metrics for this instance yet.,false,1,src/views/AdminView.vue:2257
 m_8d902168,转让队长失败,Failed to transfer captain,转让队长失败,Failed to transfer captain,false,2,src/views/TeamsView.vue:911 | src/views/TeamsView.vue:913
-m_8d9bc421,保存比赛失败,Failed to save contest,保存比赛失败,Failed to save contest,false,2,src/views/AdminView.vue:2428 | src/views/AdminView.vue:5061
+m_8d9bc421,保存比赛失败,Failed to save contest,保存比赛失败,Failed to save contest,false,2,src/views/AdminView.vue:2429 | src/views/AdminView.vue:5061
 m_8dc79bf6,测试日志会实时显示（默认最长 300 秒）；编辑已有题目时，会自动还原 runtime/ 附件到测试目录。,"Live logs are streamed in real time (default timeout: 300s). For existing challenges, runtime/ attachments are restored into the test directory automatically.",测试日志会实时显示（默认最长 300 秒）；编辑已有题目时，会自动还原 runtime/ 附件到测试目录。,"Live logs are streamed in real time (default timeout: 300s). For existing challenges, runtime/ attachments are restored into the test directory automatically.",false,1,src/views/AdminView.vue:478
 m_8e1bbf07,同步实例状态,Sync instance status,同步实例状态,Sync instance status,false,1,src/views/ContestDetailView.vue:126
-m_8e35ed38,实例健康,Instance health,实例健康,Instance health,false,2,src/views/AdminView.vue:1735 | src/views/AdminView.vue:2627
-m_8e3c7a14,删除公告,Delete announcement,删除公告,Delete announcement,false,2,src/views/AdminView.vue:1599 | src/views/AdminView.vue:2609
+m_8e35ed38,实例健康,Instance health,实例健康,Instance health,false,2,src/views/AdminView.vue:1735 | src/views/AdminView.vue:2628
+m_8e3c7a14,删除公告,Delete announcement,删除公告,Delete announcement,false,2,src/views/AdminView.vue:1599 | src/views/AdminView.vue:2610
 m_8e4b1eb4,认证失败,Authentication failed,认证失败,Authentication failed,false,1,src/views/LoginView.vue:826
-m_8e5c8550,创建公告失败,Failed to create announcement,创建公告失败,Failed to create announcement,false,2,src/views/AdminView.vue:2462 | src/views/AdminView.vue:5403
+m_8e5c8550,创建公告失败,Failed to create announcement,创建公告失败,Failed to create announcement,false,2,src/views/AdminView.vue:2463 | src/views/AdminView.vue:5403
 m_8e808008,排行榜大屏,Scoreboard Wall,排行榜大屏,Scoreboard Wall,false,1,src/views/ScoreboardWallView.vue:6
 m_8ea0c9e3,显示密码,Show password,显示密码,Show password,false,1,src/views/LoginView.vue:143
 m_8ea3da9c,导出实时动图失败,Failed to export animation,导出实时动图失败,Failed to export animation,false,1,src/views/ContestDetailView.vue:1345
-m_8ed734d0,触发扫描,trigger scan,触发扫描,trigger scan,false,2,src/views/AdminView.vue:1776 | src/views/AdminView.vue:2459
-m_8fbf9fb2,运行模板校验,Runtime template lint,运行模板校验,Runtime template lint,false,2,src/views/AdminView.vue:2700 | src/views/AdminView.vue:807
-m_9014805f,执行心跳超时实例回收失败,Failed to run stale-heartbeat reaper,执行心跳超时实例回收失败,Failed to run stale-heartbeat reaper,false,2,src/views/AdminView.vue:2721 | src/views/AdminView.vue:4391
+m_8ed734d0,触发扫描,trigger scan,触发扫描,trigger scan,false,2,src/views/AdminView.vue:1776 | src/views/AdminView.vue:2460
+m_8fbf9fb2,运行模板校验,Runtime template lint,运行模板校验,Runtime template lint,false,2,src/views/AdminView.vue:2701 | src/views/AdminView.vue:807
+m_9014805f,执行心跳超时实例回收失败,Failed to run stale-heartbeat reaper,执行心跳超时实例回收失败,Failed to run stale-heartbeat reaper,false,2,src/views/AdminView.vue:2722 | src/views/AdminView.vue:4391
 m_902516bb,{username} 已移出队伍。,{username} was removed from team.,{username} 已移出队伍。,{username} was removed from team.,false,1,src/views/TeamsView.vue:934
 m_90264d32,动态环境已销毁。,Runtime instance destroyed.,动态环境已销毁。,Runtime instance destroyed.,false,1,src/views/ContestDetailView.vue:1687
 m_902d2897,确认删除账号「{username}」？该操作会禁用并匿名化该账号。,"Delete account ""{username}""? This operation will disable and anonymize the account.",确认删除账号「{username}」？该操作会禁用并匿名化该账号。,"Delete account ""{username}""? This operation will disable and anonymize the account.",false,1,src/views/AdminView.vue:5317
 m_910a11e2,保存设置,Save,保存设置,Save,false,1,src/views/SiteSettingsView.vue:68
 m_911389de,输入邮件中的令牌,Enter token from email,输入邮件中的令牌,Enter token from email,false,2,src/views/LoginView.vue:263 | src/views/LoginView.vue:291
-m_91504b3d,上传比赛海报失败,Failed to upload contest poster,上传比赛海报失败,Failed to upload contest poster,false,2,src/views/AdminView.vue:2617 | src/views/AdminView.vue:5159
+m_91504b3d,上传比赛海报失败,Failed to upload contest poster,上传比赛海报失败,Failed to upload contest poster,false,2,src/views/AdminView.vue:2618 | src/views/AdminView.vue:5159
 m_9174e2cd,登录 · 组队 · 参赛,Sign In · Team · Play,登录 · 组队 · 参赛,Sign In · Team · Play,false,1,src/views/HomeView.vue:20
 m_917b7633,仅显示最近 5 个附件，更多请切换到“版本与附件”。,"Showing latest 5 files. Switch to ""Versions & Files"" for all.",仅显示最近 5 个附件，更多请切换到“版本与附件”。,"Showing latest 5 files. Switch to ""Versions & Files"" for all.",false,1,src/views/AdminView.vue:612
 m_91f87912,显示名（可选）,Display name (optional),显示名（可选）,Display name (optional),false,1,src/views/AdminView.vue:226
-m_92043bff,动态衰减参数,Dynamic attenuation parameters,动态衰减参数,Dynamic attenuation parameters,false,2,src/views/AdminView.vue:1019 | src/views/AdminView.vue:2473
+m_92043bff,动态衰减参数,Dynamic attenuation parameters,动态衰减参数,Dynamic attenuation parameters,false,2,src/views/AdminView.vue:1019 | src/views/AdminView.vue:2474
 m_92054f69,站点名,Site Name,站点名,Site Name,false,1,src/views/SiteSettingsView.vue:18
-m_921a3b99,镜像为空,Image is empty,镜像为空,Image is empty,false,1,src/views/AdminView.vue:2567
+m_921a3b99,镜像为空,Image is empty,镜像为空,Image is empty,false,1,src/views/AdminView.vue:2568
 m_9235c04f,折线图已导出。,Chart image exported.,折线图已导出。,Chart image exported.,false,1,src/views/ContestDetailView.vue:1236
-m_92476ad3,static：无需运行实例，提交 flag 即可判定。,static: no runtime instance is required; only flag verification is used.,static：无需运行实例，提交 flag 即可判定。,static: no runtime instance is required; only flag verification is used.,false,1,src/views/AdminView.vue:3306
+m_92476ad3,static：无需运行实例，提交 flag 即可判定。,static: no runtime instance is required; only flag verification is used.,static：无需运行实例，提交 flag 即可判定。,static: no runtime instance is required; only flag verification is used.,false,1,src/views/AdminView.vue:3307
 m_936b4b45,队伍创建成功,Team created,队伍创建成功,Team created,false,1,src/views/TeamsView.vue:647
-m_94196c3b,回滚题目版本失败,Failed to rollback challenge version,回滚题目版本失败,Failed to rollback challenge version,false,2,src/views/AdminView.vue:2533 | src/views/AdminView.vue:4870
+m_94196c3b,回滚题目版本失败,Failed to rollback challenge version,回滚题目版本失败,Failed to rollback challenge version,false,2,src/views/AdminView.vue:2534 | src/views/AdminView.vue:4870
 m_94c6bfc3,实例已停止,Instance stopped,实例已停止,Instance stopped,false,1,src/views/ContestDetailView.vue:1677
 m_950178a5,no_runtime 模式仅支持 static 题型,no_runtime mode only supports static challenges.,no_runtime 模式仅支持 static 题型,no_runtime mode only supports static challenges.,false,1,src/views/AdminView.vue:4698
-m_953502fc,邮箱,Mail,邮箱,Mail,false,2,src/views/AdminView.vue:1961 | src/views/AdminView.vue:2693
+m_953502fc,邮箱,Mail,邮箱,Mail,false,2,src/views/AdminView.vue:1961 | src/views/AdminView.vue:2694
 m_9590d5da,新密码,New password,新密码,New password,false,1,src/views/ProfileView.vue:39
 m_95ad6b02,账户,Profile,账户,Profile,false,1,src/App.vue:33
-m_95ebd9be,重置密码失败,Failed to reset password,重置密码失败,Failed to reset password,false,2,src/views/AdminView.vue:2725 | src/views/AdminView.vue:5279
+m_95ebd9be,重置密码失败,Failed to reset password,重置密码失败,Failed to reset password,false,2,src/views/AdminView.vue:2726 | src/views/AdminView.vue:5279
 m_961377ed,管理报名审核,Manage registrations,管理报名审核,Manage registrations,false,1,src/views/AdminView.vue:1202
 m_96c50279,按队伍名搜索,Search by team name,按队伍名搜索,Search by team name,false,1,src/views/TeamsView.vue:25
 m_977c3f73,比赛操作,Actions,比赛操作,Actions,false,1,src/views/ContestsView.vue:133
@@ -555,71 +555,71 @@ m_986e4cda,删除题目类别失败,Failed to delete challenge category,删除�
 m_98bfd735,账号已创建并完成登录。,Account created and signed in.,账号已创建并完成登录。,Account created and signed in.,false,1,src/views/LoginView.vue:805
 m_98d1983e,加入队伍失败,Failed to join team,加入队伍失败,Failed to join team,false,4,src/views/TeamsView.vue:689 | src/views/TeamsView.vue:691 | src/views/TeamsView.vue:718 | src/views/TeamsView.vue:720
 m_993f318b,实例操作失败,Instance operation failed,实例操作失败,Instance operation failed,false,2,src/views/ContestDetailView.vue:1690 | src/views/ContestDetailView.vue:1691
-m_996f0e43,显示公告操作菜单,Show announcement actions,显示公告操作菜单,Show announcement actions,false,2,src/views/AdminView.vue:1563 | src/views/AdminView.vue:2663
+m_996f0e43,显示公告操作菜单,Show announcement actions,显示公告操作菜单,Show announcement actions,false,2,src/views/AdminView.vue:1563 | src/views/AdminView.vue:2664
 m_99b0afa6,暂无预览内容。,No preview content yet.,暂无预览内容。,No preview content yet.,false,2,src/views/AdminView.vue:1425 | src/views/AdminView.vue:1551
 m_99ec78ae,计分模式,Scoring,计分模式,Scoring,false,2,src/views/AdminView.vue:1109 | src/views/ContestsView.vue:117
 m_9a0d3ea1,复制端点,Copy endpoint,复制端点,Copy endpoint,false,1,src/views/ContestDetailView.vue:274
 m_9a175719,节奏,Rhythm,节奏,Rhythm,false,1,src/views/HomeView.vue:27
-m_9af201e6,刷新校验,Refresh lint,刷新校验,Refresh lint,false,2,src/views/AdminView.vue:2634 | src/views/AdminView.vue:814
+m_9af201e6,刷新校验,Refresh lint,刷新校验,Refresh lint,false,2,src/views/AdminView.vue:2635 | src/views/AdminView.vue:814
 m_9aff2e21,配置路径,Config path,配置路径,Config path,false,1,src/views/ContestDetailView.vue:257
-m_9b1dbf17,发布时间已清除,Release time cleared,发布时间已清除,Release time cleared,false,1,src/views/AdminView.vue:2477
+m_9b1dbf17,发布时间已清除,Release time cleared,发布时间已清除,Release time cleared,false,1,src/views/AdminView.vue:2478
 m_9b381724,流程,Flow,流程,Flow,false,1,src/views/HomeView.vue:19
 m_9be39f08,包含小写字母,Contains lowercase,包含小写字母,Contains lowercase,false,1,src/views/LoginView.vue:192
 m_9be88a44,请再次输入密码,Repeat password,请再次输入密码,Repeat password,false,1,src/views/LoginView.vue:163
 m_9c56b45f,得分,Score,得分,Score,false,1,src/views/ContestDetailView.vue:157
 m_9cbafee6,请输入队伍名称后再提交。,Please enter a team name.,请输入队伍名称后再提交。,Please enter a team name.,false,2,src/views/TeamsView.vue:626 | src/views/TeamsView.vue:664
 m_9cdc9a88,取消邀请,Cancel invite,取消邀请,Cancel invite,false,1,src/views/TeamsView.vue:310
-m_9d43617f,更新角色,Update role,更新角色,Update role,false,2,src/views/AdminView.vue:2027 | src/views/AdminView.vue:2494
+m_9d43617f,更新角色,Update role,更新角色,Update role,false,2,src/views/AdminView.vue:2027 | src/views/AdminView.vue:2495
 m_9d508c41,刷新中...,Refreshing...,刷新中...,Refreshing...,false,8,src/views/AdminView.vue:13 | src/views/ContestDetailView.vue:293 | src/views/ContestDetailView.vue:375 | src/views/ContestDetailView.vue:79 | src/views/ContestsView.vue:9 | src/views/ScoreboardWallView.vue:27 | src/views/SiteSettingsView.vue:10 | src/views/TeamsView.vue:9
 m_9db4d839,已复制,Copied,已复制,Copied,false,3,src/views/ContestDetailView.vue:1367 | src/views/ContestsView.vue:305 | src/views/TeamsView.vue:545
-m_9df1c42a,角色非法,Invalid role,角色非法,Invalid role,false,1,src/views/AdminView.vue:2555
+m_9df1c42a,角色非法,Invalid role,角色非法,Invalid role,false,1,src/views/AdminView.vue:2556
 m_9e15a808,已向 {username} 发送队伍邀请。,Invitation sent to {username}.,已向 {username} 发送队伍邀请。,Invitation sent to {username}.,false,1,src/views/TeamsView.vue:834
 m_9e765b09,置为待审,Set pending,置为待审,Set pending,false,1,src/views/AdminView.vue:1671
-m_9e7ae955,校验,check,校验,check,false,2,src/views/AdminView.vue:2671 | src/views/AdminView.vue:893
-m_9e7e82fc,镜像,Image,镜像,Image,false,2,src/views/AdminView.vue:2563 | src/views/AdminView.vue:449
+m_9e7ae955,校验,check,校验,check,false,2,src/views/AdminView.vue:2672 | src/views/AdminView.vue:893
+m_9e7e82fc,镜像,Image,镜像,Image,false,2,src/views/AdminView.vue:2564 | src/views/AdminView.vue:449
 m_9e8aa907,报名模式：需管理员审批,Registration: admin approval required,报名模式：需管理员审批,Registration: admin approval required,false,1,src/views/AdminView.vue:1121
 m_9f31bd95,按名称加入,Join by Name,按名称加入,Join by Name,false,1,src/views/TeamsView.vue:220
-m_9f7566dd,难度,difficulty,难度,difficulty,false,2,src/views/AdminView.vue:2581 | src/views/AdminView.vue:316
+m_9f7566dd,难度,difficulty,难度,difficulty,false,2,src/views/AdminView.vue:2582 | src/views/AdminView.vue:316
 m_a01b54ad,筛选比赛并查看详情、公告和入口。,"Filter contests and inspect details, announcements, and entry actions.",筛选比赛并查看详情、公告和入口。,"Filter contests and inspect details, announcements, and entry actions.",false,1,src/views/ContestsView.vue:19
 m_a055baf7,执行转让,Transfer,执行转让,Transfer,false,1,src/views/TeamsView.vue:193
 m_a05b6f3a,更新队伍信息失败,Failed to update team,更新队伍信息失败,Failed to update team,false,2,src/views/TeamsView.vue:803 | src/views/TeamsView.vue:805
-m_a09c69b1,已过期未销毁,Expired but not destroyed,已过期未销毁,Expired but not destroyed,false,2,src/views/AdminView.vue:1738 | src/views/AdminView.vue:2681
+m_a09c69b1,已过期未销毁,Expired but not destroyed,已过期未销毁,Expired but not destroyed,false,2,src/views/AdminView.vue:1738 | src/views/AdminView.vue:2682
 m_a0a1eca2,实时积分趋势,Live score trend,实时积分趋势,Live score trend,false,1,src/views/ScoreboardWallView.vue:43
-m_a1006684,最近回收：mode=,Recent recycling: mode=,最近回收：mode=,Recent recycling: mode=,false,2,src/views/AdminView.vue:1718 | src/views/AdminView.vue:2735
+m_a1006684,最近回收：mode=,Recent recycling: mode=,最近回收：mode=,Recent recycling: mode=,false,2,src/views/AdminView.vue:1718 | src/views/AdminView.vue:2736
 m_a1138156,暂无队伍数据。,No team data.,暂无队伍数据。,No team data.,false,1,src/views/TeamsView.vue:47
-m_a14246fc,更新于,updated on,更新于,updated on,false,2,src/views/AdminView.vue:1695 | src/views/AdminView.vue:2500
-m_a17fa3ca,关键词,keywords,关键词,keywords,false,3,src/views/AdminView.vue:1925 | src/views/AdminView.vue:2520 | src/views/AdminView.vue:840
-m_a1b0461f,内部端口,internal port,内部端口,internal port,false,2,src/views/AdminView.vue:2581 | src/views/AdminView.vue:408
+m_a14246fc,更新于,updated on,更新于,updated on,false,2,src/views/AdminView.vue:1695 | src/views/AdminView.vue:2501
+m_a17fa3ca,关键词,keywords,关键词,keywords,false,3,src/views/AdminView.vue:1925 | src/views/AdminView.vue:2521 | src/views/AdminView.vue:840
+m_a1b0461f,内部端口,internal port,内部端口,internal port,false,2,src/views/AdminView.vue:2582 | src/views/AdminView.vue:408
 m_a1eb50b4,你还不在队伍中，请先创建或加入队伍后再参赛。,Create or join a team before entering contest workspace.,你还不在队伍中，请先创建或加入队伍后再参赛。,Create or join a team before entering contest workspace.,false,2,src/views/ContestsView.vue:341 | src/views/ContestsView.vue:377
 m_a1f8e1c6,邀请人,Inviter,邀请人,Inviter,false,1,src/views/TeamsView.vue:257
-m_a286bd48,题目已从当前比赛移除。,Challenge removed from current contest.,题目已从当前比赛移除。,Challenge removed from current contest.,false,1,src/views/AdminView.vue:2642
-m_a2b8d211,不健康,Unhealthy,不健康,Unhealthy,false,2,src/views/AdminView.vue:2198 | src/views/AdminView.vue:2447
+m_a286bd48,题目已从当前比赛移除。,Challenge removed from current contest.,题目已从当前比赛移除。,Challenge removed from current contest.,false,1,src/views/AdminView.vue:2643
+m_a2b8d211,不健康,Unhealthy,不健康,Unhealthy,false,2,src/views/AdminView.vue:2198 | src/views/AdminView.vue:2448
 m_a2d68c21,WireGuard 配置已生成。,WireGuard config generated.,WireGuard 配置已生成。,WireGuard config generated.,false,1,src/views/ContestDetailView.vue:1406
 m_a2db40fa,站点首页,Home,站点首页,Home,false,1,src/views/HomeView.vue:5
 m_a2e4ebb8,加载失败,Load failed,加载失败,Load failed,false,3,src/views/AdminView.vue:3970 | src/views/ContestsView.vue:405 | src/views/SiteSettingsView.vue:176
-m_a30d9d10,· 最近,· latest,· 最近,· latest,false,2,src/views/AdminView.vue:1842 | src/views/AdminView.vue:2420
+m_a30d9d10,· 最近,· latest,· 最近,· latest,false,2,src/views/AdminView.vue:1842 | src/views/AdminView.vue:2421
 m_a3332d82,题目附件,Challenge files,题目附件,Challenge files,false,1,src/views/ContestDetailView.vue:77
-m_a3eed213,模板为空,Template is empty,模板为空,Template is empty,false,2,src/views/AdminView.vue:2743 | src/views/AdminView.vue:4626
+m_a3eed213,模板为空,Template is empty,模板为空,Template is empty,false,2,src/views/AdminView.vue:2744 | src/views/AdminView.vue:4626
 m_a44cda93,比赛模块,Contest module,比赛模块,Contest module,false,1,src/views/ContestsView.vue:406
 m_a523560e,比赛空间,Contest Workspace,比赛空间,Contest Workspace,false,1,src/views/ContestDetailView.vue:6
-m_a5a2abc9,告警已恢复,Alert resolved,告警已恢复,Alert resolved,false,1,src/views/AdminView.vue:2489
+m_a5a2abc9,告警已恢复,Alert resolved,告警已恢复,Alert resolved,false,1,src/views/AdminView.vue:2490
 m_a5aab354,较强,Strong,较强,Strong,false,1,src/views/LoginView.vue:571
 m_a62c079a,销毁题目,Destroy challenge,销毁题目,Destroy challenge,false,1,src/views/AdminView.vue:4808
 m_a67598d9,邀请中心,Invitations,邀请中心,Invitations,false,1,src/views/TeamsView.vue:236
-m_a675bd5e,新密码(>=8),New password(>=8),新密码(>=8),New password(>=8),false,2,src/views/AdminView.vue:2033 | src/views/AdminView.vue:2674
+m_a675bd5e,新密码(>=8),New password(>=8),新密码(>=8),New password(>=8),false,2,src/views/AdminView.vue:2033 | src/views/AdminView.vue:2675
 m_a69a56c7,加入成功,Joined,加入成功,Joined,false,2,src/views/TeamsView.vue:683 | src/views/TeamsView.vue:712
-m_a6a42e5d,描述（可选）,Description (optional),描述（可选）,Description (optional),false,3,src/views/AdminView.vue:2579 | src/views/AdminView.vue:531 | src/views/TeamsView.vue:210
-m_a74fb838,实例监控,Instance monitoring,实例监控,Instance monitoring,false,2,src/views/AdminView.vue:2071 | src/views/AdminView.vue:2625
-m_a75c1310,编辑比赛,Edit Contest,编辑比赛,Edit Contest,false,1,src/views/AdminView.vue:3392
+m_a6a42e5d,描述（可选）,Description (optional),描述（可选）,Description (optional),false,3,src/views/AdminView.vue:2580 | src/views/AdminView.vue:531 | src/views/TeamsView.vue:210
+m_a74fb838,实例监控,Instance monitoring,实例监控,Instance monitoring,false,2,src/views/AdminView.vue:2071 | src/views/AdminView.vue:2626
+m_a75c1310,编辑比赛,Edit Contest,编辑比赛,Edit Contest,false,1,src/views/AdminView.vue:3393
 m_a7bc0615,实例列表,Instance list,实例列表,Instance list,false,1,src/views/AdminView.vue:2095
-m_a849aef3,公告已发布,Announcement published,公告已发布,Announcement published,false,1,src/views/AdminView.vue:2508
+m_a849aef3,公告已发布,Announcement published,公告已发布,Announcement published,false,1,src/views/AdminView.vue:2509
 m_a86e7a09,返回赛事列表,Back to contest list,返回赛事列表,Back to contest list,false,1,src/views/AdminView.vue:969
 m_a880ba51,Footer 版权文案,Footer Copyright,Footer 版权文案,Footer Copyright,false,1,src/views/SiteSettingsView.vue:38
-m_a88c7953,compose 测试通过,Compose test passed,compose 测试通过,Compose test passed,false,2,src/views/AdminView.vue:2745 | src/views/AdminView.vue:4679
-m_a8a1e3de,请先在“题库配置”中选择一个题目，再切换到版本管理。,"Please select a question in ""Question Bank Configuration"" first, and then switch to version management.",请先在“题库配置”中选择一个题目，再切换到版本管理。,"Please select a question in ""Question Bank Configuration"" first, and then switch to version management.",false,2,src/views/AdminView.vue:2596 | src/views/AdminView.vue:802
+m_a88c7953,compose 测试通过,Compose test passed,compose 测试通过,Compose test passed,false,2,src/views/AdminView.vue:2746 | src/views/AdminView.vue:4679
+m_a8a1e3de,请先在“题库配置”中选择一个题目，再切换到版本管理。,"Please select a question in ""Question Bank Configuration"" first, and then switch to version management.",请先在“题库配置”中选择一个题目，再切换到版本管理。,"Please select a question in ""Question Bank Configuration"" first, and then switch to version management.",false,2,src/views/AdminView.vue:2597 | src/views/AdminView.vue:802
 m_a8e88f7f,附件（快捷）,Attachments (Quick),附件（快捷）,Attachments (Quick),false,1,src/views/AdminView.vue:551
 m_a8ee1451,排名,Rank,排名,Rank,false,2,src/views/ScoreboardWallView.vue:149 | src/views/ScoreboardWallView.vue:90
-m_a92d786d,告警类型,Alarm type,告警类型,Alarm type,false,2,src/views/AdminView.vue:1803 | src/views/AdminView.vue:2489
+m_a92d786d,告警类型,Alarm type,告警类型,Alarm type,false,2,src/views/AdminView.vue:1803 | src/views/AdminView.vue:2490
 m_a94feb79,题目子导航,Challenge Tabs,题目子导航,Challenge Tabs,false,1,src/views/AdminView.vue:67
 m_a980b960,分值,Score,分值,Score,false,2,src/views/ContestDetailView.vue:50 | src/views/ContestDetailView.vue:68
 m_a995be52,动态环境已重新初始化。,Runtime instance reinitialized.,动态环境已重新初始化。,Runtime instance reinitialized.,false,1,src/views/ContestDetailView.vue:1682
@@ -630,173 +630,173 @@ m_aafc214d,安装工具请使用 apk（例如：sudo apk add --no-cache nmap）�
 m_ab05578e,发送邀请失败,Failed to send invitation,发送邀请失败,Failed to send invitation,false,2,src/views/TeamsView.vue:839 | src/views/TeamsView.vue:841
 m_ab1c75df,题目加载失败,Failed to load challenges,题目加载失败,Failed to load challenges,false,1,src/views/ContestDetailView.vue:1482
 m_ab6c5ac0,转让队长,Transfer captain,转让队长,Transfer captain,false,1,src/views/TeamsView.vue:179
-m_ac1e80c4,direct：不注入跳板或 VPN，仅使用题目入口地址。,direct: no bastion/VPN injection; only expose the challenge entrypoint.,direct：不注入跳板或 VPN，仅使用题目入口地址。,direct: no bastion/VPN injection; only expose the challenge entrypoint.,false,1,src/views/AdminView.vue:3358
+m_ac1e80c4,direct：不注入跳板或 VPN，仅使用题目入口地址。,direct: no bastion/VPN injection; only expose the challenge entrypoint.,direct：不注入跳板或 VPN，仅使用题目入口地址。,direct: no bastion/VPN injection; only expose the challenge entrypoint.,false,1,src/views/AdminView.vue:3359
 m_ac903d7b,删除,Delete,删除,Delete,false,4,src/views/AdminView.vue:279 | src/views/AdminView.vue:3852 | src/views/AdminView.vue:5177 | src/views/AdminView.vue:5321
-m_acb62123,加载题目版本失败,Failed to load challenge versions,加载题目版本失败,Failed to load challenge versions,false,2,src/views/AdminView.vue:2548 | src/views/AdminView.vue:3990
+m_acb62123,加载题目版本失败,Failed to load challenge versions,加载题目版本失败,Failed to load challenge versions,false,2,src/views/AdminView.vue:2549 | src/views/AdminView.vue:3990
 m_ace88fb0,从左侧选择一个实例查看运行指标。,Select an instance from the list to view runtime metrics.,从左侧选择一个实例查看运行指标。,Select an instance from the list to view runtime metrics.,false,1,src/views/AdminView.vue:2260
-m_acfabe37,刷新日志,Refresh logs,刷新日志,Refresh logs,false,2,src/views/AdminView.vue:2269 | src/views/AdminView.vue:2632
+m_acfabe37,刷新日志,Refresh logs,刷新日志,Refresh logs,false,2,src/views/AdminView.vue:2269 | src/views/AdminView.vue:2633
 m_acfbdc6a,动作,Action,动作,Action,false,1,src/views/ProfileView.vue:69
-m_acfcc62b,未选择题目,No challenge selected,未选择题目,No challenge selected,false,1,src/views/AdminView.vue:2656
+m_acfcc62b,未选择题目,No challenge selected,未选择题目,No challenge selected,false,1,src/views/AdminView.vue:2657
 m_ad04daf0,请先选择比赛,请先选择比赛,请先选择比赛,请先选择比赛,true,3,src/views/AdminView.vue:5128 | src/views/AdminView.vue:5367 | src/views/AdminView.vue:5527
 m_ad08b4ae,比赛空间,Contest workspace,比赛空间,Contest workspace,false,1,src/views/ContestDetailView.vue:1483
-m_ad86b8e2,公告已更新,Announcement updated,公告已更新,Announcement updated,false,1,src/views/AdminView.vue:2509
+m_ad86b8e2,公告已更新,Announcement updated,公告已更新,Announcement updated,false,1,src/views/AdminView.vue:2510
 m_adc7df6a,提交结果,Submission result,提交结果,Submission result,false,1,src/views/ContestDetailView.vue:1618
 m_adcd99fe,队伍描述,Team description,队伍描述,Team description,false,1,src/views/TeamsView.vue:119
 m_ae11a01f,退出,Sign Out,退出,Sign Out,false,1,src/App.vue:65
-m_ae8a9fb2,static：固定 flag 或哈希比对。,static: compare against fixed flag/hash.,static：固定 flag 或哈希比对。,static: compare against fixed flag/hash.,false,1,src/views/AdminView.vue:3325
-m_ae91cc78,公告已取消置顶,Announcement unpinned,公告已取消置顶,Announcement unpinned,false,1,src/views/AdminView.vue:2510
-m_aef1b531,从左侧选择一个公告查看详情。,Select an announcement on the left to view details.,从左侧选择一个公告查看详情。,Select an announcement on the left to view details.,false,2,src/views/AdminView.vue:1604 | src/views/AdminView.vue:2468
-m_af01f5ef,请先在中间列选择一个比赛。,Please select a match in the middle column first.,请先在中间列选择一个比赛。,Please select a match in the middle column first.,false,2,src/views/AdminView.vue:1232 | src/views/AdminView.vue:2597
+m_ae8a9fb2,static：固定 flag 或哈希比对。,static: compare against fixed flag/hash.,static：固定 flag 或哈希比对。,static: compare against fixed flag/hash.,false,1,src/views/AdminView.vue:3326
+m_ae91cc78,公告已取消置顶,Announcement unpinned,公告已取消置顶,Announcement unpinned,false,1,src/views/AdminView.vue:2511
+m_aef1b531,从左侧选择一个公告查看详情。,Select an announcement on the left to view details.,从左侧选择一个公告查看详情。,Select an announcement on the left to view details.,false,2,src/views/AdminView.vue:1604 | src/views/AdminView.vue:2469
+m_af01f5ef,请先在中间列选择一个比赛。,Please select a match in the middle column first.,请先在中间列选择一个比赛。,Please select a match in the middle column first.,false,2,src/views/AdminView.vue:1232 | src/views/AdminView.vue:2598
 m_af50a2a8,正在加载比赛数据...,Loading contests...,正在加载比赛数据...,Loading contests...,false,1,src/views/ContestsView.vue:70
 m_af522da8,动态环境,Runtime Instance,动态环境,Runtime Instance,false,1,src/views/ContestDetailView.vue:166
 m_af76b669,销毁,Destroy,销毁,Destroy,false,3,src/views/AdminView.vue:4813 | src/views/AdminView.vue:5207 | src/views/ContestDetailView.vue:193
 m_afc02dd0,结果,Result,结果,Result,false,1,src/views/ContestDetailView.vue:156
 m_b0b6ec56,取消邀请失败,Failed to cancel invitation,取消邀请失败,Failed to cancel invitation,false,2,src/views/TeamsView.vue:857 | src/views/TeamsView.vue:859
-m_b0c66b87,暂无用户记录。,There is no user record yet.,暂无用户记录。,There is no user record yet.,false,2,src/views/AdminView.vue:2066 | src/views/AdminView.vue:2711
+m_b0c66b87,暂无用户记录。,There is no user record yet.,暂无用户记录。,There is no user record yet.,false,2,src/views/AdminView.vue:2066 | src/views/AdminView.vue:2712
 m_b11c6a3a,请先填写注册邮箱。,Please provide registration email first.,请先填写注册邮箱。,Please provide registration email first.,false,1,src/views/LoginView.vue:841
 m_b12f1366,题目 ID 已复制,Challenge ID copied,题目 ID 已复制,Challenge ID copied,false,1,src/views/ContestDetailView.vue:121
 m_b1b286b1,动态衰减,Dynamic Decay,动态衰减,Dynamic Decay,false,1,src/views/ContestsView.vue:118
 m_b1fdf870,wireguard（VPN）,wireguard (VPN),wireguard（VPN）,wireguard (VPN),false,1,src/views/ContestDetailView.vue:716
 m_b2817a93,时间,Time,时间,Time,false,1,src/views/ProfileView.vue:68
-m_b28998ab,条数,Number of items,条数,Number of items,false,5,src/views/AdminView.vue:1807 | src/views/AdminView.vue:1946 | src/views/AdminView.vue:2285 | src/views/AdminView.vue:2649 | src/views/AdminView.vue:844
-m_b2ca4bd8,管理题目挂载,Manage challenge bindings,管理题目挂载,Manage challenge bindings,false,2,src/views/AdminView.vue:1196 | src/views/AdminView.vue:2524
+m_b28998ab,条数,Number of items,条数,Number of items,false,5,src/views/AdminView.vue:1807 | src/views/AdminView.vue:1946 | src/views/AdminView.vue:2285 | src/views/AdminView.vue:2650 | src/views/AdminView.vue:844
+m_b2ca4bd8,管理题目挂载,Manage challenge bindings,管理题目挂载,Manage challenge bindings,false,2,src/views/AdminView.vue:1196 | src/views/AdminView.vue:2525
 m_b369a6b8,邮箱激活,Email Activation,邮箱激活,Email Activation,false,1,src/views/LoginView.vue:30
-m_b383efe9,加载队伍详情失败,Failed to load team details,加载队伍详情失败,Failed to load team details,false,1,src/views/TeamsView.vue:465
+m_b383efe9,加载队伍详情失败,Failed to load team details,加载队伍详情失败,Failed to load team details,false,1,src/views/TeamsView.vue:466
 m_b39b0f9f,邀请已取消,Invitation canceled,邀请已取消,Invitation canceled,false,1,src/views/TeamsView.vue:854
-m_b426174b,未选择海报,No poster selected,未选择海报,No poster selected,false,1,src/views/AdminView.vue:2655
+m_b426174b,未选择海报,No poster selected,未选择海报,No poster selected,false,1,src/views/AdminView.vue:2656
 m_b43896c9,注册,Register,注册,Register,false,3,src/views/LoginView.vue:228 | src/views/LoginView.vue:80 | src/views/LoginView.vue:99
 m_b480e989,删除比赛海报,Delete contest poster,删除比赛海报,Delete contest poster,false,1,src/views/AdminView.vue:5172
-m_b48bc5f1,已载入题目配置,Challenge config loaded,已载入题目配置,Challenge config loaded,false,1,src/views/AdminView.vue:2684
-m_b4cabecb,置顶,pin to top,置顶,pin to top,false,3,src/views/AdminView.vue:1476 | src/views/AdminView.vue:1587 | src/views/AdminView.vue:2722
+m_b48bc5f1,已载入题目配置,Challenge config loaded,已载入题目配置,Challenge config loaded,false,1,src/views/AdminView.vue:2685
+m_b4cabecb,置顶,pin to top,置顶,pin to top,false,3,src/views/AdminView.vue:1476 | src/views/AdminView.vue:1587 | src/views/AdminView.vue:2723
 m_b514887f,实时榜单,Live Scoreboard,实时榜单,Live Scoreboard,false,1,src/views/ContestDetailView.vue:290
-m_b557b263,加载到左侧表单,Load to left form,加载到左侧表单,Load to left form,false,2,src/views/AdminView.vue:1301 | src/views/AdminView.vue:2540
+m_b557b263,加载到左侧表单,Load to left form,加载到左侧表单,Load to left form,false,2,src/views/AdminView.vue:1301 | src/views/AdminView.vue:2541
 m_b58ebf29,同步中...,Syncing...,同步中...,Syncing...,false,1,src/views/ContestDetailView.vue:20
 m_b5b4ed1f,人,members,人,members,false,2,src/views/TeamsView.vue:53 | src/views/TeamsView.vue:93
 m_b5db2fc5,更新资料失败,Failed to update profile,更新资料失败,Failed to update profile,false,2,src/views/ProfileView.vue:188 | src/views/ProfileView.vue:190
-m_b5e51c8b,恢复运行告警失败,Failed to resolve runtime alert,恢复运行告警失败,Failed to resolve runtime alert,false,2,src/views/AdminView.vue:2529 | src/views/AdminView.vue:4433
-m_b6209f25,当前未设置海报。,No posters are currently set.,当前未设置海报。,No posters are currently set.,false,2,src/views/AdminView.vue:1137 | src/views/AdminView.vue:2472
-m_b6536d5f,dynamic/internal 题型在 compose 模式下必须提供 compose 模板,dynamic/internal challenges in compose mode require a compose template.,dynamic/internal 题型在 compose 模式下必须提供 compose 模板,dynamic/internal challenges in compose mode require a compose template.,false,1,src/views/AdminView.vue:2750
-m_b690b78e,比赛已创建,Contest created,比赛已创建,Contest created,false,1,src/views/AdminView.vue:2436
-m_b743f462,compose 模板（可选）,compose template (optional),compose 模板（可选）,compose template (optional),false,1,src/views/AdminView.vue:2739
+m_b5e51c8b,恢复运行告警失败,Failed to resolve runtime alert,恢复运行告警失败,Failed to resolve runtime alert,false,2,src/views/AdminView.vue:2530 | src/views/AdminView.vue:4433
+m_b6209f25,当前未设置海报。,No posters are currently set.,当前未设置海报。,No posters are currently set.,false,2,src/views/AdminView.vue:1137 | src/views/AdminView.vue:2473
+m_b6536d5f,dynamic/internal 题型在 compose 模式下必须提供 compose 模板,dynamic/internal challenges in compose mode require a compose template.,dynamic/internal 题型在 compose 模式下必须提供 compose 模板,dynamic/internal challenges in compose mode require a compose template.,false,1,src/views/AdminView.vue:2751
+m_b690b78e,比赛已创建,Contest created,比赛已创建,Contest created,false,1,src/views/AdminView.vue:2437
+m_b743f462,compose 模板（可选）,compose template (optional),compose 模板（可选）,compose template (optional),false,1,src/views/AdminView.vue:2740
 m_b751033a,暂无趋势数据。,No trend data yet.,暂无趋势数据。,No trend data yet.,false,2,src/views/ContestDetailView.vue:1032 | src/views/ScoreboardWallView.vue:72
 m_b78f823f,请选择类别,Select category,请选择类别,Select category,false,1,src/views/AdminView.vue:305
-m_b7a30f66,已挂载题目,Questions have been mounted,已挂载题目,Questions have been mounted,false,2,src/views/AdminView.vue:1263 | src/views/AdminView.vue:2680
+m_b7a30f66,已挂载题目,Questions have been mounted,已挂载题目,Questions have been mounted,false,2,src/views/AdminView.vue:1263 | src/views/AdminView.vue:2681
 m_b7c41d65,类别已创建,Category created,类别已创建,Category created,false,1,src/views/AdminView.vue:3832
-m_b88508c6,错误,Error,错误,Error,false,2,src/views/AdminView.vue:2470 | src/views/AdminView.vue:874
+m_b88508c6,错误,Error,错误,Error,false,2,src/views/AdminView.vue:2471 | src/views/AdminView.vue:874
 m_b8aa1bed,引用,Quote,引用,Quote,false,2,src/views/AdminView.vue:1408 | src/views/AdminView.vue:1533
 m_b8b87b7a,暂无邀请。,No invitations.,暂无邀请。,No invitations.,false,1,src/views/TeamsView.vue:261
-m_b8e67a02,暂无运行告警。,There are no operational warnings yet.,暂无运行告警。,There are no operational warnings yet.,false,2,src/views/AdminView.vue:1844 | src/views/AdminView.vue:2712
-m_b9744b05,服务,Service,服务,Service,false,2,src/views/AdminView.vue:2225 | src/views/AdminView.vue:2482
+m_b8e67a02,暂无运行告警。,There are no operational warnings yet.,暂无运行告警。,There are no operational warnings yet.,false,2,src/views/AdminView.vue:1844 | src/views/AdminView.vue:2713
+m_b9744b05,服务,Service,服务,Service,false,2,src/views/AdminView.vue:2225 | src/views/AdminView.vue:2483
 m_bac1c00c,删除账号后会立即撤销会话，且不可恢复。,Deleting the account revokes all sessions and cannot be undone.,删除账号后会立即撤销会话，且不可恢复。,Deleting the account revokes all sessions and cannot be undone.,false,1,src/views/ProfileView.vue:87
 m_baf439ed,请输入账号标识。,Please enter account identifier.,请输入账号标识。,Please enter account identifier.,false,1,src/views/LoginView.vue:752
 m_bb69d239,内容（Markdown）,Content (Markdown),内容（Markdown）,Content (Markdown),false,1,src/views/AdminView.vue:1499
-m_bb96c7da,回滚版本号,Rollback version number,回滚版本号,Rollback version number,false,2,src/views/AdminView.vue:2531 | src/views/AdminView.vue:725
-m_bbdfa277,置顶公告,Pinned announcement,置顶公告,Pinned announcement,false,2,src/views/AdminView.vue:1439 | src/views/AdminView.vue:2722
+m_bb96c7da,回滚版本号,Rollback version number,回滚版本号,Rollback version number,false,2,src/views/AdminView.vue:2532 | src/views/AdminView.vue:725
+m_bbdfa277,置顶公告,Pinned announcement,置顶公告,Pinned announcement,false,2,src/views/AdminView.vue:1439 | src/views/AdminView.vue:2723
 m_bc088033,输入长度不能超过 {maxLength} 个字符。,Input cannot exceed {maxLength} characters.,输入长度不能超过 {maxLength} 个字符。,Input cannot exceed {maxLength} characters.,false,1,src/App.vue:275
-m_bc157211,队伍,Team,队伍,Team,false,4,src/views/AdminView.vue:1639 | src/views/AdminView.vue:2166 | src/views/AdminView.vue:2475 | src/views/ContestDetailView.vue:349
-m_bc183477,更新用户角色失败,Failed to update user role,更新用户角色失败,Failed to update user role,false,2,src/views/AdminView.vue:2497 | src/views/AdminView.vue:5307
+m_bc157211,队伍,Team,队伍,Team,false,4,src/views/AdminView.vue:1639 | src/views/AdminView.vue:2166 | src/views/AdminView.vue:2476 | src/views/ContestDetailView.vue:349
+m_bc183477,更新用户角色失败,Failed to update user role,更新用户角色失败,Failed to update user role,false,2,src/views/AdminView.vue:2498 | src/views/AdminView.vue:5307
 m_bc3f9e8a,批准,Approve,批准,Approve,false,1,src/views/AdminView.vue:1663
 m_bc815ee7,请求失败,Request failed,请求失败,Request failed,false,5,src/views/LoginView.vue:825 | src/views/LoginView.vue:851 | src/views/LoginView.vue:879 | src/views/LoginView.vue:901 | src/views/LoginView.vue:946
-m_bc8a5da4,公告已删除,Announcement deleted,公告已删除,Announcement deleted,false,1,src/views/AdminView.vue:2511
+m_bc8a5da4,公告已删除,Announcement deleted,公告已删除,Announcement deleted,false,1,src/views/AdminView.vue:2512
 m_bcc0fd65,转让中...,Transferring...,转让中...,Transferring...,false,1,src/views/TeamsView.vue:193
 m_bd4d0092,版本与附件,Versions & Files,版本与附件,Versions & Files,false,1,src/views/AdminView.vue:82
-m_bda7937c,海报已删除,Poster deleted,海报已删除,Poster deleted,false,1,src/views/AdminView.vue:2527
+m_bda7937c,海报已删除,Poster deleted,海报已删除,Poster deleted,false,1,src/views/AdminView.vue:2528
 m_bdd4152e,今日签名,Signature,今日签名,Signature,false,1,src/views/HomeView.vue:35
-m_bdeb8cdf,比赛题目挂载,Contest Challenge Bindings,比赛题目挂载,Contest Challenge Bindings,false,2,src/views/AdminView.vue:1228 | src/views/AdminView.vue:2435
+m_bdeb8cdf,比赛题目挂载,Contest Challenge Bindings,比赛题目挂载,Contest Challenge Bindings,false,2,src/views/AdminView.vue:1228 | src/views/AdminView.vue:2436
 m_be487257,密码强度不足，请按规则提升密码强度。,Password is too weak. Please satisfy policy checks.,密码强度不足，请按规则提升密码强度。,Password is too weak. Please satisfy policy checks.,false,1,src/views/LoginView.vue:788
 m_befbaf4a,发送重置邮件,Send Reset Email,发送重置邮件,Send Reset Email,false,1,src/views/LoginView.vue:284
-m_beff0167,账号已删除,Account deleted,账号已删除,Account deleted,false,2,src/views/AdminView.vue:2715 | src/views/ProfileView.vue:250
+m_beff0167,账号已删除,Account deleted,账号已删除,Account deleted,false,2,src/views/AdminView.vue:2716 | src/views/ProfileView.vue:250
 m_bf1c8b7c,该邀请已失效。,The invitation is now invalid.,该邀请已失效。,The invitation is now invalid.,false,1,src/views/TeamsView.vue:854
-m_bf7c753f,总提交,total commits,总提交,total commits,false,2,src/views/AdminView.vue:1732 | src/views/AdminView.vue:2733
-m_bf873b90,挂载或更新,Mount or update,挂载或更新,Mount or update,false,2,src/views/AdminView.vue:1259 | src/views/AdminView.vue:2517
+m_bf7c753f,总提交,total commits,总提交,total commits,false,2,src/views/AdminView.vue:1732 | src/views/AdminView.vue:2734
+m_bf873b90,挂载或更新,Mount or update,挂载或更新,Mount or update,false,2,src/views/AdminView.vue:1259 | src/views/AdminView.vue:2518
 m_bfd32621,未启用,Disabled,未启用,Disabled,false,1,src/views/LoginView.vue:71
 m_c05215da,配置标签、可见策略和内容文案。,"Configure tags, visibility policy, and writeup content.",配置标签、可见策略和内容文案。,"Configure tags, visibility policy, and writeup content.",false,1,src/views/AdminView.vue:514
-m_c0716098,保存修改,Save changes,保存修改,Save changes,false,5,src/views/AdminView.vue:1556 | src/views/AdminView.vue:2430 | src/views/AdminView.vue:3290 | src/views/AdminView.vue:3399 | src/views/TeamsView.vue:123
-m_c0a8de25,删除中...,Deleting...,删除中...,Deleting...,false,8,src/views/AdminView.vue:1167 | src/views/AdminView.vue:1599 | src/views/AdminView.vue:2059 | src/views/AdminView.vue:2615 | src/views/AdminView.vue:278 | src/views/AdminView.vue:606 | src/views/AdminView.vue:794 | src/views/ProfileView.vue:93
+m_c0716098,保存修改,Save changes,保存修改,Save changes,false,5,src/views/AdminView.vue:1556 | src/views/AdminView.vue:2431 | src/views/AdminView.vue:3291 | src/views/AdminView.vue:3400 | src/views/TeamsView.vue:123
+m_c0a8de25,删除中...,Deleting...,删除中...,Deleting...,false,8,src/views/AdminView.vue:1167 | src/views/AdminView.vue:1599 | src/views/AdminView.vue:2059 | src/views/AdminView.vue:2616 | src/views/AdminView.vue:278 | src/views/AdminView.vue:606 | src/views/AdminView.vue:794 | src/views/ProfileView.vue:93
 m_c0baa512,退出队伍,Leave team,退出队伍,Leave team,false,1,src/views/TeamsView.vue:98
-m_c0e4ece5,direct（直连入口）,direct (direct entrance),direct（直连入口）,direct (direct entrance),false,2,src/views/AdminView.vue:2748 | src/views/AdminView.vue:381
+m_c0e4ece5,direct（直连入口）,direct (direct entrance),direct（直连入口）,direct (direct entrance),false,2,src/views/AdminView.vue:2749 | src/views/AdminView.vue:381
 m_c1290ce6,停止,Stop,停止,Stop,false,1,src/views/ContestDetailView.vue:187
 m_c12ce48f,请输入用户名,Enter username,请输入用户名,Enter username,false,1,src/views/LoginView.vue:113
-m_c1483372,· 题目,· challenges,· 题目,· challenges,false,2,src/views/AdminView.vue:1727 | src/views/AdminView.vue:2417
+m_c1483372,· 题目,· challenges,· 题目,· challenges,false,2,src/views/AdminView.vue:1727 | src/views/AdminView.vue:2418
 m_c150cbf0,取消删除,Cancel,取消删除,Cancel,false,1,src/views/ProfileView.vue:90
 m_c1945685,已加入队伍,Joined team,已加入队伍,Joined team,false,1,src/views/TeamsView.vue:876
-m_c2a15526,确认人：,Confirmed by:,确认人：,Confirmed by:,false,2,src/views/AdminView.vue:1863 | src/views/AdminView.vue:2601
+m_c2a15526,确认人：,Confirmed by:,确认人：,Confirmed by:,false,2,src/views/AdminView.vue:1863 | src/views/AdminView.vue:2602
 m_c303b868,导出折线图失败,Failed to export chart image,导出折线图失败,Failed to export chart image,false,1,src/views/ContestDetailView.vue:1239
-m_c32c7573,销毁比赛,Destroy the game,销毁比赛,Destroy the game,false,2,src/views/AdminView.vue:1210 | src/views/AdminView.vue:2667
-m_c33a7bc5,支持任意附件格式，大小不超过 {maxSize}。若上传 .zip 且包含 docker-compose.yml，会自动导入 compose，并将其余文件保存为 runtime/...。,"Any file type is supported, up to {maxSize}. If a .zip includes docker-compose.yml, compose is auto-imported and remaining files are saved as runtime/....",支持任意附件格式，大小不超过 {maxSize}。若上传 .zip 且包含 docker-compose.yml，会自动导入 compose，并将其余文件保存为 runtime/...。,"Any file type is supported, up to {maxSize}. If a .zip includes docker-compose.yml, compose is auto-imported and remaining files are saved as runtime/....",false,1,src/views/AdminView.vue:3385
-m_c35278f5,版本号必须是大于等于 1 的整数,Version number must be an integer greater than or equal to 1.,版本号必须是大于等于 1 的整数,Version number must be an integer greater than or equal to 1.,false,2,src/views/AdminView.vue:2425 | src/views/AdminView.vue:4849
-m_c3cfdd4b,立即发布,Publish immediately,立即发布,Publish immediately,false,2,src/views/AdminView.vue:1435 | src/views/AdminView.vue:2573
-m_c4f43f6c,运行告警扫描完成,Runtime alert scan completed,运行告警扫描完成,Runtime alert scan completed,false,1,src/views/AdminView.vue:2699
-m_c50b4607,展示详细信息（JSON）,Display details (JSON),展示详细信息（JSON）,Display details (JSON),false,2,src/views/AdminView.vue:1904 | src/views/AdminView.vue:2713
+m_c32c7573,销毁比赛,Destroy the game,销毁比赛,Destroy the game,false,2,src/views/AdminView.vue:1210 | src/views/AdminView.vue:2668
+m_c33a7bc5,支持任意附件格式，大小不超过 {maxSize}。若上传 .zip 且包含 docker-compose.yml，会自动导入 compose，并将其余文件保存为 runtime/...。,"Any file type is supported, up to {maxSize}. If a .zip includes docker-compose.yml, compose is auto-imported and remaining files are saved as runtime/....",支持任意附件格式，大小不超过 {maxSize}。若上传 .zip 且包含 docker-compose.yml，会自动导入 compose，并将其余文件保存为 runtime/...。,"Any file type is supported, up to {maxSize}. If a .zip includes docker-compose.yml, compose is auto-imported and remaining files are saved as runtime/....",false,1,src/views/AdminView.vue:3386
+m_c35278f5,版本号必须是大于等于 1 的整数,Version number must be an integer greater than or equal to 1.,版本号必须是大于等于 1 的整数,Version number must be an integer greater than or equal to 1.,false,2,src/views/AdminView.vue:2426 | src/views/AdminView.vue:4849
+m_c3cfdd4b,立即发布,Publish immediately,立即发布,Publish immediately,false,2,src/views/AdminView.vue:1435 | src/views/AdminView.vue:2574
+m_c4f43f6c,运行告警扫描完成,Runtime alert scan completed,运行告警扫描完成,Runtime alert scan completed,false,1,src/views/AdminView.vue:2700
+m_c50b4607,展示详细信息（JSON）,Display details (JSON),展示详细信息（JSON）,Display details (JSON),false,2,src/views/AdminView.vue:1904 | src/views/AdminView.vue:2714
 m_c525f433,运行告警,Alerts,运行告警,Alerts,false,1,src/views/AdminView.vue:146
-m_c528f123,运行告警：实例即将到期,Runtime alert: instance expiring soon,运行告警：实例即将到期,Runtime alert: instance expiring soon,false,1,src/views/AdminView.vue:2697
-m_c53d6066,题目已创建,Challenge created,题目已创建,Challenge created,false,1,src/views/AdminView.vue:2641
+m_c528f123,运行告警：实例即将到期,Runtime alert: instance expiring soon,运行告警：实例即将到期,Runtime alert: instance expiring soon,false,1,src/views/AdminView.vue:2698
+m_c53d6066,题目已创建,Challenge created,题目已创建,Challenge created,false,1,src/views/AdminView.vue:2642
 m_c56f30e9,队伍名,Team name,队伍名,Team name,false,1,src/views/TeamsView.vue:206
-m_c618d71c,删除公告失败,Failed to delete announcement,删除公告失败,Failed to delete announcement,false,2,src/views/AdminView.vue:2610 | src/views/AdminView.vue:5518
-m_c6728ed8,创建比赛,Create Contest,创建比赛,Create Contest,false,1,src/views/AdminView.vue:3392
-m_c6c4ac59,比赛管理,Contest Management,比赛管理,Contest Management,false,2,src/views/AdminView.vue:2435 | src/views/AdminView.vue:926
+m_c618d71c,删除公告失败,Failed to delete announcement,删除公告失败,Failed to delete announcement,false,2,src/views/AdminView.vue:2611 | src/views/AdminView.vue:5518
+m_c6728ed8,创建比赛,Create Contest,创建比赛,Create Contest,false,1,src/views/AdminView.vue:3393
+m_c6c4ac59,比赛管理,Contest Management,比赛管理,Contest Management,false,2,src/views/AdminView.vue:2436 | src/views/AdminView.vue:926
 m_c6c7f47c,已创建队伍 {teamName},Team {teamName} created.,已创建队伍 {teamName},Team {teamName} created.,false,1,src/views/TeamsView.vue:648
-m_c7572bb0,题库概览,Challenge Library Overview,题库概览,Challenge Library Overview,false,2,src/views/AdminView.vue:2640 | src/views/AdminView.vue:633
-m_c77884da,比赛公告管理,Contest Announcement Management,比赛公告管理,Contest Announcement Management,false,2,src/views/AdminView.vue:1346 | src/views/AdminView.vue:2433
+m_c7572bb0,题库概览,Challenge Library Overview,题库概览,Challenge Library Overview,false,2,src/views/AdminView.vue:2641 | src/views/AdminView.vue:633
+m_c77884da,比赛公告管理,Contest Announcement Management,比赛公告管理,Contest Announcement Management,false,2,src/views/AdminView.vue:1346 | src/views/AdminView.vue:2434
 m_c88a4b42,仅 single_image 模式支持镜像测试,仅 single_image 模式支持镜像测试,仅 single_image 模式支持镜像测试,仅 single_image 模式支持镜像测试,true,1,src/views/AdminView.vue:4543
-m_c896dcc1,通过,Passed,通过,Passed,false,2,src/views/AdminView.vue:2650 | src/views/AdminView.vue:870
+m_c896dcc1,通过,Passed,通过,Passed,false,2,src/views/AdminView.vue:2651 | src/views/AdminView.vue:870
 m_c89b147b,启动,Start,启动,Start,false,1,src/views/ContestDetailView.vue:184
-m_c8e09cd0,用户,user,用户,user,false,2,src/views/AdminView.vue:1726 | src/views/AdminView.vue:2686
+m_c8e09cd0,用户,user,用户,user,false,2,src/views/AdminView.vue:1726 | src/views/AdminView.vue:2687
 m_c8f3eed0,管理员批准参赛,Approved by admin,管理员批准参赛,Approved by admin,false,1,src/views/AdminView.vue:5098
-m_c8f567c8,公告已撤回,Announcement unpublished,公告已撤回,Announcement unpublished,false,1,src/views/AdminView.vue:2506
+m_c8f567c8,公告已撤回,Announcement unpublished,公告已撤回,Announcement unpublished,false,1,src/views/AdminView.vue:2507
 m_c90e211b,加载队伍列表失败,Failed to load team list,加载队伍列表失败,Failed to load team list,false,1,src/views/TeamsView.vue:582
-m_c96e7392,管理台已刷新,Admin console refreshed,管理台已刷新,Admin console refreshed,false,1,src/views/AdminView.vue:2523
+m_c96e7392,管理台已刷新,Admin console refreshed,管理台已刷新,Admin console refreshed,false,1,src/views/AdminView.vue:2524
 m_c984bd79,排序,Sort,排序,Sort,false,1,src/views/AdminView.vue:230
 m_c9d8d76b,专注解题,Focus on Solves,专注解题,Focus on Solves,false,1,src/views/HomeView.vue:28
 m_ca254e92,解散队伍失败,Failed to disband team,解散队伍失败,Failed to disband team,false,2,src/views/TeamsView.vue:768 | src/views/TeamsView.vue:770
-m_ca36a8c9,删除账号失败,Failed to delete account,删除账号失败,Failed to delete account,false,4,src/views/AdminView.vue:2614 | src/views/AdminView.vue:5337 | src/views/ProfileView.vue:256 | src/views/ProfileView.vue:258
+m_ca36a8c9,删除账号失败,Failed to delete account,删除账号失败,Failed to delete account,false,4,src/views/AdminView.vue:2615 | src/views/AdminView.vue:5337 | src/views/ProfileView.vue:256 | src/views/ProfileView.vue:258
 m_ca424806,提交 Flag,Submit Flag,提交 Flag,Submit Flag,false,1,src/views/ContestDetailView.vue:145
 m_cad439a7,即将开始,Scheduled,即将开始,Scheduled,false,2,src/views/ContestsView.vue:273 | src/views/ContestsView.vue:46
 m_cadef15a,密码强度检测,Password Strength Check,密码强度检测,Password Strength Check,false,1,src/views/LoginView.vue:42
 m_cae0121a,安全校验,Security Check,安全校验,Security Check,false,1,src/views/LoginView.vue:70
-m_cb52efa4,标签（逗号分隔）,Tags (comma separated),标签（逗号分隔）,Tags (comma separated),false,2,src/views/AdminView.vue:2444 | src/views/AdminView.vue:518
-m_cb5e7046,扫描中...,Scanning...,扫描中...,Scanning...,false,3,src/views/AdminView.vue:1776 | src/views/AdminView.vue:2605 | src/views/AdminView.vue:814
-m_cbf89de1,compose（多容器）,compose (multiple containers),compose（多容器）,compose (multiple containers),false,2,src/views/AdminView.vue:2746 | src/views/AdminView.vue:371
-m_cc305802,总实例,Total instances,总实例,Total instances,false,2,src/views/AdminView.vue:1736 | src/views/AdminView.vue:2732
+m_cb52efa4,标签（逗号分隔）,Tags (comma separated),标签（逗号分隔）,Tags (comma separated),false,2,src/views/AdminView.vue:2445 | src/views/AdminView.vue:518
+m_cb5e7046,扫描中...,Scanning...,扫描中...,Scanning...,false,3,src/views/AdminView.vue:1776 | src/views/AdminView.vue:2606 | src/views/AdminView.vue:814
+m_cbf89de1,compose（多容器）,compose (multiple containers),compose（多容器）,compose (multiple containers),false,2,src/views/AdminView.vue:2747 | src/views/AdminView.vue:371
+m_cc305802,总实例,Total instances,总实例,Total instances,false,2,src/views/AdminView.vue:1736 | src/views/AdminView.vue:2733
 m_cc547060,访问模式,Access mode,访问模式,Access mode,false,1,src/views/ContestDetailView.vue:172
 m_ccc37284,暂无榜单数据。,No scoreboard data.,暂无榜单数据。,No scoreboard data.,false,1,src/views/ContestDetailView.vue:366
 m_cd1dd19b,返回比赛,Back to contest,返回比赛,Back to contest,false,1,src/views/ScoreboardWallView.vue:30
 m_cd54395d,代码,Code,代码,Code,false,2,src/views/AdminView.vue:1406 | src/views/AdminView.vue:1531
-m_cd5e913c,管理公告,Manage announcements,管理公告,Manage announcements,false,2,src/views/AdminView.vue:1199 | src/views/AdminView.vue:2522
+m_cd5e913c,管理公告,Manage announcements,管理公告,Manage announcements,false,2,src/views/AdminView.vue:1199 | src/views/AdminView.vue:2523
 m_cdf02ee1,你已加入队伍 {teamName},You joined {teamName}.,你已加入队伍 {teamName},You joined {teamName}.,false,2,src/views/TeamsView.vue:684 | src/views/TeamsView.vue:713
 m_cdf17038,返回比赛,Back to contests,返回比赛,Back to contests,false,1,src/views/ProfileView.vue:8
 m_ce18f466,正在加载题目...,Loading challenges...,正在加载题目...,Loading challenges...,false,1,src/views/ContestDetailView.vue:24
-m_ce46f123,compose 测试失败,Compose test failed,compose 测试失败,Compose test failed,false,4,src/views/AdminView.vue:2744 | src/views/AdminView.vue:4681 | src/views/AdminView.vue:4684 | src/views/AdminView.vue:4685
+m_ce46f123,compose 测试失败,Compose test failed,compose 测试失败,Compose test failed,false,4,src/views/AdminView.vue:2745 | src/views/AdminView.vue:4681 | src/views/AdminView.vue:4684 | src/views/AdminView.vue:4685
 m_ce47e255,忘记密码？,Forgot password?,忘记密码？,Forgot password?,false,1,src/views/LoginView.vue:235
-m_ce7f128a,公告已创建,Announcement created,公告已创建,Announcement created,false,1,src/views/AdminView.vue:2507
-m_cea5113f,附件已上传,Attachment uploaded,附件已上传,Attachment uploaded,false,1,src/views/AdminView.vue:2485
+m_ce7f128a,公告已创建,Announcement created,公告已创建,Announcement created,false,1,src/views/AdminView.vue:2508
+m_cea5113f,附件已上传,Attachment uploaded,附件已上传,Attachment uploaded,false,1,src/views/AdminView.vue:2486
 m_ceb71036,删除我的账号,Delete my account,删除我的账号,Delete my account,false,1,src/views/ProfileView.vue:90
-m_cefad74f,失败,Failed,失败,Failed,false,2,src/views/AdminView.vue:1737 | src/views/AdminView.vue:2623
+m_cefad74f,失败,Failed,失败,Failed,false,2,src/views/AdminView.vue:1737 | src/views/AdminView.vue:2624
 m_cf2b1c1b,没有匹配的比赛。,No contests matched the current filter.,没有匹配的比赛。,No contests matched the current filter.,false,1,src/views/ContestsView.vue:92
 m_cfa79de1,请输入密码,Enter password,请输入密码,Enter password,false,1,src/views/LoginView.vue:138
 m_cfc54d45,加入该队伍,Join team,加入该队伍,Join team,false,1,src/views/TeamsView.vue:69
-m_cfd59ce5,场,contests,场,contests,false,2,src/views/AdminView.vue:2454 | src/views/AdminView.vue:927
-m_cffcc91c,销毁中...,Destroying...,销毁中...,Destroying...,false,3,src/views/AdminView.vue:1210 | src/views/AdminView.vue:2670 | src/views/AdminView.vue:707
+m_cfd59ce5,场,contests,场,contests,false,2,src/views/AdminView.vue:2455 | src/views/AdminView.vue:927
+m_cffcc91c,销毁中...,Destroying...,销毁中...,Destroying...,false,3,src/views/AdminView.vue:1210 | src/views/AdminView.vue:2671 | src/views/AdminView.vue:707
 m_d02bad27,加载实例失败,Failed to load instance,加载实例失败,Failed to load instance,false,1,src/views/ContestDetailView.vue:1645
 m_d02d541b,告警列表,Alert stream,告警列表,Alert stream,false,1,src/views/AdminView.vue:1821
 m_d0905473,已有账号？去登录,Already have an account? Sign in,已有账号？去登录,Already have an account? Sign in,false,1,src/views/LoginView.vue:244
 m_d09cc560,解散中...,Disbanding...,解散中...,Disbanding...,false,1,src/views/TeamsView.vue:106
-m_d0b19161,快速筛选,Quick filter,快速筛选,Quick filter,false,3,src/views/AdminView.vue:1078 | src/views/AdminView.vue:2573 | src/views/AdminView.vue:637
-m_d10fb023,草稿,Draft,草稿,Draft,false,2,src/views/AdminView.vue:2449 | src/views/AdminView.vue:694
+m_d0b19161,快速筛选,Quick filter,快速筛选,Quick filter,false,3,src/views/AdminView.vue:1078 | src/views/AdminView.vue:2574 | src/views/AdminView.vue:637
+m_d10fb023,草稿,Draft,草稿,Draft,false,2,src/views/AdminView.vue:2450 | src/views/AdminView.vue:694
 m_d11c4ec3,积分/排名趋势,Score/rank trend,积分/排名趋势,Score/rank trend,false,1,src/views/ScoreboardWallView.vue:52
 m_d1e59020,拒绝,Reject,拒绝,Reject,false,2,src/views/AdminView.vue:1679 | src/views/TeamsView.vue:277
 m_d1f6dd7d,浏览器不支持 WebM 导出。,WebM export is not supported.,浏览器不支持 WebM 导出。,WebM export is not supported.,false,1,src/views/ContestDetailView.vue:1293
 m_d31161b8,当前浏览器不支持动图导出。,This browser does not support animated export.,当前浏览器不支持动图导出。,This browser does not support animated export.,false,1,src/views/ContestDetailView.vue:1274
-m_d3771187,测试中...,Testing...,测试中...,Testing...,false,3,src/views/AdminView.vue:2453 | src/views/AdminView.vue:427 | src/views/AdminView.vue:473
-m_d383e75c,删除海报,Delete poster,删除海报,Delete poster,false,2,src/views/AdminView.vue:1167 | src/views/AdminView.vue:2612
-m_d39922fa,挂载/更新题目,Bind/Update Challenge,挂载/更新题目,Bind/Update Challenge,false,2,src/views/AdminView.vue:1239 | src/views/AdminView.vue:2516
+m_d3771187,测试中...,Testing...,测试中...,Testing...,false,3,src/views/AdminView.vue:2454 | src/views/AdminView.vue:427 | src/views/AdminView.vue:473
+m_d383e75c,删除海报,Delete poster,删除海报,Delete poster,false,2,src/views/AdminView.vue:1167 | src/views/AdminView.vue:2613
+m_d39922fa,挂载/更新题目,Bind/Update Challenge,挂载/更新题目,Bind/Update Challenge,false,2,src/views/AdminView.vue:1239 | src/views/AdminView.vue:2517
 m_d39e3919,移除成员,Remove member,移除成员,Remove member,false,1,src/views/TeamsView.vue:173
 m_d3c025fb,很弱,Very weak,很弱,Very weak,false,1,src/views/LoginView.vue:562
 m_d3c250f1,不包含用户名/邮箱前缀,No username/email local-part,不包含用户名/邮箱前缀,No username/email local-part,false,1,src/views/LoginView.vue:200
-m_d43a45e6,暂无匹配的模板校验记录。,There is currently no matching template verification record.,暂无匹配的模板校验记录。,There is currently no matching template verification record.,false,2,src/views/AdminView.vue:2706 | src/views/AdminView.vue:920
-m_d4aeada2,处理中...,Processing...,处理中...,Processing...,false,11,src/views/AdminView.vue:1259 | src/views/AdminView.vue:1887 | src/views/AdminView.vue:1898 | src/views/AdminView.vue:2458 | src/views/ContestsView.vue:141 | src/views/LoginView.vue:225 | src/views/TeamsView.vue:173 | src/views/TeamsView.vue:214 | src/views/TeamsView.vue:227 | src/views/TeamsView.vue:69 | src/views/TeamsView.vue:98
+m_d43a45e6,暂无匹配的模板校验记录。,There is currently no matching template verification record.,暂无匹配的模板校验记录。,There is currently no matching template verification record.,false,2,src/views/AdminView.vue:2707 | src/views/AdminView.vue:920
+m_d4aeada2,处理中...,Processing...,处理中...,Processing...,false,11,src/views/AdminView.vue:1259 | src/views/AdminView.vue:1887 | src/views/AdminView.vue:1898 | src/views/AdminView.vue:2459 | src/views/ContestsView.vue:141 | src/views/LoginView.vue:225 | src/views/TeamsView.vue:173 | src/views/TeamsView.vue:214 | src/views/TeamsView.vue:227 | src/views/TeamsView.vue:69 | src/views/TeamsView.vue:98
 m_d4b7a7a9,核心模块,Core Modules,核心模块,Core Modules,false,1,src/views/AdminView.vue:23
-m_d530efbc,状态,state,状态,state,false,10,src/views/AdminView.vue:1750 | src/views/AdminView.vue:1785 | src/views/AdminView.vue:1842 | src/views/AdminView.vue:1938 | src/views/AdminView.vue:1963 | src/views/AdminView.vue:2226 | src/views/AdminView.vue:2727 | src/views/AdminView.vue:329 | src/views/AdminView.vue:831 | src/views/AdminView.vue:891
+m_d530efbc,状态,state,状态,state,false,10,src/views/AdminView.vue:1750 | src/views/AdminView.vue:1785 | src/views/AdminView.vue:1842 | src/views/AdminView.vue:1938 | src/views/AdminView.vue:1963 | src/views/AdminView.vue:2226 | src/views/AdminView.vue:2728 | src/views/AdminView.vue:329 | src/views/AdminView.vue:831 | src/views/AdminView.vue:891
 m_d53e357c,公告详情,Announcement details,公告详情,Announcement details,false,1,src/views/ContestDetailView.vue:420
 m_d54f9345,首页签名,Home Signature,首页签名,Home Signature,false,1,src/views/SiteSettingsView.vue:34
 m_d58fc361,修改密码失败,Failed to change password,修改密码失败,Failed to change password,false,2,src/views/ProfileView.vue:217 | src/views/ProfileView.vue:219
@@ -804,7 +804,7 @@ m_d5aae4de,邀请已发送,Invitation sent,邀请已发送,Invitation sent,false
 m_d5bbd37f,提示（每行一条）,Hints (one per line),提示（每行一条）,Hints (one per line),false,1,src/views/AdminView.vue:535
 m_d5de29ea,你已拒绝该邀请。,You rejected the invitation.,你已拒绝该邀请。,You rejected the invitation.,false,1,src/views/TeamsView.vue:882
 m_d6b1d25a,已在队伍中,Already in a team,已在队伍中,Already in a team,false,1,src/views/TeamsView.vue:69
-m_d6c6fce9,创建中...,Creating...,创建中...,Creating...,false,4,src/views/AdminView.vue:1444 | src/views/AdminView.vue:2464 | src/views/AdminView.vue:3288 | src/views/AdminView.vue:3397
+m_d6c6fce9,创建中...,Creating...,创建中...,Creating...,false,4,src/views/AdminView.vue:1444 | src/views/AdminView.vue:2465 | src/views/AdminView.vue:3289 | src/views/AdminView.vue:3398
 m_d6ed17cd,列表,List,列表,List,false,2,src/views/AdminView.vue:1407 | src/views/AdminView.vue:1532
 m_d71a7926,队长,Captain,队长,Captain,false,3,src/views/TeamsView.vue:44 | src/views/TeamsView.vue:58 | src/views/TeamsView.vue:91
 m_d80b3fa7,欢迎登录,Welcome Back,欢迎登录,Welcome Back,false,1,src/views/LoginView.vue:10
@@ -814,39 +814,39 @@ m_d9377cbd,报名被拒绝,Registration rejected,报名被拒绝,Registration re
 m_d9664da3,确认删除题目类别「{displayName}」？,"Delete challenge category ""{displayName}""?",确认删除题目类别「{displayName}」？,"Delete challenge category ""{displayName}""?",false,1,src/views/AdminView.vue:3848
 m_d9fe6e64,刷新,Reset,刷新,Reset,false,1,src/views/LoginView.vue:211
 m_da0d541d,请输入用户名。,Please enter username.,请输入用户名。,Please enter username.,false,1,src/views/LoginView.vue:778
-m_da24a92a,上传附件,Upload attachment,上传附件,Upload attachment,false,5,src/views/AdminView.vue:2619 | src/views/AdminView.vue:565 | src/views/AdminView.vue:581 | src/views/AdminView.vue:762 | src/views/AdminView.vue:773
+m_da24a92a,上传附件,Upload attachment,上传附件,Upload attachment,false,5,src/views/AdminView.vue:2620 | src/views/AdminView.vue:565 | src/views/AdminView.vue:581 | src/views/AdminView.vue:762 | src/views/AdminView.vue:773
 m_da84e2ee,已结束,Ended,已结束,Ended,false,2,src/views/ContestsView.vue:276 | src/views/ContestsView.vue:55
 m_daab5564,预览,Preview,预览,Preview,false,2,src/views/AdminView.vue:1381 | src/views/AdminView.vue:1521
 m_db78c2fb,刷新实例,Refresh instances,刷新实例,Refresh instances,false,1,src/views/AdminView.vue:2085
-m_dbca5dbc,当前比赛未挂载题目。,No challenges are bound to this contest.,当前比赛未挂载题目。,No challenges are bound to this contest.,false,2,src/views/AdminView.vue:1276 | src/views/AdminView.vue:2470
-m_dc8eef60,编辑题目,Edit Challenge,编辑题目,Edit Challenge,false,1,src/views/AdminView.vue:3283
-m_dcf7e7a3,扫描总数,Total number of scans,扫描总数,Total number of scans,false,2,src/views/AdminView.vue:2606 | src/views/AdminView.vue:866
+m_dbca5dbc,当前比赛未挂载题目。,No challenges are bound to this contest.,当前比赛未挂载题目。,No challenges are bound to this contest.,false,2,src/views/AdminView.vue:1276 | src/views/AdminView.vue:2471
+m_dc8eef60,编辑题目,Edit Challenge,编辑题目,Edit Challenge,false,1,src/views/AdminView.vue:3284
+m_dcf7e7a3,扫描总数,Total number of scans,扫描总数,Total number of scans,false,2,src/views/AdminView.vue:2607 | src/views/AdminView.vue:866
 m_dd0fd7d0,到期时间,Expires at,到期时间,Expires at,false,1,src/views/ContestDetailView.vue:212
-m_dd4a845c,比赛已更新,Contest updated,比赛已更新,Contest updated,false,1,src/views/AdminView.vue:2437
-m_dd60e109,销毁,destroy,销毁,destroy,false,2,src/views/AdminView.vue:2666 | src/views/AdminView.vue:707
+m_dd4a845c,比赛已更新,Contest updated,比赛已更新,Contest updated,false,1,src/views/AdminView.vue:2438
+m_dd60e109,销毁,destroy,销毁,destroy,false,2,src/views/AdminView.vue:2667 | src/views/AdminView.vue:707
 m_dd711495,准备好后，从右上角进入登录。,Use the top-right entry when you're ready.,准备好后，从右上角进入登录。,Use the top-right entry when you're ready.,false,1,src/views/HomeView.vue:43
 m_dd97ae20,浏览器不允许写入剪贴板。,Clipboard access is blocked by the browser.,浏览器不允许写入剪贴板。,Clipboard access is blocked by the browser.,false,3,src/views/ContestDetailView.vue:1371 | src/views/ContestsView.vue:309 | src/views/TeamsView.vue:549
 m_ddc92d70,邀请已处理,Invitation processed,邀请已处理,Invitation processed,false,1,src/views/TeamsView.vue:882
-m_de0a09c0,收起操作,Collapse operation,收起操作,Collapse operation,false,2,src/views/AdminView.vue:1987 | src/views/AdminView.vue:2629
-m_de0dd27f,基础规模,Base metrics,基础规模,Base metrics,false,2,src/views/AdminView.vue:1725 | src/views/AdminView.vue:2537
+m_de0a09c0,收起操作,Collapse operation,收起操作,Collapse operation,false,2,src/views/AdminView.vue:1987 | src/views/AdminView.vue:2630
+m_de0dd27f,基础规模,Base metrics,基础规模,Base metrics,false,2,src/views/AdminView.vue:1725 | src/views/AdminView.vue:2538
 m_de245eff,已重置为待审核状态,Reset to pending review,已重置为待审核状态,Reset to pending review,false,1,src/views/AdminView.vue:5101
 m_de87866a,例如：比赛赛程更新,Example: Schedule update,例如：比赛赛程更新,Example: Schedule update,false,1,src/views/AdminView.vue:1393
-m_df92a675,比赛状态已更新,Contest status updated,比赛状态已更新,Contest status updated,false,1,src/views/AdminView.vue:2440
+m_df92a675,比赛状态已更新,Contest status updated,比赛状态已更新,Contest status updated,false,1,src/views/AdminView.vue:2441
 m_dfadd166,排名动态曲线,Rank trend,排名动态曲线,Rank trend,false,1,src/views/ContestDetailView.vue:1158
 m_e0706b76,清除,清除,清除,清除,true,3,src/views/AdminView.vue:1148 | src/views/AdminView.vue:570 | src/views/AdminView.vue:767
-m_e0d612cd,总服务,Total services,总服务,Total services,false,2,src/views/AdminView.vue:2196 | src/views/AdminView.vue:2731
+m_e0d612cd,总服务,Total services,总服务,Total services,false,2,src/views/AdminView.vue:2196 | src/views/AdminView.vue:2732
 m_e108053f,取消中...,Canceling...,取消中...,Canceling...,false,1,src/views/TeamsView.vue:310
 m_e1816838,选择新队长,Select new captain,选择新队长,Select new captain,false,1,src/views/TeamsView.vue:181
 m_e24347d1,找回密码,Password Recovery,找回密码,Password Recovery,false,1,src/views/LoginView.vue:274
-m_e2c01268,发布时间（可选）,Release time (optional),发布时间（可选）,Release time (optional),false,2,src/views/AdminView.vue:1255 | src/views/AdminView.vue:2475
+m_e2c01268,发布时间（可选）,Release time (optional),发布时间（可选）,Release time (optional),false,2,src/views/AdminView.vue:1255 | src/views/AdminView.vue:2476
 m_e2c587eb,下载中...,Downloading...,下载中...,Downloading...,false,2,src/views/ContestDetailView.vue:101 | src/views/ContestDetailView.vue:266
 m_e2f84688,管理员,Admin,管理员,Admin,false,2,src/App.vue:231 | src/views/SiteSettingsView.vue:5
 m_e312bdfb,排名曲线,Rank curve,排名曲线,Rank curve,false,2,src/views/ContestDetailView.vue:334 | src/views/ScoreboardWallView.vue:24
 m_e3abd5e0,重发验证邮件,Resend,重发验证邮件,Resend,false,1,src/views/LoginView.vue:252
 m_e4bf9e9b,no_runtime（无需容器）,no_runtime (no container runtime),no_runtime（无需容器）,no_runtime (no container runtime),false,1,src/views/AdminView.vue:370
-m_e4c2ac86,更新用户状态失败,Failed to update user status,更新用户状态失败,Failed to update user status,false,2,src/views/AdminView.vue:2499 | src/views/AdminView.vue:5255
-m_e542b35b,重置中...,Resetting...,重置中...,Resetting...,false,2,src/views/AdminView.vue:2046 | src/views/AdminView.vue:2726
-m_e5e3b268,加载实例运行指标失败,Failed to load instance metrics,加载实例运行指标失败,Failed to load instance metrics,false,2,src/views/AdminView.vue:2546 | src/views/AdminView.vue:4218
+m_e4c2ac86,更新用户状态失败,Failed to update user status,更新用户状态失败,Failed to update user status,false,2,src/views/AdminView.vue:2500 | src/views/AdminView.vue:5255
+m_e542b35b,重置中...,Resetting...,重置中...,Resetting...,false,2,src/views/AdminView.vue:2046 | src/views/AdminView.vue:2727
+m_e5e3b268,加载实例运行指标失败,Failed to load instance metrics,加载实例运行指标失败,Failed to load instance metrics,false,2,src/views/AdminView.vue:2547 | src/views/AdminView.vue:4218
 m_e63449e5,在题库配置页直接管理附件，减少“编辑题目”与“版本与附件”来回切换。,Manage attachments directly here to reduce tab switching.,在题库配置页直接管理附件，减少“编辑题目”与“版本与附件”来回切换。,Manage attachments directly here to reduce tab switching.,false,1,src/views/AdminView.vue:554
 m_e6440008,附件过大,Attachment too large,附件过大,Attachment too large,false,1,src/views/AdminView.vue:4901
 m_e69f7cf8,确认密码,Confirm Password,确认密码,Confirm Password,false,1,src/views/LoginView.vue:155
@@ -854,13 +854,13 @@ m_e6ae0796,站点设置,Site Settings,站点设置,Site Settings,false,2,src/vie
 m_e71e4197,题目附件大小上限（MB）,Challenge attachment limit (MB),题目附件大小上限（MB）,Challenge attachment limit (MB),false,1,src/views/SiteSettingsView.vue:42
 m_e77c5316,队伍协作,Team Space,队伍协作,Team Space,false,1,src/views/HomeView.vue:13
 m_e78a3369,选手可切换（仅对 compose 生效）,Player-selectable modes (compose only),选手可切换（仅对 compose 生效）,Player-selectable modes (compose only),false,1,src/views/AdminView.vue:387
-m_e7f78ec8,· 队伍,· teams,· 队伍,· teams,false,2,src/views/AdminView.vue:1726 | src/views/AdminView.vue:2416
+m_e7f78ec8,· 队伍,· teams,· 队伍,· teams,false,2,src/views/AdminView.vue:1726 | src/views/AdminView.vue:2417
 m_e7fa9ac5,实时趋势与排名,Live Trend & Rankings,实时趋势与排名,Live Trend & Rankings,false,1,src/views/ScoreboardWallView.vue:7
-m_e900f5ff,请选择题目,Select a challenge,请选择题目,Select a challenge,false,2,src/views/AdminView.vue:1244 | src/views/AdminView.vue:2598
+m_e900f5ff,请选择题目,Select a challenge,请选择题目,Select a challenge,false,2,src/views/AdminView.vue:1244 | src/views/AdminView.vue:2599
 m_e94eabd5,首页简介,Home Tagline,首页简介,Home Tagline,false,1,src/views/SiteSettingsView.vue:30
 m_e9762981,隐藏密码,Hide password,隐藏密码,Hide password,false,1,src/views/LoginView.vue:143
 m_e99ef119,默认访问模式,Default access mode,默认访问模式,Default access mode,false,1,src/views/AdminView.vue:377
-m_e9f29a91,更新比赛状态失败,Failed to update contest status,更新比赛状态失败,Failed to update contest status,false,2,src/views/AdminView.vue:2491 | src/views/AdminView.vue:5077
+m_e9f29a91,更新比赛状态失败,Failed to update contest status,更新比赛状态失败,Failed to update contest status,false,2,src/views/AdminView.vue:2492 | src/views/AdminView.vue:5077
 m_ea1635a9,申请时间,Requested at,申请时间,Requested at,false,1,src/views/AdminView.vue:1641
 m_ea2973d9,认证模式切换,Auth mode switch,认证模式切换,Auth mode switch,false,1,src/views/LoginView.vue:82
 m_ea88afd6,队伍 ID 已复制。,Team ID copied.,队伍 ID 已复制。,Team ID copied.,false,1,src/views/TeamsView.vue:545
@@ -870,16 +870,16 @@ m_eb2cab1a,本地时区,Local timezone,本地时区,Local timezone,false,1,src/v
 m_eb5bcf88,返回题库,Back to library,返回题库,Back to library,false,1,src/views/AdminView.vue:207
 m_ec3f91f2,支持 PNG、JPG、WebP 等格式,支持 PNG、JPG、WebP 等格式,支持 PNG、JPG、WebP 等格式,支持 PNG、JPG、WebP 等格式,true,1,src/views/AdminView.vue:1150
 m_ec806a92,验证邮件,Verification Email,验证邮件,Verification Email,false,1,src/views/LoginView.vue:849
-m_ecc396d3,运行模式,Runtime mode,运行模式,Runtime mode,false,2,src/views/AdminView.vue:2700 | src/views/AdminView.vue:368
+m_ecc396d3,运行模式,Runtime mode,运行模式,Runtime mode,false,2,src/views/AdminView.vue:2701 | src/views/AdminView.vue:368
 m_ed9a7207,隐藏确认密码,Hide confirm password,隐藏确认密码,Hide confirm password,false,1,src/views/LoginView.vue:168
-m_ed9d8f1b,移除挂载,Remove mount,移除挂载,Remove mount,false,2,src/views/AdminView.vue:1333 | src/views/AdminView.vue:2678
-m_eda3fa71,分类,Category,分类,Category,false,3,src/views/AdminView.vue:2479 | src/views/AdminView.vue:303 | src/views/ContestDetailView.vue:66
-m_edaf3060,ssh_bastion：自动注入跳板机，适合内网扫描与横向测试。,"ssh_bastion: inject an SSH bastion, suitable for internal scan and lateral testing.",ssh_bastion：自动注入跳板机，适合内网扫描与横向测试。,"ssh_bastion: inject an SSH bastion, suitable for internal scan and lateral testing.",false,1,src/views/AdminView.vue:3363
-m_edb470c0,仅错误,only errors,仅错误,only errors,false,2,src/views/AdminView.vue:2560 | src/views/AdminView.vue:848
+m_ed9d8f1b,移除挂载,Remove mount,移除挂载,Remove mount,false,2,src/views/AdminView.vue:1333 | src/views/AdminView.vue:2679
+m_eda3fa71,分类,Category,分类,Category,false,3,src/views/AdminView.vue:2480 | src/views/AdminView.vue:303 | src/views/ContestDetailView.vue:66
+m_edaf3060,ssh_bastion：自动注入跳板机，适合内网扫描与横向测试。,"ssh_bastion: inject an SSH bastion, suitable for internal scan and lateral testing.",ssh_bastion：自动注入跳板机，适合内网扫描与横向测试。,"ssh_bastion: inject an SSH bastion, suitable for internal scan and lateral testing.",false,1,src/views/AdminView.vue:3364
+m_edb470c0,仅错误,only errors,仅错误,only errors,false,2,src/views/AdminView.vue:2561 | src/views/AdminView.vue:848
 m_ee835e18,被邀请用户名,Invitee username,被邀请用户名,Invitee username,false,1,src/views/TeamsView.vue:133
 m_eebd8224,暂无可视队伍数据。,No team data for trend view.,暂无可视队伍数据。,No team data for trend view.,false,1,src/views/ContestDetailView.vue:1041
-m_eec7d8a7,实例指标：,Instance metrics:,实例指标：,Instance metrics:,false,2,src/views/AdminView.vue:2151 | src/views/AdminView.vue:2628
-m_efc8d1be,没有匹配的比赛。,No matching contests.,没有匹配的比赛。,No matching contests.,false,2,src/views/AdminView.vue:1099 | src/views/AdminView.vue:2574
+m_eec7d8a7,实例指标：,Instance metrics:,实例指标：,Instance metrics:,false,2,src/views/AdminView.vue:2151 | src/views/AdminView.vue:2629
+m_efc8d1be,没有匹配的比赛。,No matching contests.,没有匹配的比赛。,No matching contests.,false,2,src/views/AdminView.vue:1099 | src/views/AdminView.vue:2575
 m_efce9ebf,新密码强度不足，请按规则提升密码强度。,New password is too weak. Please satisfy policy checks.,新密码强度不足，请按规则提升密码强度。,New password is too weak. Please satisfy policy checks.,false,1,src/views/LoginView.vue:923
 m_efd07c49,状态筛选,Status filter,状态筛选,Status filter,false,1,src/views/AdminView.vue:1620
 m_efec42da,队伍名为空,Team name required,队伍名为空,Team name required,false,2,src/views/TeamsView.vue:626 | src/views/TeamsView.vue:664
@@ -888,31 +888,31 @@ m_f07fccd8,正在加载队伍详情...,Loading team details...,正在加载队�
 m_f08ffc37,编辑,Edit,编辑,Edit,false,3,src/views/AdminView.vue:1372 | src/views/AdminView.vue:1512 | src/views/AdminView.vue:268
 m_f0fb08dd,加载我的队伍失败,Failed to load my team,加载我的队伍失败,Failed to load my team,false,1,src/views/TeamsView.vue:565
 m_f179d8c1,站点,Site,站点,Site,false,1,src/App.vue:47
-m_f1b723d8,未登录或会话已失效,Not signed in or session expired,未登录或会话已失效,Not signed in or session expired,false,5,src/views/ContestDetailView.vue:1355 | src/views/ContestsView.vue:318 | src/views/ProfileView.vue:146 | src/views/ScoreboardWallView.vue:525 | src/views/TeamsView.vue:524
+m_f1b723d8,未登录或会话已失效,Not signed in or session expired,未登录或会话已失效,Not signed in or session expired,false,5,src/views/ContestDetailView.vue:1355 | src/views/ContestsView.vue:318 | src/views/ProfileView.vue:147 | src/views/ScoreboardWallView.vue:525 | src/views/TeamsView.vue:524
 m_f1ea66ef,请输入内容。,Please enter a value.,请输入内容。,Please enter a value.,false,1,src/App.vue:271
 m_f1effbcd,收起找回密码,Hide recovery,收起找回密码,Hide recovery,false,1,src/views/LoginView.vue:235
 m_f2516b0f,报名模式：自动通过,Registration: auto-approved,报名模式：自动通过,Registration: auto-approved,false,1,src/views/AdminView.vue:1122
-m_f28de735,保存题目失败,Failed to save challenge,保存题目失败,Failed to save challenge,false,2,src/views/AdminView.vue:2429 | src/views/AdminView.vue:4770
-m_f2a33dcb,公告置顶状态已更新,Pin status updated,公告置顶状态已更新,Pin status updated,false,1,src/views/AdminView.vue:2513
+m_f28de735,保存题目失败,Failed to save challenge,保存题目失败,Failed to save challenge,false,2,src/views/AdminView.vue:2430 | src/views/AdminView.vue:4770
+m_f2a33dcb,公告置顶状态已更新,Pin status updated,公告置顶状态已更新,Pin status updated,false,1,src/views/AdminView.vue:2514
 m_f2ad2b4f,邀请留言（可选）,Message (optional),邀请留言（可选）,Message (optional),false,1,src/views/TeamsView.vue:137
-m_f3e7b0e1,创建时间,creation time,创建时间,creation time,false,2,src/views/AdminView.vue:1964 | src/views/AdminView.vue:2464
+m_f3e7b0e1,创建时间,creation time,创建时间,creation time,false,2,src/views/AdminView.vue:1964 | src/views/AdminView.vue:2465
 m_f3ea5f90,复制 Team ID,Copy team ID,复制 Team ID,Copy team ID,false,1,src/views/TeamsView.vue:72
 m_f3ea6ad1,忘记密码时可直接发起重置流程。,Start reset directly when you forget your password.,忘记密码时可直接发起重置流程。,Start reset directly when you forget your password.,false,1,src/views/LoginView.vue:55
-m_f415e491,从左侧选择一个比赛查看详情与状态操作。,Select a contest on the left to view details and status actions.,从左侧选择一个比赛查看详情与状态操作。,Select a contest on the left to view details and status actions.,false,2,src/views/AdminView.vue:1218 | src/views/AdminView.vue:2465
-m_f4169021,处理备注（可选）,Process notes (optional),处理备注（可选）,Process notes (optional),false,2,src/views/AdminView.vue:1868 | src/views/AdminView.vue:2457
+m_f415e491,从左侧选择一个比赛查看详情与状态操作。,Select a contest on the left to view details and status actions.,从左侧选择一个比赛查看详情与状态操作。,Select a contest on the left to view details and status actions.,false,2,src/views/AdminView.vue:1218 | src/views/AdminView.vue:2466
+m_f4169021,处理备注（可选）,Process notes (optional),处理备注（可选）,Process notes (optional),false,2,src/views/AdminView.vue:1868 | src/views/AdminView.vue:2458
 m_f4afd30f,确认解散,Confirm disband,确认解散,Confirm disband,false,1,src/views/TeamsView.vue:106
-m_f4b4b525,回收中...,Recycling...,回收中...,Recycling...,false,3,src/views/AdminView.vue:1702 | src/views/AdminView.vue:1710 | src/views/AdminView.vue:2535
+m_f4b4b525,回收中...,Recycling...,回收中...,Recycling...,false,3,src/views/AdminView.vue:1702 | src/views/AdminView.vue:1710 | src/views/AdminView.vue:2536
 m_f539d012,动态环境已进入运行状态。,Runtime instance is running.,动态环境已进入运行状态。,Runtime instance is running.,false,1,src/views/ContestDetailView.vue:1672
 m_f54f9c7e,内容与题解,Content & Writeup,内容与题解,Content & Writeup,false,1,src/views/AdminView.vue:513
 m_f5808c7b,确认删除比赛「{title}」的海报？,"Delete poster for contest ""{title}""?",确认删除比赛「{title}」的海报？,"Delete poster for contest ""{title}""?",false,1,src/views/AdminView.vue:5173
-m_f5a23e64,公告列表,Announcement list,公告列表,Announcement list,false,2,src/views/AdminView.vue:1451 | src/views/AdminView.vue:2502
+m_f5a23e64,公告列表,Announcement list,公告列表,Announcement list,false,2,src/views/AdminView.vue:1451 | src/views/AdminView.vue:2503
 m_f5a8faeb,更新于,Updated,更新于,Updated,false,1,src/views/AdminView.vue:2159
 m_f65fea10,审计日志,Audit Logs,审计日志,Audit Logs,false,1,src/views/AdminView.vue:62
-m_f7057d26,题目已回滚,Challenge rolled back,题目已回滚,Challenge rolled back,false,1,src/views/AdminView.vue:2646
-m_f70ecbc6,script：调用脚本判定，可用于复杂答案校验。,script: verify via script for complex validation.,script：调用脚本判定，可用于复杂答案校验。,script: verify via script for complex validation.,false,1,src/views/AdminView.vue:3320
-m_f7312e10,级别,level,级别,level,false,2,src/views/AdminView.vue:1794 | src/views/AdminView.vue:2538
+m_f7057d26,题目已回滚,Challenge rolled back,题目已回滚,Challenge rolled back,false,1,src/views/AdminView.vue:2647
+m_f70ecbc6,script：调用脚本判定，可用于复杂答案校验。,script: verify via script for complex validation.,script：调用脚本判定，可用于复杂答案校验。,script: verify via script for complex validation.,false,1,src/views/AdminView.vue:3321
+m_f7312e10,级别,level,级别,level,false,2,src/views/AdminView.vue:1794 | src/views/AdminView.vue:2539
 m_f79663f9,保存失败,Save failed,保存失败,Save failed,false,2,src/views/SiteSettingsView.vue:207 | src/views/SiteSettingsView.vue:208
-m_f8144eec,清除发布时间失败,Failed to clear release time,清除发布时间失败,Failed to clear release time,false,2,src/views/AdminView.vue:2589 | src/views/AdminView.vue:5601
+m_f8144eec,清除发布时间失败,Failed to clear release time,清除发布时间失败,Failed to clear release time,false,2,src/views/AdminView.vue:2590 | src/views/AdminView.vue:5601
 m_f8151d76,选择文件,选择文件,选择文件,选择文件,true,2,src/views/AdminView.vue:569 | src/views/AdminView.vue:766
 m_f8248680,站点文案已更新。,Site copy has been updated.,站点文案已更新。,Site copy has been updated.,false,1,src/views/SiteSettingsView.vue:205
 m_f82fdc41,队伍名称,Team name,队伍名称,Team name,false,2,src/views/TeamsView.vue:115 | src/views/TeamsView.vue:223
@@ -921,26 +921,26 @@ m_f899dcf7,新密码强度,New Password Strength,新密码强度,New Password St
 m_f8c391a6,提交过快,Rate limited,提交过快,Rate limited,false,1,src/views/ContestDetailView.vue:1616
 m_f8ef00a7,比赛公告,Announcements,比赛公告,Announcements,false,1,src/views/ContestDetailView.vue:373
 m_fad52b5b,一二三血加成必须为 0-500 的整数百分比。,Blood bonuses must be integer percentages between 0 and 500.,一二三血加成必须为 0-500 的整数百分比。,Blood bonuses must be integer percentages between 0 and 500.,false,1,src/views/AdminView.vue:5009
-m_fb2e4b76,显示告警操作菜单,Show alert actions,显示告警操作菜单,Show alert actions,false,2,src/views/AdminView.vue:1876 | src/views/AdminView.vue:2662
+m_fb2e4b76,显示告警操作菜单,Show alert actions,显示告警操作菜单,Show alert actions,false,2,src/views/AdminView.vue:1876 | src/views/AdminView.vue:2663
 m_fb5c7740,名称,Name,名称,Name,false,2,src/views/ScoreboardWallView.vue:150 | src/views/ScoreboardWallView.vue:91
 m_fb70bc88,提交,Submit,提交,Submit,false,1,src/views/ContestDetailView.vue:152
-m_fbd48805,暂无版本记录。,There is no version record yet.,暂无版本记录。,There is no version record yet.,false,2,src/views/AdminView.vue:2703 | src/views/AdminView.vue:757
+m_fbd48805,暂无版本记录。,There is no version record yet.,暂无版本记录。,There is no version record yet.,false,2,src/views/AdminView.vue:2704 | src/views/AdminView.vue:757
 m_fc766a66,打开完整版本与附件,Open full versions & files,打开完整版本与附件,Open full versions & files,false,1,src/views/AdminView.vue:584
-m_fc84c782,从左侧选择一个告警查看详情。,Select an alert on the left to view details.,从左侧选择一个告警查看详情。,Select an alert on the left to view details.,false,2,src/views/AdminView.vue:1908 | src/views/AdminView.vue:2467
-m_fc9a3603,挂载失败,Binding failed,挂载失败,Binding failed,false,2,src/views/AdminView.vue:2518 | src/views/AdminView.vue:5551
+m_fc84c782,从左侧选择一个告警查看详情。,Select an alert on the left to view details.,从左侧选择一个告警查看详情。,Select an alert on the left to view details.,false,2,src/views/AdminView.vue:1908 | src/views/AdminView.vue:2468
+m_fc9a3603,挂载失败,Binding failed,挂载失败,Binding failed,false,2,src/views/AdminView.vue:2519 | src/views/AdminView.vue:5551
 m_fccc67a2,验证码已过期，请重新验证。,Verification expired. Please verify again.,验证码已过期，请重新验证。,Verification expired. Please verify again.,false,1,src/views/LoginView.vue:711
-m_fcdb0f53,上传题目附件失败,Failed to upload challenge attachment,上传题目附件失败,Failed to upload challenge attachment,false,2,src/views/AdminView.vue:2620 | src/views/AdminView.vue:4926
+m_fcdb0f53,上传题目附件失败,Failed to upload challenge attachment,上传题目附件失败,Failed to upload challenge attachment,false,2,src/views/AdminView.vue:2621 | src/views/AdminView.vue:4926
 m_fcf9d2a1,修改密码,Change Password,修改密码,Change Password,false,1,src/views/ProfileView.vue:32
 m_fcfbb1b7,会话结束,Session Ended,会话结束,Session Ended,false,1,src/App.vue:333
 m_fd3fc6d5,请完成邮箱验证后再登录。,Complete email verification before signing in.,请完成邮箱验证后再登录。,Complete email verification before signing in.,false,1,src/views/LoginView.vue:818
-m_fd680df0,清除发布时间,Clear publishing time,清除发布时间,Clear publishing time,false,2,src/views/AdminView.vue:1325 | src/views/AdminView.vue:2588
+m_fd680df0,清除发布时间,Clear publishing time,清除发布时间,Clear publishing time,false,2,src/views/AdminView.vue:1325 | src/views/AdminView.vue:2589
 m_fd785681,快速筛选,Quick Filter,快速筛选,Quick Filter,false,1,src/views/ContestsView.vue:62
-m_fde4882a,回滚到该版本,Roll back to this version,回滚到该版本,Roll back to this version,false,2,src/views/AdminView.vue:2532 | src/views/AdminView.vue:753
-m_fde506b4,创建题目,Create challenge,创建题目,Create challenge,false,2,src/views/AdminView.vue:184 | src/views/AdminView.vue:3290
+m_fde4882a,回滚到该版本,Roll back to this version,回滚到该版本,Roll back to this version,false,2,src/views/AdminView.vue:2533 | src/views/AdminView.vue:753
+m_fde506b4,创建题目,Create challenge,创建题目,Create challenge,false,2,src/views/AdminView.vue:184 | src/views/AdminView.vue:3291
 m_fe316a8f,浏览器不支持,Unsupported browser,浏览器不支持,Unsupported browser,false,1,src/views/ContestDetailView.vue:1273
-m_fe3dfd2c,internal：题目运行在内部/裁判控制场景，通常不直接暴露给选手公网。,internal: runtime is intended for internal/judge-controlled scenarios.,internal：题目运行在内部/裁判控制场景，通常不直接暴露给选手公网。,internal: runtime is intended for internal/judge-controlled scenarios.,false,1,src/views/AdminView.vue:3301
-m_fe582bef,请先填写镜像仓库地址,Please provide image registry address first.,请先填写镜像仓库地址,Please provide image registry address first.,false,2,src/views/AdminView.vue:2591 | src/views/AdminView.vue:4549
+m_fe3dfd2c,internal：题目运行在内部/裁判控制场景，通常不直接暴露给选手公网。,internal: runtime is intended for internal/judge-controlled scenarios.,internal：题目运行在内部/裁判控制场景，通常不直接暴露给选手公网。,internal: runtime is intended for internal/judge-controlled scenarios.,false,1,src/views/AdminView.vue:3302
+m_fe582bef,请先填写镜像仓库地址,Please provide image registry address first.,请先填写镜像仓库地址,Please provide image registry address first.,false,2,src/views/AdminView.vue:2592 | src/views/AdminView.vue:4549
 m_fea33b9d,处理邀请失败,Failed to process invitation,处理邀请失败,Failed to process invitation,false,2,src/views/TeamsView.vue:886 | src/views/TeamsView.vue:888
 m_feca111e,复制 SSH 命令,Copy SSH command,复制 SSH 命令,Copy SSH command,false,1,src/views/ContestDetailView.vue:241
-m_ffadca98,初始状态,initial state,初始状态,initial state,false,2,src/views/AdminView.vue:1002 | src/views/AdminView.vue:2456
-m_fff3360e,可以继续挂载题目并调整状态。,You can continue binding challenges and adjusting status.,可以继续挂载题目并调整状态。,You can continue binding challenges and adjusting status.,false,1,src/views/AdminView.vue:2570
+m_ffadca98,初始状态,initial state,初始状态,initial state,false,2,src/views/AdminView.vue:1002 | src/views/AdminView.vue:2457
+m_fff3360e,可以继续挂载题目并调整状态。,You can continue binding challenges and adjusting status.,可以继续挂载题目并调整状态。,You can continue binding challenges and adjusting status.,false,1,src/views/AdminView.vue:2571

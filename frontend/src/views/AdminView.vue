@@ -2404,6 +2404,7 @@ import {
 import UploadField from "../components/UploadField.vue";
 import { useL10n } from "../composables/useL10n";
 import { renderMarkdownToHtml } from "../composables/useMarkdown";
+import { getLocaleDateLocale } from "../locales/i18n";
 import { useAuthStore } from "../stores/auth";
 import { useUiStore } from "../stores/ui";
 
@@ -3400,8 +3401,7 @@ const contestSubmitLabel = computed(() => {
 });
 
 function formatTime(input: string) {
-  const localeTag = locale.value === "en" ? "en-US" : "zh-CN";
-  return new Date(input).toLocaleString(localeTag);
+  return new Date(input).toLocaleString(getLocaleDateLocale(locale.value));
 }
 
 function formatAuditDetail(detail: Record<string, unknown>) {

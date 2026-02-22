@@ -342,6 +342,7 @@ import {
   type TeamProfile
 } from "../api/client";
 import { useL10n } from "../composables/useL10n";
+import { getLocaleDateLocale } from "../locales/i18n";
 import { useAuthStore } from "../stores/auth";
 import { useUiStore } from "../stores/ui";
 
@@ -514,8 +515,7 @@ watch(
 );
 
 function formatTime(input: string) {
-  const localeTag = locale.value === "en" ? "en-US" : "zh-CN";
-  return new Date(input).toLocaleString(localeTag);
+  return new Date(input).toLocaleString(getLocaleDateLocale(locale.value));
 }
 
 function accessTokenOrThrow() {

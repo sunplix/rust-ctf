@@ -111,6 +111,7 @@ import {
   type LoginHistoryItem
 } from "../api/client";
 import { useL10n } from "../composables/useL10n";
+import { getLocaleDateLocale } from "../locales/i18n";
 import { useAuthStore } from "../stores/auth";
 import { useUiStore } from "../stores/ui";
 
@@ -149,8 +150,7 @@ function accessTokenOrThrow() {
 }
 
 function formatTime(input: string) {
-  const localeTag = locale.value === "en" ? "en-US" : "zh-CN";
-  return new Date(input).toLocaleString(localeTag);
+  return new Date(input).toLocaleString(getLocaleDateLocale(locale.value));
 }
 
 function summarizeDetail(detail: Record<string, unknown>) {

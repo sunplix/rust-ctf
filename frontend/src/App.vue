@@ -240,7 +240,7 @@ const roleLabel = computed(() => {
 });
 
 const localeSwitchLabel = computed(() => {
-  return appStore.locale === "zh" ? "EN" : "中文";
+  return appStore.nextLocaleOption?.shortLabel ?? "Lang";
 });
 
 const themeSwitchLabel = computed(() => {
