@@ -2293,25 +2293,29 @@ async fn read_instance_wireguard_config(
     instance: &InstanceRow,
 ) -> AppResult<String> {
     let meta = read_wireguard_access_meta(state, &instance.compose_project_name).await?;
-    let url = format!(
-        "http://host.docker.internal:{}/peer1/peer1.conf",
-        meta.config_host_port
-    );
+    let candidate_urls = wireguard_config_fetch_candidate_urls(state, meta.config_host_port);
+    if candidate_urls.is_empty() {
+        return Err(AppError::BadRequest(
+            "wireguard config fetch host candidates are empty".to_string(),
+        ));
+    }
     let mut last_error: Option<String> = None;
 
     for attempt in 0..INSTANCE_WIREGUARD_CONFIG_FETCH_RETRIES {
-        match fetch_wireguard_config_via_http(state, &url).await {
-            Ok(content) => {
-                let normalized = content.replace("\r\n", "\n");
-                if normalized.contains("[Interface]") && normalized.contains("[Peer]") {
-                    return Ok(normalized);
+        for url in &candidate_urls {
+            match fetch_wireguard_config_via_http(state, url).await {
+                Ok(content) => {
+                    let normalized = content.replace("\r\n", "\n");
+                    if normalized.contains("[Interface]") && normalized.contains("[Peer]") {
+                        return Ok(normalized);
+                    }
+                    last_error = Some(format!("{url}: wireguard config is not ready yet"));
                 }
-                last_error = Some("wireguard config is not ready yet".to_string());
-            }
-            Err(AppError::BadRequest(message)) => {
-                last_error = Some(message);
-            }
-            Err(err) => return Err(err),
+                Err(AppError::BadRequest(message)) => {
+                    last_error = Some(format!("{url}: {message}"));
+                }
+                Err(err) => return Err(err),
+            };
         }
 
         if attempt + 1 < INSTANCE_WIREGUARD_CONFIG_FETCH_RETRIES {
@@ -2326,6 +2330,104 @@ async fn read_instance_wireguard_config(
         "wireguard config is not ready: {}",
         last_error.unwrap_or_else(|| "unknown error".to_string())
     )))
+}
+
+fn wireguard_config_fetch_candidate_urls(state: &AppState, port: u16) -> Vec<String> {
+    let mut hosts: Vec<String> = Vec::new();
+    push_wireguard_fetch_host(&mut hosts, "host.docker.internal");
+    push_wireguard_fetch_host(&mut hosts, "gateway.docker.internal");
+    push_wireguard_fetch_host(&mut hosts, "127.0.0.1");
+    push_wireguard_fetch_host(&mut hosts, state.config.instance_public_host.as_str());
+    if let Some(gateway) = detect_default_gateway_ipv4() {
+        push_wireguard_fetch_host(&mut hosts, gateway.as_str());
+    }
+
+    hosts
+        .into_iter()
+        .map(|host| format!("http://{host}:{port}/peer1/peer1.conf"))
+        .collect()
+}
+
+fn push_wireguard_fetch_host(hosts: &mut Vec<String>, raw: &str) {
+    let Some(host) = normalize_wireguard_fetch_host(raw) else {
+        return;
+    };
+    if hosts.iter().any(|item| item.eq_ignore_ascii_case(&host)) {
+        return;
+    }
+    hosts.push(host);
+}
+
+fn normalize_wireguard_fetch_host(raw: &str) -> Option<String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    let without_scheme = trimmed
+        .split_once("://")
+        .map(|(_, rest)| rest)
+        .unwrap_or(trimmed);
+    let authority = without_scheme.split('/').next()?.trim();
+    if authority.is_empty() {
+        return None;
+    }
+
+    let authority = authority.rsplit('@').next()?.trim();
+    if authority.is_empty() {
+        return None;
+    }
+
+    if authority.starts_with('[') {
+        let close_index = authority.find(']')?;
+        let host = authority[1..close_index].trim();
+        if host.is_empty() {
+            None
+        } else {
+            Some(host.to_string())
+        }
+    } else {
+        let host = authority
+            .rsplit_once(':')
+            .map(|(value, _)| value)
+            .unwrap_or(authority)
+            .trim();
+        if host.is_empty() {
+            None
+        } else {
+            Some(host.to_string())
+        }
+    }
+}
+
+fn detect_default_gateway_ipv4() -> Option<String> {
+    let table = std::fs::read_to_string("/proc/net/route").ok()?;
+    parse_default_gateway_ipv4_from_route_table(&table)
+}
+
+fn parse_default_gateway_ipv4_from_route_table(table: &str) -> Option<String> {
+    for line in table.lines().skip(1) {
+        let cols: Vec<&str> = line.split_whitespace().collect();
+        if cols.len() < 4 || cols[1] != "00000000" {
+            continue;
+        }
+
+        let gateway_hex = cols[2];
+        if gateway_hex.len() != 8 {
+            continue;
+        }
+
+        let gateway = u32::from_str_radix(gateway_hex, 16).ok()?;
+        let octets = gateway.to_le_bytes();
+        if octets == [0, 0, 0, 0] {
+            continue;
+        }
+        return Some(format!(
+            "{}.{}.{}.{}",
+            octets[0], octets[1], octets[2], octets[3]
+        ));
+    }
+    None
 }
 
 async fn compose_up(
@@ -3141,7 +3243,10 @@ fn instance_wireguard_config_download_url(instance: &InstanceRow) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{collect_compose_network_names, runtime_attachment_relative_path};
+    use super::{
+        collect_compose_network_names, normalize_wireguard_fetch_host,
+        parse_default_gateway_ipv4_from_route_table, runtime_attachment_relative_path,
+    };
 
     #[test]
     fn runtime_attachment_path_extracts_relative_path() {
@@ -3184,5 +3289,30 @@ networks:
 
         let names = collect_compose_network_names(root, services);
         assert_eq!(names, vec!["lab_net".to_string(), "dmz".to_string()]);
+    }
+
+    #[test]
+    fn normalize_wireguard_fetch_host_from_url_and_host() {
+        assert_eq!(
+            normalize_wireguard_fetch_host("https://inst.ctf.sunplix.io:55500/peer1/peer1.conf"),
+            Some("inst.ctf.sunplix.io".to_string())
+        );
+        assert_eq!(
+            normalize_wireguard_fetch_host("host.docker.internal"),
+            Some("host.docker.internal".to_string())
+        );
+        assert_eq!(
+            normalize_wireguard_fetch_host("  [2001:db8::1]:8000 "),
+            Some("2001:db8::1".to_string())
+        );
+    }
+
+    #[test]
+    fn parse_default_gateway_from_route_table() {
+        let table = "Iface\tDestination\tGateway\tFlags\tRefCnt\tUse\tMetric\tMask\tMTU\tWindow\tIRTT\neth0\t00000000\t010011AC\t0003\t0\t0\t0\t00000000\t0\t0\t0\n";
+        assert_eq!(
+            parse_default_gateway_ipv4_from_route_table(table),
+            Some("172.17.0.1".to_string())
+        );
     }
 }
