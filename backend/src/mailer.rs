@@ -1,8 +1,7 @@
 use anyhow::{anyhow, Context};
 use lettre::{
-    message::Mailbox,
-    transport::smtp::authentication::Credentials,
-    AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor,
+    message::Mailbox, transport::smtp::authentication::Credentials, AsyncSmtpTransport,
+    AsyncTransport, Message, Tokio1Executor,
 };
 use tracing::{info, warn};
 
@@ -46,7 +45,9 @@ fn log_email(payload: &OutboundEmail) {
 async fn send_via_smtp(config: &AppConfig, payload: &OutboundEmail) -> anyhow::Result<()> {
     let host = config.auth_smtp_host.trim();
     if host.is_empty() {
-        return Err(anyhow!("AUTH_SMTP_HOST is empty while SMTP mode is enabled"));
+        return Err(anyhow!(
+            "AUTH_SMTP_HOST is empty while SMTP mode is enabled"
+        ));
     }
 
     let from = parse_from_mailbox(config)?;

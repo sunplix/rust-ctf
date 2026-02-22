@@ -62,6 +62,7 @@ const INSTANCE_WIREGUARD_ACCESS_META_FILE: &str = "wireguard-access.json";
 const INSTANCE_WIREGUARD_CONFIG_FETCH_RETRIES: usize = 6;
 const INSTANCE_WIREGUARD_CONFIG_FETCH_DELAY_MS: u64 = 1000;
 const INSTANCE_PORT_ALLOCATE_RETRIES: usize = 64;
+const RUNTIME_ATTACHMENT_PREFIX: &str = "runtime/";
 
 #[derive(Debug, Deserialize)]
 struct InstanceActionRequest {
@@ -150,6 +151,12 @@ struct ComposeTemplateRow {
     compose_template: Option<String>,
     flag_mode: String,
     metadata: Value,
+}
+
+#[derive(Debug, FromRow)]
+struct ChallengeAttachmentRow {
+    filename: String,
+    storage_path: String,
 }
 
 #[derive(Debug, FromRow)]
@@ -242,13 +249,8 @@ async fn start_instance(
     Json(req): Json<InstanceActionRequest>,
 ) -> AppResult<Json<InstanceResponse>> {
     let team_id = fetch_user_team_id(state.as_ref(), current_user.user_id).await?;
-    ensure_team_contest_workspace_access(
-        state.as_ref(),
-        req.contest_id,
-        team_id,
-        &current_user,
-    )
-    .await?;
+    ensure_team_contest_workspace_access(state.as_ref(), req.contest_id, team_id, &current_user)
+        .await?;
     let policy = fetch_runtime_policy(state.as_ref(), req.contest_id, req.challenge_id).await?;
 
     validate_runtime_policy(&policy, &current_user.role, true)?;
@@ -302,13 +304,8 @@ async fn stop_instance(
     Json(req): Json<InstanceActionRequest>,
 ) -> AppResult<Json<InstanceResponse>> {
     let team_id = fetch_user_team_id(state.as_ref(), current_user.user_id).await?;
-    ensure_team_contest_workspace_access(
-        state.as_ref(),
-        req.contest_id,
-        team_id,
-        &current_user,
-    )
-    .await?;
+    ensure_team_contest_workspace_access(state.as_ref(), req.contest_id, team_id, &current_user)
+        .await?;
 
     let instance = fetch_instance_row(state.as_ref(), req.contest_id, req.challenge_id, team_id)
         .await?
@@ -346,13 +343,8 @@ async fn reset_instance(
     Json(req): Json<InstanceActionRequest>,
 ) -> AppResult<Json<InstanceResponse>> {
     let team_id = fetch_user_team_id(state.as_ref(), current_user.user_id).await?;
-    ensure_team_contest_workspace_access(
-        state.as_ref(),
-        req.contest_id,
-        team_id,
-        &current_user,
-    )
-    .await?;
+    ensure_team_contest_workspace_access(state.as_ref(), req.contest_id, team_id, &current_user)
+        .await?;
     let policy = fetch_runtime_policy(state.as_ref(), req.contest_id, req.challenge_id).await?;
 
     validate_runtime_policy(&policy, &current_user.role, true)?;
@@ -407,13 +399,8 @@ async fn destroy_instance(
     Json(req): Json<InstanceActionRequest>,
 ) -> AppResult<Json<InstanceResponse>> {
     let team_id = fetch_user_team_id(state.as_ref(), current_user.user_id).await?;
-    ensure_team_contest_workspace_access(
-        state.as_ref(),
-        req.contest_id,
-        team_id,
-        &current_user,
-    )
-    .await?;
+    ensure_team_contest_workspace_access(state.as_ref(), req.contest_id, team_id, &current_user)
+        .await?;
 
     let instance = fetch_instance_row(state.as_ref(), req.contest_id, req.challenge_id, team_id)
         .await?
@@ -475,13 +462,8 @@ async fn heartbeat_instance(
     Json(req): Json<InstanceActionRequest>,
 ) -> AppResult<Json<InstanceResponse>> {
     let team_id = fetch_user_team_id(state.as_ref(), current_user.user_id).await?;
-    ensure_team_contest_workspace_access(
-        state.as_ref(),
-        req.contest_id,
-        team_id,
-        &current_user,
-    )
-    .await?;
+    ensure_team_contest_workspace_access(state.as_ref(), req.contest_id, team_id, &current_user)
+        .await?;
 
     let updated =
         touch_instance_heartbeat(state.as_ref(), req.contest_id, req.challenge_id, team_id)
@@ -526,13 +508,8 @@ async fn get_instance_by_challenge(
     AxumPath((contest_id, challenge_id)): AxumPath<(Uuid, Uuid)>,
 ) -> AppResult<Json<InstanceResponse>> {
     let team_id = fetch_user_team_id(state.as_ref(), current_user.user_id).await?;
-    ensure_team_contest_workspace_access(
-        state.as_ref(),
-        contest_id,
-        team_id,
-        &current_user,
-    )
-    .await?;
+    ensure_team_contest_workspace_access(state.as_ref(), contest_id, team_id, &current_user)
+        .await?;
 
     let instance = fetch_instance_row(state.as_ref(), contest_id, challenge_id, team_id)
         .await?
@@ -551,13 +528,8 @@ async fn get_instance_wireguard_config(
     AxumPath((contest_id, challenge_id)): AxumPath<(Uuid, Uuid)>,
 ) -> AppResult<Json<WireguardConfigResponse>> {
     let team_id = fetch_user_team_id(state.as_ref(), current_user.user_id).await?;
-    ensure_team_contest_workspace_access(
-        state.as_ref(),
-        contest_id,
-        team_id,
-        &current_user,
-    )
-    .await?;
+    ensure_team_contest_workspace_access(state.as_ref(), contest_id, team_id, &current_user)
+        .await?;
 
     let instance = fetch_instance_row(state.as_ref(), contest_id, challenge_id, team_id)
         .await?
@@ -1886,6 +1858,143 @@ fn wireguard_access_meta_path(state: &AppState, compose_project_name: &str) -> P
     runtime_project_dir(state, compose_project_name).join(INSTANCE_WIREGUARD_ACCESS_META_FILE)
 }
 
+fn challenge_attachments_dir(state: &AppState, challenge_id: Uuid) -> PathBuf {
+    runtime_root_path(&state.config.instance_runtime_root)
+        .join("_challenge_files")
+        .join(challenge_id.to_string())
+}
+
+fn resolve_challenge_attachment_storage_path(
+    state: &AppState,
+    challenge_id: Uuid,
+    storage_path: &str,
+) -> PathBuf {
+    let raw = storage_path.trim();
+    if raw.is_empty() {
+        return challenge_attachments_dir(state, challenge_id).join("attachment.bin");
+    }
+
+    let original = PathBuf::from(raw);
+    if original.exists() {
+        return original;
+    }
+
+    let runtime_root = runtime_root_path(&state.config.instance_runtime_root);
+    if !original.is_absolute() {
+        let rooted = runtime_root.join(&original);
+        if rooted.exists() {
+            return rooted;
+        }
+    }
+
+    if let Some(name) = original.file_name() {
+        let fallback = challenge_attachments_dir(state, challenge_id).join(name);
+        if fallback.exists() {
+            return fallback;
+        }
+    }
+
+    if original.is_absolute() {
+        original
+    } else {
+        runtime_root.join(original)
+    }
+}
+
+fn runtime_attachment_relative_path(filename: &str) -> Option<PathBuf> {
+    let normalized = filename.trim().replace('\\', "/");
+    if !normalized.starts_with(RUNTIME_ATTACHMENT_PREFIX) {
+        return None;
+    }
+
+    let relative = normalized[RUNTIME_ATTACHMENT_PREFIX.len()..].trim();
+    if relative.is_empty() {
+        return None;
+    }
+
+    let mut cleaned = PathBuf::new();
+    for component in Path::new(relative).components() {
+        match component {
+            std::path::Component::Normal(segment) => cleaned.push(segment),
+            _ => return None,
+        }
+    }
+
+    if cleaned.as_os_str().is_empty() {
+        None
+    } else {
+        Some(cleaned)
+    }
+}
+
+async fn fetch_challenge_attachment_rows(
+    state: &AppState,
+    challenge_id: Uuid,
+) -> AppResult<Vec<ChallengeAttachmentRow>> {
+    sqlx::query_as::<_, ChallengeAttachmentRow>(
+        "SELECT filename, storage_path
+         FROM challenge_attachments
+         WHERE challenge_id = $1
+         ORDER BY created_at ASC",
+    )
+    .bind(challenge_id)
+    .fetch_all(&state.db)
+    .await
+    .map_err(AppError::internal)
+}
+
+async fn materialize_runtime_attachments(
+    state: &AppState,
+    instance: &InstanceRow,
+) -> AppResult<()> {
+    let rows = fetch_challenge_attachment_rows(state, instance.challenge_id).await?;
+    if rows.is_empty() {
+        return Ok(());
+    }
+
+    let runtime_dir = runtime_project_dir(state, &instance.compose_project_name);
+    for row in rows {
+        let Some(relative_path) = runtime_attachment_relative_path(&row.filename) else {
+            continue;
+        };
+
+        if relative_path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| name == COMPOSE_FILE_NAME)
+        {
+            return Err(AppError::BadRequest(format!(
+                "runtime attachment '{}' conflicts with reserved file '{}'",
+                row.filename, COMPOSE_FILE_NAME
+            )));
+        }
+
+        let source_path = resolve_challenge_attachment_storage_path(
+            state,
+            instance.challenge_id,
+            &row.storage_path,
+        );
+        let content = fs::read(&source_path).await.map_err(|err| {
+            AppError::BadRequest(format!(
+                "runtime attachment '{}' is missing or unreadable: {}",
+                row.filename, err
+            ))
+        })?;
+
+        let target_path = runtime_dir.join(&relative_path);
+        if let Some(parent) = target_path.parent() {
+            fs::create_dir_all(parent)
+                .await
+                .map_err(AppError::internal)?;
+        }
+        fs::write(target_path, content)
+            .await
+            .map_err(AppError::internal)?;
+    }
+
+    Ok(())
+}
+
 async fn write_wireguard_access_meta(
     state: &AppState,
     compose_project_name: &str,
@@ -2148,6 +2257,8 @@ async fn persist_compose_file(
             .await
             .map_err(AppError::internal)?;
     }
+
+    materialize_runtime_attachments(state, instance).await?;
 
     fs::write(&compose_file, rendered)
         .await
@@ -2570,14 +2681,17 @@ fn inject_ssh_gateway_service(
         );
     }
 
-    let primary_network_name = root_map
-        .get(serde_yaml::Value::String("networks".to_string()))
-        .and_then(serde_yaml::Value::as_mapping)
-        .and_then(|networks| {
-            networks
-                .keys()
-                .find_map(|key| key.as_str().map(|name| name.to_string()))
-        });
+    let network_names = {
+        let Some(services_map) = root_map
+            .get(&services_key)
+            .and_then(serde_yaml::Value::as_mapping)
+        else {
+            return Err(AppError::BadRequest(
+                "compose.services must be a mapping".to_string(),
+            ));
+        };
+        collect_compose_network_names(root_map, services_map)
+    };
 
     let Some(services_map) = root_map
         .get_mut(&services_key)
@@ -2641,10 +2755,15 @@ fn inject_ssh_gateway_service(
             "{host_port}:{INSTANCE_SSH_GATEWAY_PORT}"
         ))]),
     );
-    if let Some(network_name) = primary_network_name {
+    if !network_names.is_empty() {
         service_map.insert(
             serde_yaml::Value::String("networks".to_string()),
-            serde_yaml::Value::Sequence(vec![serde_yaml::Value::String(network_name)]),
+            serde_yaml::Value::Sequence(
+                network_names
+                    .into_iter()
+                    .map(serde_yaml::Value::String)
+                    .collect(),
+            ),
         );
     }
 
@@ -2683,14 +2802,17 @@ fn inject_wireguard_service(
         );
     }
 
-    let primary_network_name = root_map
-        .get(serde_yaml::Value::String("networks".to_string()))
-        .and_then(serde_yaml::Value::as_mapping)
-        .and_then(|networks| {
-            networks
-                .keys()
-                .find_map(|key| key.as_str().map(|name| name.to_string()))
-        });
+    let network_names = {
+        let Some(services_map) = root_map
+            .get(&services_key)
+            .and_then(serde_yaml::Value::as_mapping)
+        else {
+            return Err(AppError::BadRequest(
+                "compose.services must be a mapping".to_string(),
+            ));
+        };
+        collect_compose_network_names(root_map, services_map)
+    };
 
     let Some(services_map) = root_map
         .get_mut(&services_key)
@@ -2791,10 +2913,15 @@ fn inject_wireguard_service(
         ))]),
     );
 
-    if let Some(network_name) = primary_network_name {
+    if !network_names.is_empty() {
         service_map.insert(
             serde_yaml::Value::String("networks".to_string()),
-            serde_yaml::Value::Sequence(vec![serde_yaml::Value::String(network_name)]),
+            serde_yaml::Value::Sequence(
+                network_names
+                    .into_iter()
+                    .map(serde_yaml::Value::String)
+                    .collect(),
+            ),
         );
     }
 
@@ -2881,6 +3008,62 @@ fn inject_wireguard_service(
     })
 }
 
+fn collect_compose_network_names(
+    root_map: &serde_yaml::Mapping,
+    services_map: &serde_yaml::Mapping,
+) -> Vec<String> {
+    let mut names = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+
+    if let Some(root_networks) = root_map
+        .get(serde_yaml::Value::String("networks".to_string()))
+        .and_then(serde_yaml::Value::as_mapping)
+    {
+        for key in root_networks.keys() {
+            if let Some(name) = key.as_str() {
+                if !name.trim().is_empty() && seen.insert(name.to_string()) {
+                    names.push(name.to_string());
+                }
+            }
+        }
+    }
+
+    for service_value in services_map.values() {
+        let Some(service_map) = service_value.as_mapping() else {
+            continue;
+        };
+        let Some(service_networks) =
+            service_map.get(serde_yaml::Value::String("networks".to_string()))
+        else {
+            continue;
+        };
+
+        match service_networks {
+            serde_yaml::Value::Sequence(items) => {
+                for item in items {
+                    if let Some(name) = item.as_str() {
+                        if !name.trim().is_empty() && seen.insert(name.to_string()) {
+                            names.push(name.to_string());
+                        }
+                    }
+                }
+            }
+            serde_yaml::Value::Mapping(items) => {
+                for key in items.keys() {
+                    if let Some(name) = key.as_str() {
+                        if !name.trim().is_empty() && seen.insert(name.to_string()) {
+                            names.push(name.to_string());
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    names
+}
+
 async fn cleanup_runtime_dir(state: &AppState, compose_project_name: &str) {
     let runtime_dir = runtime_project_dir(state, compose_project_name);
 
@@ -2954,4 +3137,52 @@ fn instance_wireguard_config_download_url(instance: &InstanceRow) -> String {
         "/api/v1/instances/{}/{}/wireguard-config",
         instance.contest_id, instance.challenge_id
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{collect_compose_network_names, runtime_attachment_relative_path};
+
+    #[test]
+    fn runtime_attachment_path_extracts_relative_path() {
+        let path = runtime_attachment_relative_path("runtime/app/Dockerfile")
+            .expect("runtime attachment path should parse");
+        assert_eq!(path.to_string_lossy(), "app/Dockerfile");
+    }
+
+    #[test]
+    fn runtime_attachment_path_rejects_traversal() {
+        assert!(runtime_attachment_relative_path("runtime/../../etc/passwd").is_none());
+        assert!(runtime_attachment_relative_path("runtime/../Dockerfile").is_none());
+        assert!(runtime_attachment_relative_path("../runtime/Dockerfile").is_none());
+    }
+
+    #[test]
+    fn collect_network_names_from_root_and_services() {
+        let doc = r#"
+services:
+  jumpbox:
+    image: alpine:3.20
+    networks:
+      - lab_net
+  internal:
+    image: alpine:3.20
+    networks:
+      dmz:
+        aliases:
+          - target
+networks:
+  lab_net: {}
+"#;
+
+        let value: serde_yaml::Value = serde_yaml::from_str(doc).expect("yaml should parse");
+        let root = value.as_mapping().expect("root must be mapping");
+        let services = root
+            .get(serde_yaml::Value::String("services".to_string()))
+            .and_then(serde_yaml::Value::as_mapping)
+            .expect("services must be mapping");
+
+        let names = collect_compose_network_names(root, services);
+        assert_eq!(names, vec!["lab_net".to_string(), "dmz".to_string()]);
+    }
 }

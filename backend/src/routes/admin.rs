@@ -3048,11 +3048,8 @@ async fn delete_challenge(
     .ok_or(AppError::BadRequest("challenge not found".to_string()))?;
 
     for storage_path in &attachment_paths {
-        let path = resolve_challenge_attachment_storage_path(
-            state.as_ref(),
-            challenge_id,
-            storage_path,
-        );
+        let path =
+            resolve_challenge_attachment_storage_path(state.as_ref(), challenge_id, storage_path);
         if let Err(err) = fs::remove_file(&path).await {
             if err.kind() != std::io::ErrorKind::NotFound {
                 return Err(AppError::internal(err));

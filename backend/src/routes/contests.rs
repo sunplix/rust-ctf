@@ -17,9 +17,9 @@ use crate::{
     auth::AuthenticatedUser,
     error::{AppError, AppResult},
     routes::contest_access::{
-        ensure_contest_visibility, ensure_registration_status, ensure_user_contest_workspace_access,
-        ensure_user_has_team, get_user_team_id_optional, is_privileged_role,
-        load_contest_gate, load_contest_registration, ContestRegistrationRow,
+        ensure_contest_visibility, ensure_registration_status,
+        ensure_user_contest_workspace_access, ensure_user_has_team, get_user_team_id_optional,
+        is_privileged_role, load_contest_gate, load_contest_registration, ContestRegistrationRow,
     },
     state::AppState,
 };
@@ -281,11 +281,9 @@ async fn get_contest_registration(
     let registration = load_contest_registration(state.as_ref(), contest_id, team_id).await?;
     let (registration_status, review_note, requested_at, reviewed_at, can_enter_workspace) =
         if let Some(row) = registration {
-            let can_enter = ensure_registration_status(
-                Some(&row),
-                contest.registration_requires_approval,
-            )
-            .is_ok();
+            let can_enter =
+                ensure_registration_status(Some(&row), contest.registration_requires_approval)
+                    .is_ok();
             (
                 row.status,
                 row.review_note,
@@ -294,7 +292,13 @@ async fn get_contest_registration(
                 can_enter,
             )
         } else {
-            ("not_registered".to_string(), "".to_string(), None, None, false)
+            (
+                "not_registered".to_string(),
+                "".to_string(),
+                None,
+                None,
+                false,
+            )
         };
 
     Ok(Json(ContestRegistrationStatusResponse {
@@ -487,7 +491,8 @@ async fn list_contest_challenge_attachments(
     Path((contest_id, challenge_id)): Path<(Uuid, Uuid)>,
     current_user: AuthenticatedUser,
 ) -> AppResult<Json<Vec<ContestChallengeAttachmentItem>>> {
-    ensure_contest_challenge_access(state.as_ref(), contest_id, challenge_id, &current_user).await?;
+    ensure_contest_challenge_access(state.as_ref(), contest_id, challenge_id, &current_user)
+        .await?;
 
     let rows = sqlx::query_as::<_, ContestChallengeAttachmentRow>(
         "SELECT id,
@@ -530,7 +535,8 @@ async fn download_contest_challenge_attachment(
     Path((contest_id, challenge_id, attachment_id)): Path<(Uuid, Uuid, Uuid)>,
     current_user: AuthenticatedUser,
 ) -> AppResult<impl IntoResponse> {
-    ensure_contest_challenge_access(state.as_ref(), contest_id, challenge_id, &current_user).await?;
+    ensure_contest_challenge_access(state.as_ref(), contest_id, challenge_id, &current_user)
+        .await?;
 
     let row = sqlx::query_as::<_, ContestChallengeAttachmentFileRow>(
         "SELECT filename, content_type, storage_path

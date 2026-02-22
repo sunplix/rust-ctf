@@ -51,7 +51,10 @@ pub(crate) fn ensure_contest_visibility(
     Ok(())
 }
 
-pub(crate) async fn load_contest_gate(state: &AppState, contest_id: Uuid) -> AppResult<ContestGateRow> {
+pub(crate) async fn load_contest_gate(
+    state: &AppState,
+    contest_id: Uuid,
+) -> AppResult<ContestGateRow> {
     sqlx::query_as::<_, ContestGateRow>(
         "SELECT visibility,
                 status,
@@ -67,7 +70,10 @@ pub(crate) async fn load_contest_gate(state: &AppState, contest_id: Uuid) -> App
     .ok_or(AppError::BadRequest("contest not found".to_string()))
 }
 
-pub(crate) async fn get_user_team_id_optional(state: &AppState, user_id: Uuid) -> AppResult<Option<Uuid>> {
+pub(crate) async fn get_user_team_id_optional(
+    state: &AppState,
+    user_id: Uuid,
+) -> AppResult<Option<Uuid>> {
     let row = sqlx::query_as::<_, TeamMembershipRow>(
         "SELECT team_id
          FROM team_members
@@ -149,7 +155,10 @@ pub(crate) async fn ensure_user_contest_workspace_access(
 
     let team_id = ensure_user_has_team(state, current_user.user_id).await?;
     let registration = load_contest_registration(state, contest_id, team_id).await?;
-    ensure_registration_status(registration.as_ref(), contest.registration_requires_approval)?;
+    ensure_registration_status(
+        registration.as_ref(),
+        contest.registration_requires_approval,
+    )?;
     Ok(Some(team_id))
 }
 
@@ -167,5 +176,8 @@ pub(crate) async fn ensure_team_contest_workspace_access(
     }
 
     let registration = load_contest_registration(state, contest_id, team_id).await?;
-    ensure_registration_status(registration.as_ref(), contest.registration_requires_approval)
+    ensure_registration_status(
+        registration.as_ref(),
+        contest.registration_requires_approval,
+    )
 }

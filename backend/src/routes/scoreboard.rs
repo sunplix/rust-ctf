@@ -661,11 +661,8 @@ async fn load_scoreboard_rankings(
 
     for row in events {
         if team_seen.insert((row.team_id, row.challenge_id)) {
-            let order = marker_order_for_subject(
-                &mut team_blood_order,
-                row.challenge_id,
-                row.team_id,
-            );
+            let order =
+                marker_order_for_subject(&mut team_blood_order, row.challenge_id, row.team_id);
             let solve = ScoreboardRankingChallenge {
                 challenge_id: row.challenge_id,
                 challenge_title: row.challenge_title.clone(),
@@ -686,11 +683,8 @@ async fn load_scoreboard_rankings(
         }
 
         if player_seen.insert((row.user_id, row.challenge_id)) {
-            let order = marker_order_for_subject(
-                &mut player_blood_order,
-                row.challenge_id,
-                row.user_id,
-            );
+            let order =
+                marker_order_for_subject(&mut player_blood_order, row.challenge_id, row.user_id);
             let solve = ScoreboardRankingChallenge {
                 challenge_id: row.challenge_id,
                 challenge_title: row.challenge_title,
@@ -749,13 +743,15 @@ fn push_subject_solve(
     score_awarded: i32,
     submitted_at: DateTime<Utc>,
 ) {
-    let state = states.entry(subject_id).or_insert_with(|| RankingSubjectState {
-        subject_name,
-        total_score: 0,
-        solved_count: 0,
-        last_submit_at: None,
-        categories: HashMap::new(),
-    });
+    let state = states
+        .entry(subject_id)
+        .or_insert_with(|| RankingSubjectState {
+            subject_name,
+            total_score: 0,
+            solved_count: 0,
+            last_submit_at: None,
+            categories: HashMap::new(),
+        });
 
     state.total_score += score_awarded as i64;
     state.solved_count += 1;

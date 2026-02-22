@@ -510,7 +510,8 @@ async fn calculate_awarded_score(
         } else {
             let decay = ctx.contest_dynamic_decay.max(1) as f64;
             let solves = solved_count.max(0) as f64;
-            let raw = min_score as f64 + (max_score - min_score) as f64 * (decay / (decay + solves));
+            let raw =
+                min_score as f64 + (max_score - min_score) as f64 * (decay / (decay + solves));
             let score = raw.round() as i32;
             score.clamp(min_score, max_score)
         }

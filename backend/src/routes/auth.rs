@@ -493,9 +493,11 @@ async fn update_profile(
     })?
     .ok_or(AppError::Unauthorized)?;
 
-    let email_changed = updated.email.to_ascii_lowercase() != original_user.email.to_ascii_lowercase();
+    let email_changed =
+        updated.email.to_ascii_lowercase() != original_user.email.to_ascii_lowercase();
     if email_verification_enabled && email_changed {
-        let refreshed_user = fetch_active_user_with_secret(state.as_ref(), current_user.user_id).await?;
+        let refreshed_user =
+            fetch_active_user_with_secret(state.as_ref(), current_user.user_id).await?;
         send_email_verification_flow(
             state.as_ref(),
             &refreshed_user,
@@ -637,8 +639,9 @@ async fn request_email_verification(
     }
 
     Ok(Json(ActionMessageResponse {
-        message: "if the account exists and verification is pending, a verification email has been sent"
-            .to_string(),
+        message:
+            "if the account exists and verification is pending, a verification email has been sent"
+                .to_string(),
     }))
 }
 
@@ -744,7 +747,13 @@ async fn request_password_reset(
     .map_err(AppError::internal)?;
 
     if let Some(user) = user {
-        send_password_reset_flow(state.as_ref(), &user, &headers, "auth.password.reset.request").await;
+        send_password_reset_flow(
+            state.as_ref(),
+            &user,
+            &headers,
+            "auth.password.reset.request",
+        )
+        .await;
     }
 
     Ok(Json(ActionMessageResponse {
@@ -1109,16 +1118,15 @@ async fn verify_human_verification(
         .form(&form)
         .send()
         .await
-        .map_err(|err| AppError::BadRequest(format!("human verification request failed: {}", err)))?;
+        .map_err(|err| {
+            AppError::BadRequest(format!("human verification request failed: {}", err))
+        })?;
 
     let payload = response
         .json::<TurnstileVerifyResponse>()
         .await
         .map_err(|err| {
-            AppError::BadRequest(format!(
-                "human verification response parse failed: {}",
-                err
-            ))
+            AppError::BadRequest(format!("human verification response parse failed: {}", err))
         })?;
 
     if !payload.success {

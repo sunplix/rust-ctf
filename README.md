@@ -390,6 +390,8 @@ services:
 - 默认自动注入队伍隔离 SSH 跳板（`access_mode=ssh_bastion`），选手进入跳板后可对 10.x.x.0/24 子网做端口扫描与横向渗透
 - 跳板账号默认支持 `sudo`，可按需安装额外扫描工具（如 `sudo apk add --no-cache nmap`）
 - 也可切换为 WireGuard VPN（`access_mode=wireguard`），下载专属 `.conf` 后从本地终端直接访问队伍子网
+- `ssh_bastion` 与 `wireguard` 注入容器会自动接入题目声明/使用的网络（包含多网络模板），降低复杂拓扑下“可登录但无法横向”的概率
+- 若题目依赖本地构建上下文文件（如 `build.context` + `Dockerfile`），可将所需文件作为题目附件上传并以 `runtime/` 前缀命名（如 `runtime/Dockerfile`、`runtime/app/start.sh`）；实例启动时会自动还原到运行目录
 - 若要关闭跳板，可显式设置 `metadata.runtime.access_mode=direct`
 
 2. `single_image`
