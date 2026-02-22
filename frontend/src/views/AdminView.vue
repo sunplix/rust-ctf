@@ -364,7 +364,7 @@
                       <span>{{ tl('flag/哈希') }}</span>
                       <input v-model="newChallenge.flag_hash" />
                     </label>
-                    <label>
+                    <label class="runtime-mode-field">
                       <span>{{ tl('运行模式') }}</span>
                       <select v-model="newChallenge.runtime_mode">
                         <option value="none">{{ tr("no_runtime（无需容器）", "no_runtime (no container runtime)") }}</option>
@@ -373,7 +373,7 @@
                       </select>
                       <small class="field-note">{{ runtimeModeDescription }}</small>
                     </label>
-                    <label v-if="newChallenge.runtime_mode === 'compose'">
+                    <label v-if="newChallenge.runtime_mode === 'compose'" class="runtime-access-field">
                       <span>{{ tl('访问模式') }}</span>
                       <select v-model="newChallenge.runtime_access_mode">
                         <option value="ssh_bastion">{{ tl('ssh_bastion（默认）') }}</option>
@@ -441,13 +441,7 @@
                       </div>
                     </div>
                     <label v-if="newChallenge.runtime_mode === 'compose'" class="field-span-2">
-                      <span>
-                        {{
-                          newChallenge.challenge_type === "static"
-                            ? tl("compose 模板（可选）")
-                            : tr("compose 模板（dynamic/internal 必填）", "compose template (required for dynamic/internal)")
-                        }}
-                      </span>
+                      <span>{{ tr("compose 模板（可选，可由压缩包自动导入）", "compose template (optional, can be auto-imported from zip)") }}</span>
                       <textarea v-model="newChallenge.compose_template" rows="5" />
                       <small class="field-note">{{ composeRuntimeAttachmentHint }}</small>
                     </label>
@@ -3294,8 +3288,8 @@ const runtimeAccessModeDescription = computed(() => {
 
 const composeRuntimeAttachmentHint = computed(() => {
   return tr(
-    "可在“版本与附件”上传 runtime/ 前缀文件（如 runtime/Dockerfile、runtime/app/start.sh），实例启动时会自动还原到运行目录。",
-    "Upload runtime/ prefixed files in Attachments (e.g. runtime/Dockerfile, runtime/app/start.sh); they are restored into runtime workspace on instance start."
+    "可选两种方式：1）直接填写 compose 模板；2）在“版本与附件”上传 .zip（内含 docker-compose.yml 和相关文件），系统会自动写入 compose，并把其余文件保存为 runtime/...。若只上传单个文件而非 zip，请把文件名写成 runtime/ 开头（如 runtime/Dockerfile）。",
+    "Two options: (1) fill compose template directly; (2) upload a .zip in Versions & Files (contains docker-compose.yml and related files). The system auto-imports compose and stores remaining files as runtime/.... For single-file uploads (non-zip), use runtime/ prefix (e.g. runtime/Dockerfile)."
   );
 });
 
@@ -3305,8 +3299,8 @@ const challengeRuntimeImageStreamOutput = computed(() => {
 
 const challengeAttachmentUploadHint = computed(() => {
   return tr(
-    `支持任意附件格式，大小不超过 ${formatSize(challengeAttachmentMaxBytes.value)}`,
-    `Any file type is supported, up to ${formatSize(challengeAttachmentMaxBytes.value)}.`
+    `支持任意附件格式，大小不超过 ${formatSize(challengeAttachmentMaxBytes.value)}。若上传 .zip 且包含 docker-compose.yml，会自动导入 compose，并将其余文件保存为 runtime/...。`,
+    `Any file type is supported, up to ${formatSize(challengeAttachmentMaxBytes.value)}. If a .zip includes docker-compose.yml, compose is auto-imported and remaining files are saved as runtime/....`
   );
 });
 
@@ -4510,15 +4504,6 @@ async function handleCreateChallenge() {
         challengeError.value = tl("single_image 模式仅支持 dynamic 或 internal 题型");
         return;
       }
-    }
-
-    if (
-      newChallenge.runtime_mode === "compose" &&
-      (newChallenge.challenge_type === "dynamic" || newChallenge.challenge_type === "internal") &&
-      !newChallenge.compose_template.trim()
-    ) {
-      challengeError.value = tl("dynamic/internal 题型在 compose 模式下必须提供 compose 模板");
-      return;
     }
 
     const runtimeMetadata = buildChallengeRuntimeMetadata();
@@ -5773,6 +5758,12 @@ onUnmounted(() => {
 }
 
 .challenge-form-grid > label {
+  align-self: start;
+  align-content: start;
+}
+
+.challenge-form-grid .runtime-mode-field,
+.challenge-form-grid .runtime-access-field {
   align-self: start;
   align-content: start;
 }

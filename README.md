@@ -391,7 +391,9 @@ services:
 - 跳板账号默认支持 `sudo`，可按需安装额外扫描工具（如 `sudo apk add --no-cache nmap`）
 - 也可切换为 WireGuard VPN（`access_mode=wireguard`），下载专属 `.conf` 后从本地终端直接访问队伍子网
 - `ssh_bastion` 与 `wireguard` 注入容器会自动接入题目声明/使用的网络（包含多网络模板），降低复杂拓扑下“可登录但无法横向”的概率
-- 若题目依赖本地构建上下文文件（如 `build.context` + `Dockerfile`），可将所需文件作为题目附件上传并以 `runtime/` 前缀命名（如 `runtime/Dockerfile`、`runtime/app/start.sh`）；实例启动时会自动还原到运行目录
+- 若上传题目压缩包（`.zip`）且其中包含 `docker-compose.yml` / `docker-compose.yaml` / `compose.yml` / `compose.yaml`，后台会自动写入 `compose_template`，并将其余文件保存为 `runtime/...` 附件；实例启动时自动还原到运行目录
+- 若只上传单个附件（非 zip），请使用 `runtime/` 前缀命名（如 `runtime/Dockerfile`、`runtime/app/start.sh`），实例启动时同样会自动还原
+- `zip` 自动解析依赖后端环境可执行 `unzip` 命令（Docker 镜像已内置）
 - 若要关闭跳板，可显式设置 `metadata.runtime.access_mode=direct`
 
 2. `single_image`

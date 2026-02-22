@@ -1,5 +1,9 @@
 use std::{
-    collections::HashSet, convert::Infallible, path::PathBuf, process::Stdio, sync::Arc,
+    collections::HashSet,
+    convert::Infallible,
+    path::PathBuf,
+    process::Stdio,
+    sync::Arc,
     time::Instant,
 };
 
@@ -79,6 +83,11 @@ const DEFAULT_CHALLENGE_ATTACHMENT_MAX_BYTES: i64 = 20 * 1024 * 1024;
 const MIN_CHALLENGE_ATTACHMENT_MAX_BYTES: i64 = 1 * 1024 * 1024;
 const MAX_CHALLENGE_ATTACHMENT_MAX_BYTES: i64 = 256 * 1024 * 1024;
 const ATTACHMENT_UPLOAD_JSON_BODY_LIMIT_BYTES: usize = 384 * 1024 * 1024;
+const RUNTIME_BUNDLE_ZIP_TIMEOUT_SECONDS: u64 = 45;
+const RUNTIME_BUNDLE_MAX_FILES: usize = 300;
+const RUNTIME_BUNDLE_MAX_SINGLE_FILE_BYTES: usize = 16 * 1024 * 1024;
+const RUNTIME_BUNDLE_MAX_TOTAL_BYTES: usize = 128 * 1024 * 1024;
+const RUNTIME_ATTACHMENT_FILENAME_PREFIX: &str = "runtime/";
 
 #[derive(Debug, Serialize, FromRow)]
 struct AdminChallengeItem {
@@ -382,6 +391,19 @@ struct UploadChallengeAttachmentRequest {
     filename: String,
     content_base64: String,
     content_type: Option<String>,
+}
+
+#[derive(Debug)]
+struct RuntimeBundleExtractedFile {
+    filename: String,
+    content_type: String,
+    bytes: Vec<u8>,
+}
+
+#[derive(Debug)]
+struct RuntimeBundleImportPlan {
+    compose_template: String,
+    runtime_files: Vec<RuntimeBundleExtractedFile>,
 }
 
 #[derive(Debug, Serialize, FromRow)]
@@ -3325,42 +3347,49 @@ async fn upload_challenge_attachment(
         .and_then(normalize_optional_text)
         .map(str::to_string)
         .unwrap_or_else(|| "application/octet-stream".to_string());
-    let safe_filename = sanitize_filename(&filename);
-    let attachment_dir = challenge_attachments_dir(state.as_ref(), challenge_id);
-    fs::create_dir_all(&attachment_dir)
-        .await
-        .map_err(AppError::internal)?;
+    let runtime_bundle_plan = if is_zip_filename(&filename) {
+        build_runtime_bundle_import_plan(state.as_ref(), &decoded).await?
+    } else {
+        None
+    };
+    let runtime_config = if runtime_bundle_plan.is_some() {
+        Some(load_challenge_runtime_config(state.as_ref(), challenge_id).await?)
+    } else {
+        None
+    };
 
-    let stored_name = format!("{}-{}", Uuid::new_v4(), safe_filename);
-    let stored_path = attachment_dir.join(&stored_name);
-    let stored_rel_path = PathBuf::from("_challenge_files")
-        .join(challenge_id.to_string())
-        .join(&stored_name);
-    fs::write(&stored_path, &decoded)
-        .await
-        .map_err(AppError::internal)?;
-
-    let attachment_id = sqlx::query_scalar::<_, Uuid>(
-        "INSERT INTO challenge_attachments (
-            challenge_id,
-            filename,
-            content_type,
-            storage_path,
-            size_bytes,
-            uploaded_by
-         )
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING id",
+    let mut tx = state.db.begin().await.map_err(AppError::internal)?;
+    let attachment_id = persist_challenge_attachment_record(
+        state.as_ref(),
+        &mut tx,
+        challenge_id,
+        &filename,
+        &content_type,
+        &decoded,
+        current_user.user_id,
     )
-    .bind(challenge_id)
-    .bind(&filename)
-    .bind(&content_type)
-    .bind(stored_rel_path.to_string_lossy().to_string())
-    .bind(decoded.len() as i64)
-    .bind(current_user.user_id)
-    .fetch_one(&state.db)
-    .await
-    .map_err(AppError::internal)?;
+    .await?;
+
+    let mut runtime_file_count = 0usize;
+    let auto_imported_runtime_bundle = if let Some(plan) = runtime_bundle_plan {
+        runtime_file_count = plan.runtime_files.len();
+        apply_runtime_bundle_import(
+            state.as_ref(),
+            &mut tx,
+            challenge_id,
+            runtime_config
+                .as_ref()
+                .ok_or(AppError::BadRequest("challenge runtime configuration is missing".to_string()))?,
+            &plan,
+            current_user.user_id,
+        )
+        .await?;
+        true
+    } else {
+        false
+    };
+
+    tx.commit().await.map_err(AppError::internal)?;
 
     let item = load_challenge_attachment_item(state.as_ref(), attachment_id).await?;
     record_audit_log(
@@ -3372,7 +3401,9 @@ async fn upload_challenge_attachment(
         json!({
             "challenge_id": challenge_id,
             "filename": &item.filename,
-            "size_bytes": item.size_bytes
+            "size_bytes": item.size_bytes,
+            "auto_imported_runtime_bundle": auto_imported_runtime_bundle,
+            "runtime_file_count": runtime_file_count
         }),
     )
     .await;
@@ -6325,9 +6356,7 @@ fn validate_compose_runtime_configuration(
         Some(template) => {
             validate_compose_template_schema(template, metadata).map_err(AppError::BadRequest)
         }
-        None if requires_runtime => Err(AppError::BadRequest(
-            "challenge runtime template is required for dynamic/internal challenge".to_string(),
-        )),
+        None if requires_runtime => Ok(()),
         None => Ok(()),
     }
 }
@@ -6515,6 +6544,511 @@ async fn ensure_challenge_exists(state: &AppState, challenge_id: Uuid) -> AppRes
     } else {
         Err(AppError::BadRequest("challenge not found".to_string()))
     }
+}
+
+#[derive(Debug, FromRow)]
+struct AttachmentStoragePathRow {
+    storage_path: String,
+}
+
+fn is_zip_filename(filename: &str) -> bool {
+    filename.trim().to_ascii_lowercase().ends_with(".zip")
+}
+
+fn normalize_runtime_bundle_entry_path(raw: &str) -> Option<PathBuf> {
+    let normalized = raw.trim().replace('\\', "/");
+    let trimmed = normalized.trim_start_matches("./").trim();
+    if trimmed.is_empty() || trimmed.ends_with('/') {
+        return None;
+    }
+
+    let mut out = PathBuf::new();
+    for component in std::path::Path::new(trimmed).components() {
+        match component {
+            std::path::Component::Normal(segment) => out.push(segment),
+            _ => return None,
+        }
+    }
+
+    if out.as_os_str().is_empty() {
+        None
+    } else {
+        Some(out)
+    }
+}
+
+fn strip_common_runtime_bundle_root(entries: Vec<(String, PathBuf)>) -> Vec<(String, PathBuf)> {
+    let Some(first_component) = entries.first().and_then(|(_, path)| {
+        path.components()
+            .next()
+            .and_then(|component| match component {
+                std::path::Component::Normal(value) => Some(value.to_owned()),
+                _ => None,
+            })
+    }) else {
+        return entries;
+    };
+
+    let should_strip = entries.iter().all(|(_, path)| {
+        matches!(
+            path.components().next(),
+            Some(std::path::Component::Normal(value))
+                if value == first_component.as_os_str() && path.components().count() >= 2
+        )
+    });
+    if !should_strip {
+        return entries;
+    }
+
+    entries
+        .into_iter()
+        .filter_map(|(archive_entry, path)| {
+            let mut stripped = PathBuf::new();
+            let mut components = path.components();
+            components.next()?;
+            for component in components {
+                if let std::path::Component::Normal(value) = component {
+                    stripped.push(value);
+                }
+            }
+            if stripped.as_os_str().is_empty() {
+                None
+            } else {
+                Some((archive_entry, stripped))
+            }
+        })
+        .collect()
+}
+
+fn runtime_bundle_compose_rank(path: &std::path::Path) -> Option<u8> {
+    let filename = path.file_name()?.to_str()?.to_ascii_lowercase();
+    match filename.as_str() {
+        "docker-compose.yml" => Some(0),
+        "docker-compose.yaml" => Some(1),
+        "compose.yml" => Some(2),
+        "compose.yaml" => Some(3),
+        _ => None,
+    }
+}
+
+fn path_to_unix_string(path: &std::path::Path) -> String {
+    let mut out = Vec::new();
+    for component in path.components() {
+        if let std::path::Component::Normal(segment) = component {
+            if let Some(value) = segment.to_str() {
+                out.push(value.to_string());
+            }
+        }
+    }
+    out.join("/")
+}
+
+fn infer_runtime_bundle_attachment_content_type(filename: &str) -> String {
+    if let Some(image_type) = infer_image_content_type_from_filename(filename) {
+        return image_type.to_string();
+    }
+
+    let lower = filename.trim().to_ascii_lowercase();
+    if lower.ends_with(".yml")
+        || lower.ends_with(".yaml")
+        || lower.ends_with(".json")
+        || lower.ends_with(".toml")
+        || lower.ends_with(".ini")
+        || lower.ends_with(".conf")
+        || lower.ends_with(".txt")
+        || lower.ends_with(".md")
+        || lower.ends_with(".sh")
+        || lower.ends_with(".py")
+        || lower.ends_with(".js")
+        || lower.ends_with(".ts")
+        || lower.ends_with(".sql")
+        || lower.ends_with(".env")
+    {
+        "text/plain".to_string()
+    } else {
+        "application/octet-stream".to_string()
+    }
+}
+
+async fn extract_zip_entry_bytes(
+    zip_path: &std::path::Path,
+    archive_entry: &str,
+) -> AppResult<Vec<u8>> {
+    let mut command = Command::new("unzip");
+    command
+        .args(["-p"])
+        .arg(zip_path)
+        .arg(archive_entry)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .kill_on_drop(true);
+
+    let output = match timeout(
+        TokioDuration::from_secs(RUNTIME_BUNDLE_ZIP_TIMEOUT_SECONDS),
+        command.output(),
+    )
+    .await
+    {
+        Ok(Ok(output)) => output,
+        Ok(Err(err)) if err.kind() == std::io::ErrorKind::NotFound => {
+            return Err(AppError::BadRequest(
+                "unzip command not found on server; cannot auto-import runtime bundle".to_string(),
+            ));
+        }
+        Ok(Err(err)) => return Err(AppError::internal(err)),
+        Err(_) => {
+            return Err(AppError::BadRequest(format!(
+                "zip entry extraction timed out after {} seconds",
+                RUNTIME_BUNDLE_ZIP_TIMEOUT_SECONDS
+            )));
+        }
+    };
+
+    if !output.status.success() {
+        let merged = {
+            let mut data = output.stdout.clone();
+            if !output.stderr.is_empty() {
+                if !data.is_empty() {
+                    data.extend_from_slice(b"\n");
+                }
+                data.extend_from_slice(&output.stderr);
+            }
+            data
+        };
+        let message = compact_runtime_monitor_message(&String::from_utf8_lossy(&merged));
+        return Err(AppError::BadRequest(format!(
+            "failed to extract zip entry '{archive_entry}': {message}"
+        )));
+    }
+
+    if output.stdout.len() > RUNTIME_BUNDLE_MAX_SINGLE_FILE_BYTES {
+        return Err(AppError::BadRequest(format!(
+            "zip entry '{archive_entry}' is too large (max {} bytes per file)",
+            RUNTIME_BUNDLE_MAX_SINGLE_FILE_BYTES
+        )));
+    }
+
+    Ok(output.stdout)
+}
+
+async fn build_runtime_bundle_import_plan(
+    state: &AppState,
+    zip_bytes: &[u8],
+) -> AppResult<Option<RuntimeBundleImportPlan>> {
+    let temp_dir = std::env::temp_dir().join(format!(
+        "rust-ctf-runtime-bundle-{}",
+        Uuid::new_v4().as_simple()
+    ));
+    fs::create_dir_all(&temp_dir)
+        .await
+        .map_err(AppError::internal)?;
+    let archive_path = temp_dir.join("bundle.zip");
+    fs::write(&archive_path, zip_bytes)
+        .await
+        .map_err(AppError::internal)?;
+
+    let result = async {
+        let archive_path_string = archive_path.to_string_lossy().to_string();
+        let entries_output = run_external_command(
+            "unzip",
+            &["-Z1", archive_path_string.as_str()],
+            None,
+            None,
+            RUNTIME_BUNDLE_ZIP_TIMEOUT_SECONDS,
+        )
+        .await?;
+        if !entries_output.success {
+            return Err(AppError::BadRequest(format!(
+                "invalid zip archive: {}",
+                compact_runtime_monitor_message(&entries_output.output)
+            )));
+        }
+
+        let mut entries: Vec<(String, PathBuf)> = entries_output
+            .output
+            .lines()
+            .filter_map(|line| {
+                let raw = line.trim_end_matches('\r').trim();
+                if raw.is_empty() {
+                    return None;
+                }
+                normalize_runtime_bundle_entry_path(raw).map(|path| (raw.to_string(), path))
+            })
+            .collect();
+
+        if entries.is_empty() {
+            return Ok(None);
+        }
+        if entries.len() > RUNTIME_BUNDLE_MAX_FILES {
+            return Err(AppError::BadRequest(format!(
+                "zip archive contains too many files (max {})",
+                RUNTIME_BUNDLE_MAX_FILES
+            )));
+        }
+
+        entries = strip_common_runtime_bundle_root(entries);
+
+        let compose_index = entries
+            .iter()
+            .enumerate()
+            .filter_map(|(index, (_, relative_path))| {
+                let rank = runtime_bundle_compose_rank(relative_path)?;
+                let depth = relative_path.components().count();
+                Some((rank, depth, path_to_unix_string(relative_path), index))
+            })
+            .min_by(|left, right| {
+                left.0
+                    .cmp(&right.0)
+                    .then_with(|| left.1.cmp(&right.1))
+                    .then_with(|| left.2.cmp(&right.2))
+            })
+            .map(|(_, _, _, index)| index);
+
+        let Some(compose_index) = compose_index else {
+            return Ok(None);
+        };
+
+        let mut total_size = 0usize;
+        let compose_bytes = extract_zip_entry_bytes(&archive_path, &entries[compose_index].0).await?;
+        total_size += compose_bytes.len();
+        let compose_template = String::from_utf8(compose_bytes).map_err(|_| {
+            AppError::BadRequest(
+                "compose file in zip archive is not valid UTF-8 text".to_string(),
+            )
+        })?;
+        if compose_template.trim().is_empty() {
+            return Err(AppError::BadRequest(
+                "compose file in zip archive is empty".to_string(),
+            ));
+        }
+
+        let mut runtime_files = Vec::new();
+        for (index, (archive_entry, relative_path)) in entries.iter().enumerate() {
+            if index == compose_index {
+                continue;
+            }
+            let relative = path_to_unix_string(relative_path);
+            if relative.is_empty() {
+                continue;
+            }
+            let filename = format!("{RUNTIME_ATTACHMENT_FILENAME_PREFIX}{relative}");
+            if filename.chars().count() > 255 {
+                return Err(AppError::BadRequest(format!(
+                    "runtime bundle file path is too long for attachment storage: '{filename}'"
+                )));
+            }
+
+            let bytes = extract_zip_entry_bytes(&archive_path, archive_entry).await?;
+            total_size += bytes.len();
+            if total_size > RUNTIME_BUNDLE_MAX_TOTAL_BYTES {
+                return Err(AppError::BadRequest(format!(
+                    "runtime bundle uncompressed content is too large (max {} bytes)",
+                    RUNTIME_BUNDLE_MAX_TOTAL_BYTES
+                )));
+            }
+
+            runtime_files.push(RuntimeBundleExtractedFile {
+                content_type: infer_runtime_bundle_attachment_content_type(&filename),
+                filename,
+                bytes,
+            });
+        }
+
+        Ok(Some(RuntimeBundleImportPlan {
+            compose_template,
+            runtime_files,
+        }))
+    }
+    .await;
+
+    if let Err(err) = fs::remove_dir_all(&temp_dir).await {
+        if err.kind() != std::io::ErrorKind::NotFound {
+            warn!(
+                path = %temp_dir.display(),
+                error = %err,
+                "failed to cleanup runtime bundle temp directory"
+            );
+        }
+    }
+
+    let _ = state;
+    result
+}
+
+async fn persist_challenge_attachment_record(
+    state: &AppState,
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    challenge_id: Uuid,
+    filename: &str,
+    content_type: &str,
+    bytes: &[u8],
+    uploaded_by: Uuid,
+) -> AppResult<Uuid> {
+    let safe_filename = sanitize_filename(filename);
+    let attachment_dir = challenge_attachments_dir(state, challenge_id);
+    fs::create_dir_all(&attachment_dir)
+        .await
+        .map_err(AppError::internal)?;
+
+    let stored_name = format!("{}-{}", Uuid::new_v4(), safe_filename);
+    let stored_path = attachment_dir.join(&stored_name);
+    let stored_rel_path = PathBuf::from("_challenge_files")
+        .join(challenge_id.to_string())
+        .join(&stored_name);
+    fs::write(&stored_path, bytes).await.map_err(AppError::internal)?;
+
+    sqlx::query_scalar::<_, Uuid>(
+        "INSERT INTO challenge_attachments (
+            challenge_id,
+            filename,
+            content_type,
+            storage_path,
+            size_bytes,
+            uploaded_by
+         )
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING id",
+    )
+    .bind(challenge_id)
+    .bind(filename)
+    .bind(content_type)
+    .bind(stored_rel_path.to_string_lossy().to_string())
+    .bind(bytes.len() as i64)
+    .bind(uploaded_by)
+    .fetch_one(&mut **tx)
+    .await
+    .map_err(AppError::internal)
+}
+
+async fn remove_runtime_prefixed_attachments(
+    state: &AppState,
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    challenge_id: Uuid,
+) -> AppResult<()> {
+    let rows = sqlx::query_as::<_, AttachmentStoragePathRow>(
+        "DELETE FROM challenge_attachments
+         WHERE challenge_id = $1
+           AND filename LIKE $2
+         RETURNING storage_path",
+    )
+    .bind(challenge_id)
+    .bind(format!("{RUNTIME_ATTACHMENT_FILENAME_PREFIX}%"))
+    .fetch_all(&mut **tx)
+    .await
+    .map_err(AppError::internal)?;
+
+    for row in rows {
+        let path = resolve_challenge_attachment_storage_path(state, challenge_id, &row.storage_path);
+        if let Err(err) = fs::remove_file(path).await {
+            if err.kind() != std::io::ErrorKind::NotFound {
+                return Err(AppError::internal(err));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+async fn apply_runtime_bundle_import(
+    state: &AppState,
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    challenge_id: Uuid,
+    runtime_config: &ChallengeRuntimeConfigRow,
+    plan: &RuntimeBundleImportPlan,
+    actor_user_id: Uuid,
+) -> AppResult<()> {
+    validate_compose_runtime_configuration(
+        runtime_config.challenge_type.as_str(),
+        Some(plan.compose_template.as_str()),
+        &runtime_config.metadata,
+    )?;
+
+    validate_compose_template_schema(plan.compose_template.as_str(), &runtime_config.metadata)
+        .map_err(AppError::BadRequest)?;
+
+    remove_runtime_prefixed_attachments(state, tx, challenge_id).await?;
+    for runtime_file in &plan.runtime_files {
+        persist_challenge_attachment_record(
+            state,
+            tx,
+            challenge_id,
+            runtime_file.filename.as_str(),
+            runtime_file.content_type.as_str(),
+            &runtime_file.bytes,
+            actor_user_id,
+        )
+        .await?;
+    }
+
+    let existing_compose = runtime_config
+        .compose_template
+        .as_deref()
+        .map(str::trim)
+        .unwrap_or_default();
+    let next_compose = plan.compose_template.trim();
+    if existing_compose == next_compose {
+        return Ok(());
+    }
+
+    let row = sqlx::query_as::<_, ChallengeSnapshotRow>(
+        "UPDATE challenges
+         SET compose_template = $2,
+             current_version = current_version + 1,
+             updated_at = NOW()
+         WHERE id = $1
+         RETURNING id,
+                   title,
+                   slug,
+                   category,
+                   difficulty,
+                   description,
+                   static_score,
+                   min_score,
+                   max_score,
+                   challenge_type,
+                   flag_mode,
+                   status,
+                   flag_hash,
+                   compose_template,
+                   metadata,
+                   is_visible,
+                   tags,
+                   hints,
+                   writeup_visibility,
+                   writeup_content,
+                   current_version,
+                   created_at,
+                   updated_at",
+    )
+    .bind(challenge_id)
+    .bind(plan.compose_template.as_str())
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(AppError::internal)?
+    .ok_or(AppError::BadRequest("challenge not found".to_string()))?;
+
+    let snapshot = challenge_snapshot_to_value(&row);
+    sqlx::query(
+        "INSERT INTO challenge_versions (
+            challenge_id,
+            version_no,
+            snapshot,
+            change_note,
+            created_by
+         )
+         VALUES ($1, $2, $3, $4, $5)",
+    )
+    .bind(row.id)
+    .bind(row.current_version)
+    .bind(snapshot)
+    .bind("runtime bundle import")
+    .bind(actor_user_id)
+    .execute(&mut **tx)
+    .await
+    .map_err(AppError::internal)?;
+
+    Ok(())
 }
 
 fn challenge_attachments_dir(state: &AppState, challenge_id: Uuid) -> PathBuf {
