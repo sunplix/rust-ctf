@@ -93,10 +93,6 @@ cp backend/.env.example backend/.env.prod
 - `INSTANCE_HEARTBEAT_REPORT_URL=https://ctf.example.com/api/v1/instances/heartbeat/report`
 - `DATABASE_URL` 与 `REDIS_URL`（与 compose 内服务保持一致）
 
-注意：
-
-- `backend/.env.prod` 不应提交到 Git（当前 `.gitignore` 已覆盖 `.env.*`）。
-- 上线后请第一时间登录后台修改默认管理员密码。
 
 ### 5.2 Compose 变量文件（`deploy/.env.prod.stack`）
 
@@ -236,7 +232,7 @@ server {
     client_max_body_size 50m;
 
     location /api/ {
-        proxy_pass http://127.0.0.1:8080/api/;
+        proxy_pass http://127.0.0.1:8080/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;

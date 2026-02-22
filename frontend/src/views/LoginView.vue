@@ -185,15 +185,15 @@
             <span :class="['strength-fill', `level-${registerStrength.score}`]" :style="registerStrengthStyle"></span>
           </div>
           <p class="soft strength-meta">
-            {{ tr(`估算破解时间：${registerCrackTimeLabel}`, `Estimated crack time: ${registerCrackTimeLabel}`) }}
+            {{ registerCrackTimeText }}
           </p>
           <div class="check-grid">
-            <p :class="checkClass(registerStrength.checks.length)">{{ tr(`长度至少 ${passwordPolicy.min_length} 位`, `Length >= ${passwordPolicy.min_length}`) }}</p>
+            <p :class="checkClass(registerStrength.checks.length)">{{ registerMinLengthText }}</p>
             <p :class="checkClass(registerStrength.checks.lowercase)">{{ tr("包含小写字母", "Contains lowercase") }}</p>
             <p :class="checkClass(registerStrength.checks.uppercase)">{{ tr("包含大写字母", "Contains uppercase") }}</p>
             <p :class="checkClass(registerStrength.checks.digit)">{{ tr("包含数字", "Contains digit") }}</p>
             <p v-if="passwordPolicy.require_symbol" :class="checkClass(registerStrength.checks.symbol)">{{ tr("包含符号", "Contains symbol") }}</p>
-            <p :class="checkClass(registerStrength.checks.unique)">{{ tr(`至少 ${passwordPolicy.min_unique_chars} 个唯一字符`, `At least ${passwordPolicy.min_unique_chars} unique chars`) }}</p>
+            <p :class="checkClass(registerStrength.checks.unique)">{{ registerMinUniqueCharsText }}</p>
             <p :class="checkClass(registerStrength.checks.noWeakPattern)">{{ tr("无弱口令模式", "No weak/common pattern") }}</p>
             <p :class="checkClass(registerStrength.checks.noSequence)">{{ tr("无连续字符序列", "No sequential run") }}</p>
             <p :class="checkClass(registerStrength.checks.noRepeatingRuns)">{{ tr("无重复字符序列", "No repeating run") }}</p>
@@ -338,7 +338,7 @@
               <span :class="['strength-fill', `level-${resetStrength.score}`]" :style="resetStrengthStyle"></span>
             </div>
             <p class="soft strength-meta">
-              {{ tr(`估算破解时间：${resetCrackTimeLabel}`, `Estimated crack time: ${resetCrackTimeLabel}`) }}
+              {{ resetCrackTimeText }}
             </p>
             <p v-if="resetConfirmForm.password && resetConfirmForm.passwordConfirm && resetConfirmForm.password !== resetConfirmForm.passwordConfirm" class="warn">
               {{ tr("两次输入的密码不一致。", "Passwords do not match.") }}
@@ -493,6 +493,21 @@ const registerStrengthLabel = computed(() => strengthLabel(registerStrength.valu
 const resetStrengthLabel = computed(() => strengthLabel(resetStrength.value.score));
 const registerCrackTimeLabel = computed(() => formatCrackTime(registerStrength.value.crackTimeSeconds));
 const resetCrackTimeLabel = computed(() => formatCrackTime(resetStrength.value.crackTimeSeconds));
+const registerCrackTimeText = computed(() =>
+  tr("估算破解时间：{crackTime}", "Estimated crack time: {crackTime}").replace("{crackTime}", registerCrackTimeLabel.value)
+);
+const resetCrackTimeText = computed(() =>
+  tr("估算破解时间：{crackTime}", "Estimated crack time: {crackTime}").replace("{crackTime}", resetCrackTimeLabel.value)
+);
+const registerMinLengthText = computed(() =>
+  tr("长度至少 {minLength} 位", "Length >= {minLength}").replace("{minLength}", String(passwordPolicy.value.min_length))
+);
+const registerMinUniqueCharsText = computed(() =>
+  tr("至少 {minUniqueChars} 个唯一字符", "At least {minUniqueChars} unique chars").replace(
+    "{minUniqueChars}",
+    String(passwordPolicy.value.min_unique_chars)
+  )
+);
 
 const registerStrengthStyle = computed(() => ({
   width: `${(registerStrength.value.score / 4) * 100}%`

@@ -35,7 +35,8 @@ use crate::{
     routes::instances,
     runtime_template::{
         build_single_image_compose_template, parse_runtime_metadata_options,
-        render_compose_template_variables, validate_compose_template_schema, RuntimeMode,
+        render_compose_template_variables, validate_compose_template_schema, RuntimeAccessMode,
+        RuntimeMode,
     },
     state::AppState,
 };
@@ -1979,30 +1980,29 @@ async fn lint_challenge_runtime_templates(
             .and_then(normalize_optional_text)
             .is_some();
 
+        let mut lint_errors: Vec<String> = Vec::new();
+
         match validate_compose_runtime_configuration(
             &row.challenge_type,
             row.compose_template.as_deref(),
             &row.metadata,
         ) {
-            Ok(()) => {
-                ok_count += 1;
-                if !only_errors {
-                    items.push(AdminChallengeRuntimeLintItem {
-                        id: row.id,
-                        title: row.title,
-                        slug: row.slug,
-                        challenge_type: row.challenge_type,
-                        status: row.status,
-                        is_visible: row.is_visible,
-                        has_compose_template,
-                        lint_status: "ok".to_string(),
-                        message: None,
-                        updated_at: row.updated_at,
-                    });
-                }
+            Ok(()) => {}
+            Err(AppError::BadRequest(message)) => lint_errors.push(message),
+            Err(other) => return Err(other),
+        }
+
+        if lint_errors.is_empty() {
+            if let Some(message) =
+                lint_compose_hardcoded_subnet(row.compose_template.as_deref(), &row.metadata)?
+            {
+                lint_errors.push(message);
             }
-            Err(AppError::BadRequest(message)) => {
-                error_count += 1;
+        }
+
+        if lint_errors.is_empty() {
+            ok_count += 1;
+            if !only_errors {
                 items.push(AdminChallengeRuntimeLintItem {
                     id: row.id,
                     title: row.title,
@@ -2011,12 +2011,25 @@ async fn lint_challenge_runtime_templates(
                     status: row.status,
                     is_visible: row.is_visible,
                     has_compose_template,
-                    lint_status: "error".to_string(),
-                    message: Some(message),
+                    lint_status: "ok".to_string(),
+                    message: None,
                     updated_at: row.updated_at,
                 });
             }
-            Err(other) => return Err(other),
+        } else {
+            error_count += 1;
+            items.push(AdminChallengeRuntimeLintItem {
+                id: row.id,
+                title: row.title,
+                slug: row.slug,
+                challenge_type: row.challenge_type,
+                status: row.status,
+                is_visible: row.is_visible,
+                has_compose_template,
+                lint_status: "error".to_string(),
+                message: Some(lint_errors.join("; ")),
+                updated_at: row.updated_at,
+            });
         }
     }
 
@@ -7019,6 +7032,137 @@ fn validate_compose_runtime_configuration(
     }
 }
 
+fn lint_compose_hardcoded_subnet(
+    compose_template: Option<&str>,
+    metadata: &Value,
+) -> AppResult<Option<String>> {
+    let runtime_options = parse_runtime_metadata_options(metadata).map_err(AppError::BadRequest)?;
+    if runtime_options.mode != RuntimeMode::Compose {
+        return Ok(None);
+    }
+
+    let has_ssh_or_wireguard = runtime_options.access_mode_candidates.iter().any(|mode| {
+        matches!(
+            mode,
+            RuntimeAccessMode::SshBastion | RuntimeAccessMode::Wireguard
+        )
+    });
+    if !has_ssh_or_wireguard {
+        return Ok(None);
+    }
+
+    let Some(template) = compose_template.and_then(normalize_optional_text) else {
+        return Ok(None);
+    };
+
+    if template.contains("{{SUBNET}}") || template.contains("{{SUBNET_CIDR}}") {
+        return Ok(None);
+    }
+
+    if !compose_template_contains_hardcoded_subnet_cidr(template) {
+        return Ok(None);
+    }
+
+    let access_modes = runtime_options
+        .access_mode_candidates
+        .iter()
+        .filter_map(|mode| match mode {
+            RuntimeAccessMode::SshBastion => Some("ssh_bastion"),
+            RuntimeAccessMode::Wireguard => Some("wireguard"),
+            RuntimeAccessMode::Direct => None,
+        })
+        .collect::<Vec<&str>>();
+    let mode_hint = if access_modes.is_empty() {
+        "ssh_bastion/wireguard".to_string()
+    } else {
+        access_modes.join(",")
+    };
+
+    Ok(Some(format!(
+        "compose template contains a hardcoded subnet CIDR but does not use '{{{{SUBNET}}}}'; this breaks isolated team subnets for access mode(s): {mode_hint}. Use subnet: \"{{{{SUBNET}}}}\" (or \"{{{{SUBNET_CIDR}}}}\")."
+    )))
+}
+
+fn compose_template_contains_hardcoded_subnet_cidr(template: &str) -> bool {
+    template
+        .lines()
+        .filter(|line| line.to_ascii_lowercase().contains("subnet"))
+        .any(line_contains_ipv4_cidr_literal)
+}
+
+fn line_contains_ipv4_cidr_literal(line: &str) -> bool {
+    let bytes = line.as_bytes();
+    for slash_index in
+        bytes
+            .iter()
+            .enumerate()
+            .filter_map(|(index, byte)| if *byte == b'/' { Some(index) } else { None })
+    {
+        let Some((prefix, end_index)) = parse_cidr_prefix(bytes, slash_index + 1) else {
+            continue;
+        };
+        if prefix > 32 {
+            continue;
+        }
+
+        if end_index < bytes.len()
+            && (bytes[end_index].is_ascii_alphanumeric() || bytes[end_index] == b'_')
+        {
+            continue;
+        }
+
+        let mut start_index = slash_index;
+        while start_index > 0 {
+            let previous = bytes[start_index - 1];
+            if previous.is_ascii_digit() || previous == b'.' {
+                start_index -= 1;
+            } else {
+                break;
+            }
+        }
+
+        if is_valid_ipv4_address(&line[start_index..slash_index]) {
+            return true;
+        }
+    }
+    false
+}
+
+fn parse_cidr_prefix(bytes: &[u8], start_index: usize) -> Option<(u8, usize)> {
+    if start_index >= bytes.len() || !bytes[start_index].is_ascii_digit() {
+        return None;
+    }
+
+    let mut end_index = start_index;
+    while end_index < bytes.len() && bytes[end_index].is_ascii_digit() {
+        end_index += 1;
+    }
+
+    let prefix = std::str::from_utf8(&bytes[start_index..end_index])
+        .ok()?
+        .parse::<u8>()
+        .ok()?;
+    Some((prefix, end_index))
+}
+
+fn is_valid_ipv4_address(input: &str) -> bool {
+    let mut segments = input.split('.');
+    let mut count = 0_usize;
+    while let Some(segment) = segments.next() {
+        if segment.is_empty() {
+            return false;
+        }
+        if segment.len() > 1 && segment.starts_with('0') {
+            return false;
+        }
+        if segment.parse::<u8>().is_err() {
+            return false;
+        }
+        count += 1;
+    }
+    count == 4
+}
+
 fn default_challenge_status() -> String {
     "draft".to_string()
 }
@@ -8430,5 +8574,68 @@ async fn record_audit_log(
             error = %err,
             "failed to write admin audit log"
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::{line_contains_ipv4_cidr_literal, lint_compose_hardcoded_subnet};
+
+    #[test]
+    fn detects_hardcoded_subnet_for_wireguard() {
+        let metadata = json!({
+            "runtime": {
+                "mode": "compose",
+                "access_mode": "wireguard"
+            }
+        });
+        let template = "services:\n  app:\n    image: alpine:3.20\nnetworks:\n  default:\n    ipam:\n      config:\n        - subnet: \"10.197.231.0/24\"\n";
+
+        let lint = lint_compose_hardcoded_subnet(Some(template), &metadata).unwrap();
+
+        assert!(lint.is_some());
+    }
+
+    #[test]
+    fn allows_subnet_placeholder_for_wireguard() {
+        let metadata = json!({
+            "runtime": {
+                "mode": "compose",
+                "access_mode": "wireguard"
+            }
+        });
+        let template =
+            "networks:\n  default:\n    ipam:\n      config:\n        - subnet: \"{{SUBNET}}\"\n";
+
+        let lint = lint_compose_hardcoded_subnet(Some(template), &metadata).unwrap();
+
+        assert!(lint.is_none());
+    }
+
+    #[test]
+    fn ignores_hardcoded_subnet_for_direct_only_mode() {
+        let metadata = json!({
+            "runtime": {
+                "mode": "compose",
+                "access_mode": "direct",
+                "access_mode_options": ["direct"]
+            }
+        });
+        let template = "networks:\n  default:\n    ipam:\n      config:\n        - subnet: \"10.197.231.0/24\"\n";
+
+        let lint = lint_compose_hardcoded_subnet(Some(template), &metadata).unwrap();
+
+        assert!(lint.is_none());
+    }
+
+    #[test]
+    fn cidr_line_detection_rejects_non_ipv4_cidr_text() {
+        assert!(line_contains_ipv4_cidr_literal("subnet: 10.10.10.0/24"));
+        assert!(!line_contains_ipv4_cidr_literal(
+            "subnet: host.docker.internal"
+        ));
+        assert!(!line_contains_ipv4_cidr_literal("subnet: 10.x.x.0/24"));
     }
 }

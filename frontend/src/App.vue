@@ -273,9 +273,9 @@ function submitPromptDialog() {
   }
   if (input.length > dialog.maxLength) {
     promptInputError.value = tr(
-      `输入长度不能超过 ${dialog.maxLength} 个字符。`,
-      `Input cannot exceed ${dialog.maxLength} characters.`
-    );
+      "输入长度不能超过 {maxLength} 个字符。",
+      "Input cannot exceed {maxLength} characters."
+    ).replace("{maxLength}", String(dialog.maxLength));
     return;
   }
 
@@ -331,7 +331,9 @@ function logout() {
   authStore.clearSession();
   uiStore.info(
     tr("会话结束", "Session Ended"),
-    username ? tr(`${username} 已退出登录。`, `${username} signed out.`) : tr("会话已清理。", "Session cleared.")
+    username
+      ? tr("{username} 已退出登录。", "{username} signed out.").replace("{username}", username)
+      : tr("会话已清理。", "Session cleared.")
   );
   uiStore.clearAlerts();
   router.replace("/home");

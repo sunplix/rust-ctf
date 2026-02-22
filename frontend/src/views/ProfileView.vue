@@ -246,7 +246,11 @@ async function handleDeleteAccount() {
     const username = authStore.user?.username ?? tr("当前账号", "Current account");
     authStore.clearSession();
     confirmDelete.value = false;
-    uiStore.warning(tr("账号已删除", "Account deleted"), tr(`${username} 已被删除并退出登录。`, `${username} was deleted and signed out.`), 3400);
+    uiStore.warning(
+      tr("账号已删除", "Account deleted"),
+      tr("{username} 已被删除并退出登录。", "{username} was deleted and signed out.").replace("{username}", username),
+      3400
+    );
     router.replace("/home");
   } catch (err) {
     const message = err instanceof ApiClientError ? err.message : tr("删除账号失败", "Failed to delete account");

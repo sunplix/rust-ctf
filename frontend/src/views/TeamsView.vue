@@ -645,7 +645,7 @@ async function handleCreateTeam() {
     createForm.description = "";
     uiStore.success(
       tr("队伍创建成功", "Team created"),
-      tr(`已创建队伍 ${createdTeam.name}`, `Team ${createdTeam.name} created.`)
+      tr("已创建队伍 {teamName}", "Team {teamName} created.").replace("{teamName}", createdTeam.name)
     );
     await Promise.all([loadTeams(), loadReceivedInvitations()]);
     await loadSentInvitations();
@@ -679,7 +679,10 @@ async function handleJoinByName() {
     myTeam.value = joinedTeam;
     syncTeamForms(joinedTeam);
     joinTeamName.value = "";
-    uiStore.success(tr("加入成功", "Joined"), tr(`你已加入队伍 ${joinedTeam.name}`, `You joined ${joinedTeam.name}.`));
+    uiStore.success(
+      tr("加入成功", "Joined"),
+      tr("你已加入队伍 {teamName}", "You joined {teamName}.").replace("{teamName}", joinedTeam.name)
+    );
     await Promise.all([loadTeams(), loadReceivedInvitations()]);
     await loadSentInvitations();
   } catch (err) {
@@ -705,7 +708,10 @@ async function handleJoinById(teamId: string, teamName: string) {
     );
     myTeam.value = joinedTeam;
     syncTeamForms(joinedTeam);
-    uiStore.success(tr("加入成功", "Joined"), tr(`你已加入队伍 ${teamName}`, `You joined ${teamName}.`));
+    uiStore.success(
+      tr("加入成功", "Joined"),
+      tr("你已加入队伍 {teamName}", "You joined {teamName}.").replace("{teamName}", teamName)
+    );
     await Promise.all([loadTeams(), loadReceivedInvitations()]);
     await loadSentInvitations();
   } catch (err) {
@@ -825,7 +831,7 @@ async function handleCreateInvitation() {
     inviteForm.message = "";
     uiStore.success(
       tr("邀请已发送", "Invitation sent"),
-      tr(`已向 ${username} 发送队伍邀请。`, `Invitation sent to ${username}.`),
+      tr("已向 {username} 发送队伍邀请。", "Invitation sent to {username}.").replace("{username}", username),
       2200
     );
     await loadSentInvitations();
@@ -868,7 +874,7 @@ async function handleRespondInvitation(invitationId: string, action: "accept" | 
       syncTeamForms(result.team);
       uiStore.success(
         tr("已加入队伍", "Joined team"),
-        tr(`你已加入 ${result.team.name}`, `You joined ${result.team.name}.`),
+        tr("你已加入 {teamName}", "You joined {teamName}.").replace("{teamName}", result.team.name),
         2200
       );
       await loadSentInvitations();
@@ -923,7 +929,11 @@ async function handleRemoveMember(memberUserId: string, username: string) {
     const updatedTeam = await removeTeamMember(myTeam.value.id, memberUserId, token);
     myTeam.value = updatedTeam;
     syncTeamForms(updatedTeam);
-    uiStore.info(tr("成员已移除", "Member removed"), tr(`${username} 已移出队伍。`, `${username} was removed from team.`), 2200);
+    uiStore.info(
+      tr("成员已移除", "Member removed"),
+      tr("{username} 已移出队伍。", "{username} was removed from team.").replace("{username}", username),
+      2200
+    );
     await loadTeams();
   } catch (err) {
     const message = err instanceof ApiClientError ? err.message : tr("移除成员失败", "Failed to remove member");

@@ -1,0 +1,4688 @@
+{
+  "pairs": {
+    "m_0014d0f3": {
+      "zh": "成员已移除",
+      "en": "Member removed"
+    },
+    "m_00269f97": {
+      "zh": "刷新失败",
+      "en": "Refresh failed"
+    },
+    "m_0041fe19": {
+      "zh": "下移",
+      "en": "move down"
+    },
+    "m_00492b40": {
+      "zh": "访问模式",
+      "en": "access mode"
+    },
+    "m_004dcf1e": {
+      "zh": "密码过短",
+      "en": "Password too short"
+    },
+    "m_00595bb6": {
+      "zh": "无重复字符序列",
+      "en": "No repeating run"
+    },
+    "m_009667e9": {
+      "zh": "显示确认密码",
+      "en": "Show confirm password"
+    },
+    "m_0122ceb0": {
+      "zh": "较弱",
+      "en": "Weak"
+    },
+    "m_01bbe0ec": {
+      "zh": "请先选择一个附件文件",
+      "en": "Please select an attachment file first."
+    },
+    "m_027b4288": {
+      "zh": "创建队伍",
+      "en": "Create team"
+    },
+    "m_02c5ee29": {
+      "zh": "账户设置",
+      "en": "Account Settings"
+    },
+    "m_02f8238a": {
+      "zh": "密码",
+      "en": "Password"
+    },
+    "m_035d13cd": {
+      "zh": "保存题目类别失败",
+      "en": "Failed to save challenge category"
+    },
+    "m_0363a785": {
+      "zh": "分",
+      "en": "pts"
+    },
+    "m_04114707": {
+      "zh": "三血加成(%)",
+      "en": "Third blood bonus (%)"
+    },
+    "m_044a2437": {
+      "zh": "加载题目附件失败",
+      "en": "Failed to load challenge files"
+    },
+    "m_0463511a": {
+      "zh": "更新题目失败",
+      "en": "Failed to update challenge"
+    },
+    "m_04af0993": {
+      "zh": "确认中...",
+      "en": "Confirming..."
+    },
+    "m_04bf8b3c": {
+      "zh": "加粗",
+      "en": "Bold"
+    },
+    "m_05061322": {
+      "zh": "公告标题和内容不能为空",
+      "en": "公告标题和内容不能为空"
+    },
+    "m_0544870a": {
+      "zh": "请先填写 compose 模板",
+      "en": "Please fill in the compose template first."
+    },
+    "m_05a3691f": {
+      "zh": "加入时间",
+      "en": "Joined at"
+    },
+    "m_05b983ca": {
+      "zh": "确认重置密码",
+      "en": "Confirm Password Reset"
+    },
+    "m_05ece329": {
+      "zh": "测试镜像（拉取+构建探测）",
+      "en": "Test image (pull + build probe)"
+    },
+    "m_06301325": {
+      "zh": "选择并管理",
+      "en": "Select and manage"
+    },
+    "m_065234bd": {
+      "zh": "队伍大厅",
+      "en": "Team Lobby"
+    },
+    "m_0683f7b9": {
+      "zh": "管理该账号",
+      "en": "Manage this account"
+    },
+    "m_070fdd67": {
+      "zh": "包含数字",
+      "en": "Contains digit"
+    },
+    "m_074e39c3": {
+      "zh": "配置题型、flag 策略和运行环境。",
+      "en": "Configure challenge type, flag strategy, and runtime."
+    },
+    "m_0784b499": {
+      "zh": "估算破解时间：{crackTime}",
+      "en": "Estimated crack time: {crackTime}"
+    },
+    "m_0894367f": {
+      "zh": "测试日志会实时显示（默认最长 300 秒），适合镜像拉取/构建较慢场景。",
+      "en": "Live logs are streamed in real time (default timeout: 300s)."
+    },
+    "m_08abf5d1": {
+      "zh": "加载排行榜失败",
+      "en": "Failed to load scoreboard wall"
+    },
+    "m_08c1db3c": {
+      "zh": "加载实例失败",
+      "en": "Failed to load instances"
+    },
+    "m_094bf85e": {
+      "zh": "会话已清理。",
+      "en": "Session cleared."
+    },
+    "m_0958cae5": {
+      "zh": "执行过期回收",
+      "en": "Execute expiration recycling"
+    },
+    "m_095bfdbe": {
+      "zh": "{username} 已退出登录。",
+      "en": "{username} signed out."
+    },
+    "m_0a13e71b": {
+      "zh": "浏览与筛选",
+      "en": "Browse & filter"
+    },
+    "m_0a144ea8": {
+      "zh": "暂无审计记录。",
+      "en": "There is no audit record yet."
+    },
+    "m_0a313cc1": {
+      "zh": "你已加入 {teamName}",
+      "en": "You joined {teamName}."
+    },
+    "m_0a70c7a5": {
+      "zh": "队伍已解散",
+      "en": "Team disbanded"
+    },
+    "m_0a7adaf0": {
+      "zh": "按标题、slug、状态筛选",
+      "en": "Filter by title, slug, status"
+    },
+    "m_0a7b00b8": {
+      "zh": "首页主标题",
+      "en": "Home Title"
+    },
+    "m_0aaf6356": {
+      "zh": "无法测试镜像",
+      "en": "Cannot test image"
+    },
+    "m_0bb69211": {
+      "zh": "运行概览",
+      "en": "Runtime Overview"
+    },
+    "m_0bbf7363": {
+      "zh": "报名状态已更新",
+      "en": "Registration status updated"
+    },
+    "m_0be9d53f": {
+      "zh": "全部",
+      "en": "All"
+    },
+    "m_0c203026": {
+      "zh": "· 运行中",
+      "en": "· running"
+    },
+    "m_0c4ebfa3": {
+      "zh": "未登录或会话过期",
+      "en": "Not signed in or session expired"
+    },
+    "m_0cbac248": {
+      "zh": "进入比赛空间",
+      "en": "Open Contest Workspace"
+    },
+    "m_0cbe80f6": {
+      "zh": "运行中",
+      "en": "Running"
+    },
+    "m_0cccf76f": {
+      "zh": "移除挂载失败",
+      "en": "Failed to remove binding"
+    },
+    "m_0ccfd26d": {
+      "zh": "暂无队伍描述。",
+      "en": "No team description."
+    },
+    "m_0cfc5917": {
+      "zh": "· 状态",
+      "en": "· status"
+    },
+    "m_0d2900bf": {
+      "zh": "镜像测试失败",
+      "en": "Image test failed"
+    },
+    "m_0d681512": {
+      "zh": "公告内容",
+      "en": "Announcement content"
+    },
+    "m_0dd20335": {
+      "zh": "实例信息",
+      "en": "Instance overview"
+    },
+    "m_0dea37b7": {
+      "zh": "导出实时动图(WebM)",
+      "en": "Export realtime animation (WebM)"
+    },
+    "m_0e4d50d2": {
+      "zh": "账号入口",
+      "en": "Account Access"
+    },
+    "m_0e8c3d5c": {
+      "zh": "积分动态曲线",
+      "en": "Score trend"
+    },
+    "m_0f19e4a4": {
+      "zh": "当前不满足参赛条件，请稍后重试。",
+      "en": "Contest entry requirements are not met yet."
+    },
+    "m_0f39de54": {
+      "zh": "更新时间",
+      "en": "Update time"
+    },
+    "m_0f4b78e9": {
+      "zh": "提交完成",
+      "en": "Submitted"
+    },
+    "m_0f532178": {
+      "zh": "收到的邀请",
+      "en": "Received Invitations"
+    },
+    "m_0f81a13e": {
+      "zh": "compose 模板（可选，可由压缩包自动导入）",
+      "en": "compose template (optional, can be auto-imported from zip)"
+    },
+    "m_0f88f239": {
+      "zh": "导出折线图",
+      "en": "Export chart"
+    },
+    "m_0fd3a167": {
+      "zh": "版本/附件",
+      "en": "Version/Attachment"
+    },
+    "m_0fe1fde8": {
+      "zh": "加载登录历史失败",
+      "en": "Failed to load login history"
+    },
+    "m_0fe38bc7": {
+      "zh": "发布",
+      "en": "Publish"
+    },
+    "m_100e63c1": {
+      "zh": "题目已销毁",
+      "en": "Challenge deleted"
+    },
+    "m_10239abc": {
+      "zh": "至少 {minUniqueChars} 个唯一字符",
+      "en": "At least {minUniqueChars} unique chars"
+    },
+    "m_10524332": {
+      "zh": "加载运行概览失败",
+      "en": "Failed to load runtime overview"
+    },
+    "m_1069461a": {
+      "zh": "结束时间",
+      "en": "end time"
+    },
+    "m_111b0037": {
+      "zh": "公告内容不完整",
+      "en": "Announcement content incomplete"
+    },
+    "m_11270e01": {
+      "zh": "取消解散",
+      "en": "Cancel disband"
+    },
+    "m_1217532d": {
+      "zh": "类别保存失败",
+      "en": "Category save failed"
+    },
+    "m_12395a86": {
+      "zh": "公告内容（Markdown）",
+      "en": "Announcement Content (Markdown)"
+    },
+    "m_12e4e87b": {
+      "zh": "确认销毁比赛「{title}」？该操作将删除比赛、公告、挂载、提交与实例数据。",
+      "en": "Destroy contest \"{title}\"? This will remove contest data, announcements, bindings, submissions, and instances."
+    },
+    "m_1343acbf": {
+      "zh": "复制比赛 ID",
+      "en": "Copy Contest ID"
+    },
+    "m_143d2784": {
+      "zh": "选中队伍",
+      "en": "Selected Team"
+    },
+    "m_146407ea": {
+      "zh": "编辑比赛配置",
+      "en": "Edit match configuration"
+    },
+    "m_14c8a36e": {
+      "zh": "撤回发布",
+      "en": "Withdraw publication"
+    },
+    "m_14e5b72a": {
+      "zh": "未选择图片文件",
+      "en": "未选择图片文件"
+    },
+    "m_14ffd56c": {
+      "zh": "题目模块",
+      "en": "Challenges"
+    },
+    "m_153c6475": {
+      "zh": "无弱口令模式",
+      "en": "No weak/common pattern"
+    },
+    "m_1544178e": {
+      "zh": "提交正确",
+      "en": "Accepted"
+    },
+    "m_15522831": {
+      "zh": "挂载已移除",
+      "en": "Binding removed"
+    },
+    "m_159a8f4e": {
+      "zh": "加载中...",
+      "en": "Loading..."
+    },
+    "m_159eb477": {
+      "zh": "实时变化动图已导出。",
+      "en": "Realtime animated chart exported."
+    },
+    "m_15cd57fe": {
+      "zh": "置顶",
+      "en": "Pinned"
+    },
+    "m_15f93c38": {
+      "zh": "再次点击执行不可恢复的解散操作：",
+      "en": "Click again to run irreversible disband action:"
+    },
+    "m_164a2da6": {
+      "zh": "操作人",
+      "en": "Actor"
+    },
+    "m_165b1edb": {
+      "zh": "公告已保存。",
+      "en": "Announcement saved."
+    },
+    "m_165c42c1": {
+      "zh": "题目状态已更新",
+      "en": "Challenge status updated"
+    },
+    "m_16e77afe": {
+      "zh": "用户名或邮箱",
+      "en": "Username or email"
+    },
+    "m_1735ab18": {
+      "zh": "请选择一个题目进入解题流程。",
+      "en": "Select a challenge to continue."
+    },
+    "m_17f3b97d": {
+      "zh": "比赛总览",
+      "en": "Contest Overview"
+    },
+    "m_17f53274": {
+      "zh": "登录",
+      "en": "Sign In"
+    },
+    "m_1800eeda": {
+      "zh": "服务状态",
+      "en": "Service status"
+    },
+    "m_183042c1": {
+      "zh": "暂无实例记录。",
+      "en": "There is no instance record yet."
+    },
+    "m_183a4087": {
+      "zh": "确认告警",
+      "en": "Confirm alarm"
+    },
+    "m_18833119": {
+      "zh": "移除成员失败",
+      "en": "Failed to remove member"
+    },
+    "m_18a099b4": {
+      "zh": "账户入口",
+      "en": "Account Entry"
+    },
+    "m_18a929df": {
+      "zh": "暂无题目描述。",
+      "en": "No challenge description."
+    },
+    "m_195ce0b6": {
+      "zh": "加载榜单失败",
+      "en": "Failed to load scoreboard"
+    },
+    "m_19673bf9": {
+      "zh": "比赛",
+      "en": "Contest"
+    },
+    "m_19a7f679": {
+      "zh": "报名审核",
+      "en": "Registrations"
+    },
+    "m_19f43844": {
+      "zh": "复制 SSH 密码",
+      "en": "Copy SSH password"
+    },
+    "m_1b59043c": {
+      "zh": "报名需管理员审批",
+      "en": "Registration requires admin approval"
+    },
+    "m_1b6d1043": {
+      "zh": "复制失败",
+      "en": "Copy failed"
+    },
+    "m_1c6b959e": {
+      "zh": "从左侧选择一个挂载题目查看详情。",
+      "en": "Select a bound challenge on the left to view details."
+    },
+    "m_1cd15757": {
+      "zh": "未发布",
+      "en": "Unpublished"
+    },
+    "m_1d01abee": {
+      "zh": "状态过滤",
+      "en": "Status filtering"
+    },
+    "m_1d1af2d7": {
+      "zh": "角色已更新",
+      "en": "Role updated"
+    },
+    "m_1d53b967": {
+      "zh": "加载题目详情失败",
+      "en": "Failed to load challenge details"
+    },
+    "m_1d946633": {
+      "zh": "判题与部署",
+      "en": "Validation & Runtime"
+    },
+    "m_1d9bd946": {
+      "zh": "重置密码",
+      "en": "reset password"
+    },
+    "m_1daed537": {
+      "zh": "wireguard：下发 VPN 配置，选手可从本机直接访问队伍子网。",
+      "en": "wireguard: issue VPN config so teams can access their subnet from local machine."
+    },
+    "m_1ef6cbe6": {
+      "zh": "登录成功，正在跳转...",
+      "en": "Signed in, redirecting..."
+    },
+    "m_1f1aec54": {
+      "zh": "标题或 slug",
+      "en": "title or slug"
+    },
+    "m_1f1dad1a": {
+      "zh": "用户名和邮箱已保存。",
+      "en": "Username and email saved."
+    },
+    "m_1f416534": {
+      "zh": "开始时间",
+      "en": "start time"
+    },
+    "m_1f98a5ec": {
+      "zh": "进入登录",
+      "en": "Sign In"
+    },
+    "m_1fa71d9f": {
+      "zh": "single_image（单镜像）",
+      "en": "single_image (single image)"
+    },
+    "m_1fd3773b": {
+      "zh": "确认销毁题目「{title}」？该操作会删除题目、挂载关系、提交记录与运行实例。",
+      "en": "Destroy challenge \"{title}\"? This will remove challenge data, bindings, submissions, and instances."
+    },
+    "m_200865ae": {
+      "zh": "管理控制台",
+      "en": "Admin Console"
+    },
+    "m_202836b9": {
+      "zh": "取消编辑",
+      "en": "Cancel edit"
+    },
+    "m_204656e7": {
+      "zh": "SSH 命令已复制",
+      "en": "SSH command copied"
+    },
+    "m_206ddac1": {
+      "zh": "销毁题目失败",
+      "en": "Failed to delete challenge"
+    },
+    "m_209b9919": {
+      "zh": "创建公告编辑模式",
+      "en": "Create announcement editor mode"
+    },
+    "m_20c0bed0": {
+      "zh": "题目操作",
+      "en": "Actions"
+    },
+    "m_2144ffcd": {
+      "zh": "人机验证脚本加载失败。",
+      "en": "Failed to load human verification script."
+    },
+    "m_214f537d": {
+      "zh": "下载配置",
+      "en": "Download config"
+    },
+    "m_21a78d58": {
+      "zh": "发送失败",
+      "en": "Failed to send"
+    },
+    "m_225d7147": {
+      "zh": "题目挂载",
+      "en": "Bindings"
+    },
+    "m_229bcaee": {
+      "zh": "附件已删除",
+      "en": "Attachment deleted"
+    },
+    "m_22d9593f": {
+      "zh": "显示题目操作菜单",
+      "en": "Show challenge actions"
+    },
+    "m_23328cc7": {
+      "zh": "禁用",
+      "en": "disabled"
+    },
+    "m_2340bcd7": {
+      "zh": "刷新告警",
+      "en": "Refresh alerts"
+    },
+    "m_2373da40": {
+      "zh": "single_image 模式仅支持 dynamic 或 internal 题型",
+      "en": "single_image mode only supports dynamic/internal challenge types."
+    },
+    "m_23ada321": {
+      "zh": "请填写类别 slug。",
+      "en": "Please provide a category slug."
+    },
+    "m_23e734c9": {
+      "zh": "轻量 · 稳定",
+      "en": "Clean · Stable"
+    },
+    "m_246d6ccc": {
+      "zh": "排序已更新",
+      "en": "Sort updated"
+    },
+    "m_24eff94d": {
+      "zh": "尚未创建动态环境实例。",
+      "en": "No runtime instance yet."
+    },
+    "m_2501646a": {
+      "zh": "赛事管理",
+      "en": "Contest Hub"
+    },
+    "m_25102041": {
+      "zh": "类别已更新",
+      "en": "Category updated"
+    },
+    "m_2543ca11": {
+      "zh": "动态衰减",
+      "en": "Dynamic decay"
+    },
+    "m_25e98085": {
+      "zh": "重置邮箱",
+      "en": "Reset Email"
+    },
+    "m_25f9c546": {
+      "zh": "更新公告失败",
+      "en": "Failed to update announcement"
+    },
+    "m_26367f72": {
+      "zh": "编辑公告内容模式",
+      "en": "Edit announcement content mode"
+    },
+    "m_264acbb0": {
+      "zh": "确认新密码",
+      "en": "Confirm New Password"
+    },
+    "m_28171ba8": {
+      "zh": "用户状态已更新",
+      "en": "User status updated"
+    },
+    "m_2872b7ba": {
+      "zh": "来源信息",
+      "en": "Source"
+    },
+    "m_28a141b7": {
+      "zh": "题目管理",
+      "en": "Challenge Management"
+    },
+    "m_28db53ea": {
+      "zh": "心跳",
+      "en": "Heartbeat"
+    },
+    "m_2a565d62": {
+      "zh": "监控子导航",
+      "en": "Operations Tabs"
+    },
+    "m_2a755655": {
+      "zh": "心跳超时实例回收已执行",
+      "en": "Stale-heartbeat reaper executed"
+    },
+    "m_2aa114ab": {
+      "zh": "显示比赛操作菜单",
+      "en": "Show contest actions"
+    },
+    "m_2aa949f3": {
+      "zh": "刷新榜单",
+      "en": "Refresh scoreboard"
+    },
+    "m_2aacf3d7": {
+      "zh": "已选中",
+      "en": "selected"
+    },
+    "m_2ab7cec0": {
+      "zh": "实时看板",
+      "en": "Live Board"
+    },
+    "m_2b0f8cb3": {
+      "zh": "重启中服务",
+      "en": "Restarting service"
+    },
+    "m_2b9740b0": {
+      "zh": "运行告警：实例失败",
+      "en": "Runtime alert: instance failure"
+    },
+    "m_2bb67eb7": {
+      "zh": "刷新指标",
+      "en": "Refresh metrics"
+    },
+    "m_2bccf299": {
+      "zh": "比赛列表",
+      "en": "Contest Directory"
+    },
+    "m_2be5180e": {
+      "zh": "请联系管理员处理报名审核。",
+      "en": "Contact admins for registration review."
+    },
+    "m_2bf2c365": {
+      "zh": "暂无比赛描述。",
+      "en": "No contest description."
+    },
+    "m_2c328ade": {
+      "zh": "搜索",
+      "en": "Search"
+    },
+    "m_2c68820f": {
+      "zh": "SSH 密码已复制",
+      "en": "SSH password copied"
+    },
+    "m_2c871c1e": {
+      "zh": "{username} 已被删除并退出登录。",
+      "en": "{username} was deleted and signed out."
+    },
+    "m_2ca2fc68": {
+      "zh": "关闭",
+      "en": "Close"
+    },
+    "m_2cd6c99d": {
+      "zh": "运行概览",
+      "en": "Overview"
+    },
+    "m_2d845457": {
+      "zh": "赛事列表",
+      "en": "Contest list"
+    },
+    "m_2e521f2e": {
+      "zh": "请选择一个比赛查看详情。",
+      "en": "Select a contest to view details."
+    },
+    "m_2eb410f2": {
+      "zh": "加载题目附件失败",
+      "en": "Failed to load challenge attachments"
+    },
+    "m_2f40ea9a": {
+      "zh": "退出队伍失败",
+      "en": "Failed to leave team"
+    },
+    "m_2f683754": {
+      "zh": "重置",
+      "en": "Reset"
+    },
+    "m_2f6e2521": {
+      "zh": "验证失败",
+      "en": "Verification failed"
+    },
+    "m_2fead4f5": {
+      "zh": "很强",
+      "en": "Very strong"
+    },
+    "m_301cc31c": {
+      "zh": "镜像仓库地址",
+      "en": "Image registry URL"
+    },
+    "m_30359f8f": {
+      "zh": "暂无附件。",
+      "en": "There are no attachments yet."
+    },
+    "m_30407de4": {
+      "zh": "加载题目类别失败",
+      "en": "Failed to load challenge categories"
+    },
+    "m_3050f465": {
+      "zh": "确认删除",
+      "en": "Confirm delete"
+    },
+    "m_30c55f78": {
+      "zh": "销毁比赛",
+      "en": "Destroy contest"
+    },
+    "m_30ca028e": {
+      "zh": "加载模板校验结果失败",
+      "en": "Failed to load template lint results"
+    },
+    "m_30f83df7": {
+      "zh": "加载用户列表失败",
+      "en": "Failed to load users"
+    },
+    "m_31bd3334": {
+      "zh": "上传海报",
+      "en": "Upload poster"
+    },
+    "m_31ed1b1c": {
+      "zh": "包含符号",
+      "en": "Contains symbol"
+    },
+    "m_32601cdc": {
+      "zh": "版本备注（可选）",
+      "en": "Version notes (optional)"
+    },
+    "m_3274f71e": {
+      "zh": "编辑选中",
+      "en": "Edit selected"
+    },
+    "m_3279a105": {
+      "zh": "趋势维度",
+      "en": "Trend metric"
+    },
+    "m_32f9f723": {
+      "zh": "审计日志",
+      "en": "Audit log"
+    },
+    "m_337bc844": {
+      "zh": "请输入重置令牌。",
+      "en": "Please enter reset token."
+    },
+    "m_340289e4": {
+      "zh": "解题",
+      "en": "Solved"
+    },
+    "m_3430041f": {
+      "zh": "运行告警",
+      "en": "Runtime Alerts"
+    },
+    "m_3468f9f1": {
+      "zh": "删除比赛海报失败",
+      "en": "Failed to delete contest poster"
+    },
+    "m_34c5aaaf": {
+      "zh": "浏览与运维",
+      "en": "Browse & operate"
+    },
+    "m_3529c2b3": {
+      "zh": "时间",
+      "en": "time"
+    },
+    "m_3550af31": {
+      "zh": "刷新附件",
+      "en": "Refresh files"
+    },
+    "m_35547bd6": {
+      "zh": "解出",
+      "en": "Solved"
+    },
+    "m_35637b95": {
+      "zh": "请先保存题目，再上传附件。",
+      "en": "Save this challenge first, then upload attachments."
+    },
+    "m_3647c275": {
+      "zh": "下线",
+      "en": "offline"
+    },
+    "m_365ea0b9": {
+      "zh": "深色",
+      "en": "Dark"
+    },
+    "m_36acf58c": {
+      "zh": "发布时间",
+      "en": "Release at"
+    },
+    "m_36d1fc56": {
+      "zh": "比赛 ID 已复制到剪贴板。",
+      "en": "Contest ID copied to clipboard."
+    },
+    "m_36f806f7": {
+      "zh": "题目",
+      "en": "Challenge"
+    },
+    "m_37f02fbf": {
+      "zh": "比赛与提交",
+      "en": "Contests & Submissions"
+    },
+    "m_381a0334": {
+      "zh": "上传中...",
+      "en": "Uploading..."
+    },
+    "m_3853c4ac": {
+      "zh": "输入 Flag",
+      "en": "Enter flag"
+    },
+    "m_388010cd": {
+      "zh": "发布时间",
+      "en": "Published at"
+    },
+    "m_388e428a": {
+      "zh": "一二三血加成",
+      "en": "Blood bonuses"
+    },
+    "m_38964c56": {
+      "zh": "个人资料",
+      "en": "Profile"
+    },
+    "m_393ec1ae": {
+      "zh": "最后提交",
+      "en": "Last submission"
+    },
+    "m_39586b53": {
+      "zh": "注册成功",
+      "en": "Registration succeeded"
+    },
+    "m_39a14738": {
+      "zh": "题型",
+      "en": "Challenge type"
+    },
+    "m_3b14bc0c": {
+      "zh": "入口",
+      "en": "Entry"
+    },
+    "m_3bc3f92f": {
+      "zh": "验证令牌",
+      "en": "Verification Token"
+    },
+    "m_3bc85adb": {
+      "zh": "标题",
+      "en": "H2"
+    },
+    "m_3bc97e51": {
+      "zh": "销毁比赛失败",
+      "en": "Failed to delete contest"
+    },
+    "m_3c6543bb": {
+      "zh": "加载公告失败",
+      "en": "Failed to load announcements"
+    },
+    "m_3c7ee600": {
+      "zh": "三血",
+      "en": "Third blood"
+    },
+    "m_3c93b7db": {
+      "zh": "compose：多服务编排，支持复杂依赖场景。",
+      "en": "compose: multi-service orchestration for complex runtimes."
+    },
+    "m_3cb674b7": {
+      "zh": "更新密码",
+      "en": "Update password"
+    },
+    "m_3cc00f05": {
+      "zh": "请输入被邀请用户名。",
+      "en": "Please enter invitee username."
+    },
+    "m_3cf479bc": {
+      "zh": "危险操作",
+      "en": "Danger Zone"
+    },
+    "m_3d6fa7bd": {
+      "zh": "上传比赛海报",
+      "en": "Upload contest poster"
+    },
+    "m_3d939718": {
+      "zh": "版本与附件：",
+      "en": "Versions & Files:"
+    },
+    "m_3e68eff3": {
+      "zh": "创建类别",
+      "en": "Create category"
+    },
+    "m_3e9337da": {
+      "zh": "两次输入的密码不一致。",
+      "en": "Passwords do not match."
+    },
+    "m_3ea8707e": {
+      "zh": "dynamic_decay 必须为大于等于 1 的整数",
+      "en": "dynamic_decay 必须为大于等于 1 的整数"
+    },
+    "m_3eb84b3d": {
+      "zh": "刷新用户",
+      "en": "Refresh users"
+    },
+    "m_3f15c5aa": {
+      "zh": "最近失败实例",
+      "en": "Recent failed instances"
+    },
+    "m_3fd1ba38": {
+      "zh": "创建比赛",
+      "en": "Create contest"
+    },
+    "m_405ce874": {
+      "zh": "角色必须是 player / judge / admin",
+      "en": "角色必须是 player / judge / admin"
+    },
+    "m_40855434": {
+      "zh": "接受",
+      "en": "Accept"
+    },
+    "m_408617f5": {
+      "zh": "当前没有报名记录。",
+      "en": "No registration records yet."
+    },
+    "m_40a4b698": {
+      "zh": "恢复人：",
+      "en": "Restoration Person:"
+    },
+    "m_40a8c128": {
+      "zh": "实时反馈密码强度与规则达成情况。",
+      "en": "Realtime feedback for password strength and policy checks."
+    },
+    "m_410d4519": {
+      "zh": "请先完成人机验证。",
+      "en": "Please complete human verification first."
+    },
+    "m_413f5542": {
+      "zh": "最近发现：",
+      "en": "Recently discovered:"
+    },
+    "m_417a9700": {
+      "zh": "账户模块",
+      "en": "Account module"
+    },
+    "m_419cf225": {
+      "zh": "请先选择要管理的题目",
+      "en": "Please select a challenge to manage first."
+    },
+    "m_430c1bcd": {
+      "zh": "可见性",
+      "en": "Visibility"
+    },
+    "m_431ed67d": {
+      "zh": "下载配置失败",
+      "en": "Failed to download config"
+    },
+    "m_4387df7d": {
+      "zh": "可选两种方式：1）直接填写 compose 模板；2）在“版本与附件”上传 .zip（内含 docker-compose.yml 和相关文件），系统会自动写入 compose，并把其余文件保存为 runtime/...。若只上传单个文件而非 zip，请把文件名写成 runtime/ 开头（如 runtime/Dockerfile）。",
+      "en": "Two options: (1) fill compose template directly; (2) upload a .zip in Versions & Files (contains docker-compose.yml and related files). The system auto-imports compose and stores remaining files as runtime/.... For single-file uploads (non-zip), use runtime/ prefix (e.g. runtime/Dockerfile)."
+    },
+    "m_43aeb4c9": {
+      "zh": "选手",
+      "en": "Player"
+    },
+    "m_43b0f4b0": {
+      "zh": "仅 compose 模式支持模板测试",
+      "en": "Only compose mode supports template testing."
+    },
+    "m_43d6ee87": {
+      "zh": "加载题目失败",
+      "en": "Failed to load challenges"
+    },
+    "m_44460f78": {
+      "zh": "重置邮件",
+      "en": "Reset Email"
+    },
+    "m_4451fdbe": {
+      "zh": "执行回滚",
+      "en": "perform rollback"
+    },
+    "m_44742ec5": {
+      "zh": "队伍协作",
+      "en": "Team Collaboration"
+    },
+    "m_44747a0b": {
+      "zh": "密码长度",
+      "en": "Password Length"
+    },
+    "m_4487e56a": {
+      "zh": "我的队伍",
+      "en": "My Team"
+    },
+    "m_4492fc9c": {
+      "zh": "队伍排名",
+      "en": "Team ranking"
+    },
+    "m_44dd12f5": {
+      "zh": "未选择文件",
+      "en": "No file selected"
+    },
+    "m_456919e6": {
+      "zh": "· 版本 v",
+      "en": "· version v"
+    },
+    "m_45c41db6": {
+      "zh": "密码已重置",
+      "en": "Password reset"
+    },
+    "m_4600650d": {
+      "zh": "查看提示",
+      "en": "Show hints"
+    },
+    "m_461cf285": {
+      "zh": "测试 compose（config+build探测）",
+      "en": "Test compose (config + build probe)"
+    },
+    "m_467d6b2b": {
+      "zh": "认证错误",
+      "en": "Authentication error"
+    },
+    "m_46fb8d10": {
+      "zh": "执行心跳超时回收",
+      "en": "Execute heartbeat timeout recycling"
+    },
+    "m_4724dadb": {
+      "zh": "加载站点设置失败",
+      "en": "Failed to load site settings"
+    },
+    "m_47cb88a6": {
+      "zh": "你已退出当前队伍。",
+      "en": "You left the team."
+    },
+    "m_48f2d1c5": {
+      "zh": "上移",
+      "en": "move up"
+    },
+    "m_490b3b0d": {
+      "zh": "展开筛选条件",
+      "en": "Expand filters"
+    },
+    "m_49587159": {
+      "zh": "排序",
+      "en": "sort"
+    },
+    "m_49615c2b": {
+      "zh": "加载比赛失败",
+      "en": "Failed to load contests"
+    },
+    "m_49836ca4": {
+      "zh": "已退出队伍",
+      "en": "Left team"
+    },
+    "m_498dad43": {
+      "zh": "应用筛选",
+      "en": "Apply filters"
+    },
+    "m_4a8066b6": {
+      "zh": "single_image 模式内部端口必须在 1~65535",
+      "en": "single_image internal port must be between 1 and 65535."
+    },
+    "m_4acda218": {
+      "zh": "刷新",
+      "en": "Refresh"
+    },
+    "m_4ba1dc6f": {
+      "zh": "内容",
+      "en": "content"
+    },
+    "m_4bbf9aca": {
+      "zh": "查看指标",
+      "en": "View metrics"
+    },
+    "m_4bee959b": {
+      "zh": "dynamic：每队可创建独立运行实例，适合隔离容器题。",
+      "en": "dynamic: each team can start an isolated runtime instance."
+    },
+    "m_4c5ee0e3": {
+      "zh": "加载审计日志失败",
+      "en": "Failed to load audit logs"
+    },
+    "m_4c9b527e": {
+      "zh": "无法测试 compose",
+      "en": "Cannot test compose"
+    },
+    "m_4d04a160": {
+      "zh": "请先选择海报文件",
+      "en": "Please select a poster file first."
+    },
+    "m_4d470de2": {
+      "zh": "版本号非法",
+      "en": "Invalid version number"
+    },
+    "m_4da3b942": {
+      "zh": "请先加入队伍",
+      "en": "Join a team first"
+    },
+    "m_4da8e6b7": {
+      "zh": "网络 RX/TX",
+      "en": "Network RX/TX"
+    },
+    "m_4db82d6c": {
+      "zh": "二血",
+      "en": "Second blood"
+    },
+    "m_4e02000d": {
+      "zh": "当前账号",
+      "en": "Current account"
+    },
+    "m_4e4ced61": {
+      "zh": "公告已置顶",
+      "en": "Announcement pinned"
+    },
+    "m_4e587c3b": {
+      "zh": "没有账号？去注册",
+      "en": "No account? Register"
+    },
+    "m_4e8f120d": {
+      "zh": "标题",
+      "en": "title"
+    },
+    "m_4f0b38ff": {
+      "zh": "附件超过大小限制（最大 {maxSize}）。",
+      "en": "Attachment exceeds size limit (max {maxSize})."
+    },
+    "m_501ef068": {
+      "zh": "时间显示模式",
+      "en": "Time display mode"
+    },
+    "m_504dde5a": {
+      "zh": "导出成功",
+      "en": "Export completed"
+    },
+    "m_5059a4d7": {
+      "zh": "暂无公告。",
+      "en": "No announcements."
+    },
+    "m_508ea417": {
+      "zh": "你当前不在任何队伍中。可以创建新队伍或按名称加入。",
+      "en": "You are not in a team. Create one or join by team name."
+    },
+    "m_50d673df": {
+      "zh": "更新中...",
+      "en": "Updating..."
+    },
+    "m_50fba5af": {
+      "zh": "长度至少 {minLength} 位",
+      "en": "Length >= {minLength}"
+    },
+    "m_513484b2": {
+      "zh": "下载成功",
+      "en": "Download succeeded"
+    },
+    "m_5151b973": {
+      "zh": "进行中",
+      "en": "Running"
+    },
+    "m_51706220": {
+      "zh": "请输入邮箱。",
+      "en": "Please enter email."
+    },
+    "m_51d70420": {
+      "zh": "时间与入口",
+      "en": "Timing & entrypoint"
+    },
+    "m_522ae0ae": {
+      "zh": "保存资料",
+      "en": "Save profile"
+    },
+    "m_522f662b": {
+      "zh": "下载附件失败",
+      "en": "Failed to download challenge file"
+    },
+    "m_5387b69d": {
+      "zh": "正在加载附件...",
+      "en": "Loading files..."
+    },
+    "m_53af64d8": {
+      "zh": "保存类别",
+      "en": "Save category"
+    },
+    "m_541ee58b": {
+      "zh": "动态环境已停止。",
+      "en": "Runtime instance stopped."
+    },
+    "m_544160b5": {
+      "zh": "暂无登录历史记录。",
+      "en": "No login history records."
+    },
+    "m_545d698d": {
+      "zh": "回滚中...",
+      "en": "Rolling back..."
+    },
+    "m_5495a4b5": {
+      "zh": "当前密码",
+      "en": "Current password"
+    },
+    "m_5589bfd3": {
+      "zh": "no_runtime：不启动容器，适用于纯静态题。",
+      "en": "no_runtime: no container runtime, suited for static challenges."
+    },
+    "m_55e9dbe2": {
+      "zh": "删除题目类别",
+      "en": "Delete challenge category"
+    },
+    "m_560617c6": {
+      "zh": "保存后，前台时间将统一按 UTC 展示。",
+      "en": "Save to apply UTC display mode in player views."
+    },
+    "m_56331fa4": {
+      "zh": "执行过期实例回收失败",
+      "en": "Failed to run expired instance reaper"
+    },
+    "m_569db49f": {
+      "zh": "实例已销毁，连接信息已隐藏。可点击“启动”重新创建新实例。",
+      "en": "Instance is destroyed and access details are hidden. Click Start to create a new one."
+    },
+    "m_571f1414": {
+      "zh": "创建题目",
+      "en": "Create Challenge"
+    },
+    "m_57398562": {
+      "zh": "入口",
+      "en": "Entrypoint"
+    },
+    "m_5799a650": {
+      "zh": "按标题、slug、分类筛选",
+      "en": "Filter by title, slug, category"
+    },
+    "m_58427b35": {
+      "zh": "提交中...",
+      "en": "Submitting..."
+    },
+    "m_588fde3f": {
+      "zh": "用于 ack / resolve 审计记录",
+      "en": "for ack / resolve audit records"
+    },
+    "m_59a6510c": {
+      "zh": "取消",
+      "en": "Cancel"
+    },
+    "m_59db56f5": {
+      "zh": "描述",
+      "en": "Description"
+    },
+    "m_59e0839c": {
+      "zh": "加载运行告警失败",
+      "en": "Failed to load runtime alerts"
+    },
+    "m_59e5e034": {
+      "zh": "运行中比赛",
+      "en": "Running contests"
+    },
+    "m_5a8d2ab7": {
+      "zh": "站点副标题",
+      "en": "Site Subtitle"
+    },
+    "m_5b749587": {
+      "zh": "· 24h 提交",
+      "en": "· 24h submissions"
+    },
+    "m_5c662ba2": {
+      "zh": "总积分",
+      "en": "Total score"
+    },
+    "m_5d243c84": {
+      "zh": "报名审核",
+      "en": "Registration Review"
+    },
+    "m_5d514884": {
+      "zh": "邮箱找回",
+      "en": "Email Recovery"
+    },
+    "m_5d6a99f1": {
+      "zh": "未分类",
+      "en": "Uncategorized"
+    },
+    "m_5d6f637e": {
+      "zh": "该题将在比赛内即时可见。",
+      "en": "This challenge is now immediately visible in contest."
+    },
+    "m_5da74e51": {
+      "zh": "登录历史",
+      "en": "Login History"
+    },
+    "m_5e530f8e": {
+      "zh": "暂无已发送邀请。",
+      "en": "No sent invitations."
+    },
+    "m_5e680a9c": {
+      "zh": "管理",
+      "en": "Admin"
+    },
+    "m_5e88b40c": {
+      "zh": "管理员拒绝报名",
+      "en": "Rejected by admin"
+    },
+    "m_5e9f43b7": {
+      "zh": "积分曲线",
+      "en": "Score curve"
+    },
+    "m_5ec96319": {
+      "zh": "人机验证",
+      "en": "Human Verification"
+    },
+    "m_5ef37c49": {
+      "zh": "确认后将立即退出并删除账号数据。",
+      "en": "This action will sign out and delete account data immediately."
+    },
+    "m_5efbc81b": {
+      "zh": "重置失败",
+      "en": "Reset failed"
+    },
+    "m_5f9b36c9": {
+      "zh": "题目列表",
+      "en": "Challenges"
+    },
+    "m_6000e0ac": {
+      "zh": "分数",
+      "en": "Score"
+    },
+    "m_60649a8f": {
+      "zh": "封榜时间（可选）",
+      "en": "Closing time (optional)"
+    },
+    "m_61206794": {
+      "zh": "实时排名趋势",
+      "en": "Live rank trend"
+    },
+    "m_61e0e005": {
+      "zh": "邮箱验证成功",
+      "en": "Email verified"
+    },
+    "m_61eae72d": {
+      "zh": "体验",
+      "en": "Experience"
+    },
+    "m_62389c00": {
+      "zh": "ssh_bastion（跳板）",
+      "en": "ssh_bastion (bastion)"
+    },
+    "m_623e431b": {
+      "zh": "导出中...",
+      "en": "Exporting..."
+    },
+    "m_62594d98": {
+      "zh": "加载报名记录失败",
+      "en": "Failed to load contest registrations"
+    },
+    "m_627ed3b1": {
+      "zh": "登录后即可进入比赛与队伍空间。注册支持邮箱激活，找回密码支持邮箱重置。",
+      "en": "Sign in to access contests and team space. Registration supports email activation and password recovery supports email reset."
+    },
+    "m_631d6ff6": {
+      "zh": "等待日志输出...",
+      "en": "Waiting for stream output..."
+    },
+    "m_633a192b": {
+      "zh": "题目提示",
+      "en": "Challenge hints"
+    },
+    "m_639e00e2": {
+      "zh": "解散队伍",
+      "en": "Disband team"
+    },
+    "m_63a0ccbf": {
+      "zh": "密码强度",
+      "en": "Password Strength"
+    },
+    "m_64a1aae5": {
+      "zh": "验证码加载失败，请稍后重试。",
+      "en": "Verification failed to load. Please try again."
+    },
+    "m_64ab0649": {
+      "zh": "暂无公告内容。",
+      "en": "No announcement content."
+    },
+    "m_64cf0eb5": {
+      "zh": "暂无可见题目。",
+      "en": "No visible challenges."
+    },
+    "m_6513e68b": {
+      "zh": "用户名为空",
+      "en": "Username required"
+    },
+    "m_65b1e1d5": {
+      "zh": "最后更新",
+      "en": "Last updated"
+    },
+    "m_65b203f4": {
+      "zh": "角色",
+      "en": "Role"
+    },
+    "m_65e8ead7": {
+      "zh": "· 30 分钟内到期",
+      "en": "· expiring within 30m"
+    },
+    "m_6687665a": {
+      "zh": "保存中...",
+      "en": "Saving..."
+    },
+    "m_6730b7b0": {
+      "zh": "结果",
+      "en": "result"
+    },
+    "m_673c49cf": {
+      "zh": "角色未变化",
+      "en": "Role unchanged"
+    },
+    "m_6751b0e5": {
+      "zh": "创建",
+      "en": "Created"
+    },
+    "m_67527bda": {
+      "zh": "操作",
+      "en": "Actions"
+    },
+    "m_6776744b": {
+      "zh": "发送中...",
+      "en": "Sending..."
+    },
+    "m_677ebb32": {
+      "zh": "当前题目暂无附件。",
+      "en": "No files attached to this challenge."
+    },
+    "m_680bbf78": {
+      "zh": "过期实例回收已执行",
+      "en": "Expired instance reaper executed"
+    },
+    "m_688903fc": {
+      "zh": "队伍已自动解散。",
+      "en": "The team was automatically disbanded."
+    },
+    "m_68d61495": {
+      "zh": "邀请成员",
+      "en": "Invite Members"
+    },
+    "m_69b196cc": {
+      "zh": "dynamic：按队伍下发动态 flag（通常来自实例启动流程）。",
+      "en": "dynamic: per-team flag issued from runtime flow."
+    },
+    "m_69ce9e3a": {
+      "zh": "下载附件",
+      "en": "Download"
+    },
+    "m_6a3c825a": {
+      "zh": "公告标题",
+      "en": "Announcement title"
+    },
+    "m_6a560c34": {
+      "zh": "加载挂载失败",
+      "en": "Failed to load bindings"
+    },
+    "m_6a915651": {
+      "zh": "暂时无法进入",
+      "en": "Unable to enter"
+    },
+    "m_6adbda32": {
+      "zh": "队伍信息已更新",
+      "en": "Team updated"
+    },
+    "m_6b105084": {
+      "zh": "登录成功",
+      "en": "Sign in succeeded"
+    },
+    "m_6b9cdbf9": {
+      "zh": "触发运行告警扫描失败",
+      "en": "Failed to run runtime alert scan"
+    },
+    "m_6c3e8515": {
+      "zh": "邮箱验证",
+      "en": "Email Verification"
+    },
+    "m_6c5b92c4": {
+      "zh": "题目已更新",
+      "en": "Challenge updated"
+    },
+    "m_6c7cbcc9": {
+      "zh": "复制题目 ID",
+      "en": "Copy challenge ID"
+    },
+    "m_6cca03f6": {
+      "zh": "信息",
+      "en": "information"
+    },
+    "m_6d5a625e": {
+      "zh": "进入比赛失败",
+      "en": "Failed to enter contest workspace"
+    },
+    "m_6d6f4067": {
+      "zh": "未解",
+      "en": "Unsolved"
+    },
+    "m_6d9285c7": {
+      "zh": "未选择比赛",
+      "en": "No contest selected"
+    },
+    "m_6e23569b": {
+      "zh": "无连续字符序列",
+      "en": "No sequential run"
+    },
+    "m_6e253afd": {
+      "zh": "确认验证",
+      "en": "Confirm"
+    },
+    "m_6e80778a": {
+      "zh": "没有匹配的题目。",
+      "en": "No matching challenges."
+    },
+    "m_6ea8943a": {
+      "zh": "首次发现：",
+      "en": "First discovered:"
+    },
+    "m_6eb83832": {
+      "zh": "消息",
+      "en": "Message"
+    },
+    "m_6ff3e19e": {
+      "zh": "一血",
+      "en": "First blood"
+    },
+    "m_7063b017": {
+      "zh": "编辑",
+      "en": "edit"
+    },
+    "m_70827177": {
+      "zh": "队长已转让",
+      "en": "Captain transferred"
+    },
+    "m_709543a2": {
+      "zh": "已启用",
+      "en": "Enabled"
+    },
+    "m_70e0600e": {
+      "zh": "选择图片",
+      "en": "选择图片"
+    },
+    "m_70e75154": {
+      "zh": "中等",
+      "en": "Fair"
+    },
+    "m_7121504f": {
+      "zh": "已载入比赛配置",
+      "en": "Contest config loaded"
+    },
+    "m_7122e4c0": {
+      "zh": "支持标题、列表、代码块、引用与链接。",
+      "en": "Supports headings, lists, code blocks, quotes and links."
+    },
+    "m_715254cb": {
+      "zh": "刷新全部",
+      "en": "Refresh all"
+    },
+    "m_717d6494": {
+      "zh": "子网",
+      "en": "subnet"
+    },
+    "m_71bed88c": {
+      "zh": "WireGuard 端点已复制",
+      "en": "WireGuard endpoint copied"
+    },
+    "m_71c524f9": {
+      "zh": "题解内容（可选）",
+      "en": "Solution content (optional)"
+    },
+    "m_71ff82ad": {
+      "zh": "公告状态已更新",
+      "en": "Announcement status updated"
+    },
+    "m_72a25657": {
+      "zh": "镜像测试通过",
+      "en": "Image test passed"
+    },
+    "m_72a9a920": {
+      "zh": "该海报当前在比赛中心不可预览（仅 public 且 scheduled/running/ended 可见）。",
+      "en": "This poster is currently not visible in contest center (only when visibility is public and status is scheduled/running/ended)."
+    },
+    "m_72ba36fa": {
+      "zh": "新密码",
+      "en": "New Password"
+    },
+    "m_72d643a0": {
+      "zh": "欢迎回来。",
+      "en": "Welcome back."
+    },
+    "m_739d3876": {
+      "zh": "密码重置成功",
+      "en": "Password reset succeeded"
+    },
+    "m_73f0133c": {
+      "zh": "新密码至少需要 8 位字符",
+      "en": "New password must contain at least 8 characters."
+    },
+    "m_73f12aef": {
+      "zh": "已发送邀请",
+      "en": "Sent Invitations"
+    },
+    "m_73f93b76": {
+      "zh": "正在加载我的队伍...",
+      "en": "Loading my team..."
+    },
+    "m_7425225f": {
+      "zh": "斜体",
+      "en": "Italic"
+    },
+    "m_744f331c": {
+      "zh": "题目管理、比赛控制、实例监控、用户管理与审计日志。",
+      "en": "Challenge management, contests, instance monitoring, users, and audit logs."
+    },
+    "m_74ccfccb": {
+      "zh": "实例监控",
+      "en": "Instances"
+    },
+    "m_750134cc": {
+      "zh": "可以继续管理版本、附件或挂载到比赛。",
+      "en": "You can continue with versions, attachments, or contest bindings."
+    },
+    "m_7578fa45": {
+      "zh": "ssh_bastion（默认）",
+      "en": "ssh_bastion (default)"
+    },
+    "m_75a98d3d": {
+      "zh": "已切换为 UTC",
+      "en": "Switched to UTC"
+    },
+    "m_75f33a7a": {
+      "zh": "模板校验",
+      "en": "Template Lint"
+    },
+    "m_764c7341": {
+      "zh": "重置令牌",
+      "en": "Reset Token"
+    },
+    "m_767f5a44": {
+      "zh": "内存",
+      "en": "Memory"
+    },
+    "m_76dab22d": {
+      "zh": "请选择题目类别。",
+      "en": "Please select a challenge category."
+    },
+    "m_76dd3a7c": {
+      "zh": "题解可见策略",
+      "en": "Visible strategies for solving problems"
+    },
+    "m_76e64ee0": {
+      "zh": "创建公告",
+      "en": "Create announcement"
+    },
+    "m_771df5d0": {
+      "zh": "会话已刷新。",
+      "en": "Session refreshed."
+    },
+    "m_77632fa3": {
+      "zh": "资料已更新",
+      "en": "Profile updated"
+    },
+    "m_7781ccd1": {
+      "zh": "最新题目、比赛、实例、审计和运行概览已同步。",
+      "en": "Challenges, contests, instances, audit logs, and runtime overview are synced."
+    },
+    "m_77b385c8": {
+      "zh": "发送邀请",
+      "en": "Send invite"
+    },
+    "m_77c31046": {
+      "zh": "队伍",
+      "en": "Teams"
+    },
+    "m_7804796e": {
+      "zh": "正在准备编辑器...",
+      "en": "Preparing editor..."
+    },
+    "m_78105a42": {
+      "zh": "模板",
+      "en": "template"
+    },
+    "m_783e67a6": {
+      "zh": "请先在“赛事配置”中选择一个比赛。",
+      "en": "Please select a competition in \"Event Configuration\" first."
+    },
+    "m_78ead2ae": {
+      "zh": "运行告警：过期实例未销毁",
+      "en": "Runtime alert: expired instance not destroyed"
+    },
+    "m_78ecacdb": {
+      "zh": "导出失败",
+      "en": "Export failed"
+    },
+    "m_793f6799": {
+      "zh": "公告管理",
+      "en": "Announcements"
+    },
+    "m_79a6c934": {
+      "zh": "取消置顶",
+      "en": "Unpin"
+    },
+    "m_79dc2644": {
+      "zh": "回滚备注（可选）",
+      "en": "Rollback notes (optional)"
+    },
+    "m_79fb82fd": {
+      "zh": "难度",
+      "en": "Difficulty"
+    },
+    "m_7a0b57cf": {
+      "zh": "入口协议",
+      "en": "Entry protocol"
+    },
+    "m_7a2e671d": {
+      "zh": "到期",
+      "en": "Expires"
+    },
+    "m_7a2eec85": {
+      "zh": "题库配置",
+      "en": "Library"
+    },
+    "m_7a329ade": {
+      "zh": "flag/哈希",
+      "en": "flag/hash"
+    },
+    "m_7a562222": {
+      "zh": "CPU 总计",
+      "en": "Total CPU"
+    },
+    "m_7a907cf1": {
+      "zh": "使用 UTC 校准显示",
+      "en": "Use UTC display calibration"
+    },
+    "m_7b727b3c": {
+      "zh": "更新排序失败",
+      "en": "Failed to update sort"
+    },
+    "m_7b9f16b6": {
+      "zh": "资源汇总",
+      "en": "Resource summary"
+    },
+    "m_7bf93c43": {
+      "zh": "下载失败",
+      "en": "Download failed"
+    },
+    "m_7c4c883e": {
+      "zh": "挂载成功",
+      "en": "Binding updated"
+    },
+    "m_7c4cf02e": {
+      "zh": "加入队伍",
+      "en": "Join team"
+    },
+    "m_7cf66678": {
+      "zh": "选手排名",
+      "en": "Player ranking"
+    },
+    "m_7cfd8c18": {
+      "zh": "确认运行告警失败",
+      "en": "Failed to acknowledge runtime alert"
+    },
+    "m_7d0ee771": {
+      "zh": "删除账号",
+      "en": "Delete account"
+    },
+    "m_7d26ce6d": {
+      "zh": "分值",
+      "en": "Points"
+    },
+    "m_7d5f1433": {
+      "zh": "提交失败",
+      "en": "Submission failed"
+    },
+    "m_7d6616fd": {
+      "zh": "端点",
+      "en": "Endpoint"
+    },
+    "m_7d836833": {
+      "zh": "single_image 模式必须填写镜像仓库地址",
+      "en": "single_image mode requires an image registry address."
+    },
+    "m_7e64c452": {
+      "zh": "报名已提交",
+      "en": "Registration submitted"
+    },
+    "m_7eaff99b": {
+      "zh": "题目已挂载/更新到当前比赛。",
+      "en": "Challenge bound/updated for the current contest."
+    },
+    "m_7ecebde2": {
+      "zh": "标记恢复",
+      "en": "mark recovery"
+    },
+    "m_7edd4eae": {
+      "zh": "加载中...",
+      "en": "loading..."
+    },
+    "m_7f47735d": {
+      "zh": "比赛已销毁",
+      "en": "Contest deleted"
+    },
+    "m_7f7c1072": {
+      "zh": "启用",
+      "en": "enabled"
+    },
+    "m_7f7c27e3": {
+      "zh": "当前队伍已被删除。",
+      "en": "The team has been removed."
+    },
+    "m_7fbbeeb4": {
+      "zh": "注册后通过邮件完成激活。",
+      "en": "Complete activation via email after registration."
+    },
+    "m_8030afd6": {
+      "zh": "本地时间",
+      "en": "Local time"
+    },
+    "m_8053734e": {
+      "zh": "实例已重置",
+      "en": "Instance reset"
+    },
+    "m_811882da": {
+      "zh": "请先在“赛事配置”中选择一个比赛。",
+      "en": "Select a contest in config tab first."
+    },
+    "m_81461868": {
+      "zh": "新的队伍信息已保存。",
+      "en": "Team changes saved."
+    },
+    "m_81a7be74": {
+      "zh": "子网",
+      "en": "Subnet"
+    },
+    "m_81f27140": {
+      "zh": "队伍队长角色已更新。",
+      "en": "Team captain role updated."
+    },
+    "m_821c4958": {
+      "zh": "创建队伍失败",
+      "en": "Failed to create team"
+    },
+    "m_8270b669": {
+      "zh": "备注",
+      "en": "Note"
+    },
+    "m_8274b77a": {
+      "zh": "比赛模块",
+      "en": "Contests"
+    },
+    "m_8276261f": {
+      "zh": "选择题目",
+      "en": "Select topic"
+    },
+    "m_82b9f29d": {
+      "zh": "更新报名状态失败",
+      "en": "Failed to update registration status"
+    },
+    "m_82ce8495": {
+      "zh": "海报已上传",
+      "en": "Poster uploaded"
+    },
+    "m_82db4fbe": {
+      "zh": "暂无公告。",
+      "en": "No announcement yet."
+    },
+    "m_82db9172": {
+      "zh": "成员管理",
+      "en": "Member Management"
+    },
+    "m_830d08b9": {
+      "zh": "比赛子导航",
+      "en": "Contest Tabs"
+    },
+    "m_83821da4": {
+      "zh": "告警已确认",
+      "en": "Alert acknowledged"
+    },
+    "m_83a2602b": {
+      "zh": "定义题目身份、类别与分值。",
+      "en": "Define challenge identity, category, and score."
+    },
+    "m_8456cac3": {
+      "zh": "一血加成(%)",
+      "en": "First blood bonus (%)"
+    },
+    "m_847b431a": {
+      "zh": "用户管理",
+      "en": "Users"
+    },
+    "m_847cc18d": {
+      "zh": "状态",
+      "en": "Status"
+    },
+    "m_850cd8f9": {
+      "zh": "按标题、slug、状态检索",
+      "en": "Filter by title, slug, or status"
+    },
+    "m_8521f7a8": {
+      "zh": "创建队伍",
+      "en": "Create Team"
+    },
+    "m_85ef0245": {
+      "zh": "同步最新数据",
+      "en": "Sync Latest Data"
+    },
+    "m_86373f11": {
+      "zh": "邮箱",
+      "en": "Email"
+    },
+    "m_86872266": {
+      "zh": "用户名",
+      "en": "username"
+    },
+    "m_86baab6a": {
+      "zh": "运行监控",
+      "en": "Operations"
+    },
+    "m_86c4c3ab": {
+      "zh": "暂无失败实例。",
+      "en": "There are no failed instances yet."
+    },
+    "m_86d67ad8": {
+      "zh": "点击查看完整公告",
+      "en": "Click to view full announcement"
+    },
+    "m_8781f035": {
+      "zh": "flag 模式",
+      "en": "flag mode"
+    },
+    "m_8782ba3e": {
+      "zh": "比赛",
+      "en": "Contests"
+    },
+    "m_878f864f": {
+      "zh": "删除题目附件失败",
+      "en": "Failed to delete challenge attachment"
+    },
+    "m_87915466": {
+      "zh": "实例已销毁",
+      "en": "Instance destroyed"
+    },
+    "m_87ed1dff": {
+      "zh": "积分模式",
+      "en": "Points mode"
+    },
+    "m_8839e665": {
+      "zh": "single_image：单镜像快速部署，适合轻量动态题。",
+      "en": "single_image: single-image runtime for lightweight dynamic challenges."
+    },
+    "m_8841b5b5": {
+      "zh": "赛事配置",
+      "en": "Config"
+    },
+    "m_8841d448": {
+      "zh": "最低强度",
+      "en": "Minimum Score"
+    },
+    "m_88828f2f": {
+      "zh": "支持 Markdown，建议分段编写公告。",
+      "en": "Markdown supported. Write the announcement in structured sections."
+    },
+    "m_8936d6a9": {
+      "zh": "二血加成(%)",
+      "en": "Second blood bonus (%)"
+    },
+    "m_8948f420": {
+      "zh": "请输入验证令牌。",
+      "en": "Please enter verification token."
+    },
+    "m_8952f281": {
+      "zh": "direct（直连）",
+      "en": "direct"
+    },
+    "m_8a1b645f": {
+      "zh": "浅色",
+      "en": "Light"
+    },
+    "m_8b097bf1": {
+      "zh": "基础信息",
+      "en": "Basics"
+    },
+    "m_8b0e6c03": {
+      "zh": "密码已更新",
+      "en": "Password updated"
+    },
+    "m_8b45594c": {
+      "zh": "最新公告",
+      "en": "Latest Announcement"
+    },
+    "m_8b4c1bdb": {
+      "zh": "当前报名待管理员审核，请稍后再进入比赛空间。",
+      "en": "Registration is pending admin approval."
+    },
+    "m_8bcc9e7f": {
+      "zh": "配置与保存",
+      "en": "Configure & save"
+    },
+    "m_8bf7f8a5": {
+      "zh": "包含大写字母",
+      "en": "Contains uppercase"
+    },
+    "m_8c104606": {
+      "zh": "删除附件",
+      "en": "Delete attachment"
+    },
+    "m_8c863e9e": {
+      "zh": "裁判",
+      "en": "Judge"
+    },
+    "m_8cb5ca46": {
+      "zh": "用户名",
+      "en": "Username"
+    },
+    "m_8cfa2206": {
+      "zh": "显示挂载操作菜单",
+      "en": "Show binding actions"
+    },
+    "m_8d14bd4c": {
+      "zh": "用户管理",
+      "en": "User management"
+    },
+    "m_8d4d17d5": {
+      "zh": "审核时间",
+      "en": "Reviewed at"
+    },
+    "m_8d4ddbbf": {
+      "zh": "该实例暂无服务指标。",
+      "en": "No service metrics for this instance yet."
+    },
+    "m_8d902168": {
+      "zh": "转让队长失败",
+      "en": "Failed to transfer captain"
+    },
+    "m_8d9bc421": {
+      "zh": "保存比赛失败",
+      "en": "Failed to save contest"
+    },
+    "m_8dc79bf6": {
+      "zh": "测试日志会实时显示（默认最长 300 秒）；编辑已有题目时，会自动还原 runtime/ 附件到测试目录。",
+      "en": "Live logs are streamed in real time (default timeout: 300s). For existing challenges, runtime/ attachments are restored into the test directory automatically."
+    },
+    "m_8e1bbf07": {
+      "zh": "同步实例状态",
+      "en": "Sync instance status"
+    },
+    "m_8e35ed38": {
+      "zh": "实例健康",
+      "en": "Instance health"
+    },
+    "m_8e3c7a14": {
+      "zh": "删除公告",
+      "en": "Delete announcement"
+    },
+    "m_8e4b1eb4": {
+      "zh": "认证失败",
+      "en": "Authentication failed"
+    },
+    "m_8e5c8550": {
+      "zh": "创建公告失败",
+      "en": "Failed to create announcement"
+    },
+    "m_8e808008": {
+      "zh": "排行榜大屏",
+      "en": "Scoreboard Wall"
+    },
+    "m_8ea0c9e3": {
+      "zh": "显示密码",
+      "en": "Show password"
+    },
+    "m_8ea3da9c": {
+      "zh": "导出实时动图失败",
+      "en": "Failed to export animation"
+    },
+    "m_8ed734d0": {
+      "zh": "触发扫描",
+      "en": "trigger scan"
+    },
+    "m_8fbf9fb2": {
+      "zh": "运行模板校验",
+      "en": "Runtime template lint"
+    },
+    "m_9014805f": {
+      "zh": "执行心跳超时实例回收失败",
+      "en": "Failed to run stale-heartbeat reaper"
+    },
+    "m_902516bb": {
+      "zh": "{username} 已移出队伍。",
+      "en": "{username} was removed from team."
+    },
+    "m_90264d32": {
+      "zh": "动态环境已销毁。",
+      "en": "Runtime instance destroyed."
+    },
+    "m_902d2897": {
+      "zh": "确认删除账号「{username}」？该操作会禁用并匿名化该账号。",
+      "en": "Delete account \"{username}\"? This operation will disable and anonymize the account."
+    },
+    "m_910a11e2": {
+      "zh": "保存设置",
+      "en": "Save"
+    },
+    "m_911389de": {
+      "zh": "输入邮件中的令牌",
+      "en": "Enter token from email"
+    },
+    "m_91504b3d": {
+      "zh": "上传比赛海报失败",
+      "en": "Failed to upload contest poster"
+    },
+    "m_9174e2cd": {
+      "zh": "登录 · 组队 · 参赛",
+      "en": "Sign In · Team · Play"
+    },
+    "m_917b7633": {
+      "zh": "仅显示最近 5 个附件，更多请切换到“版本与附件”。",
+      "en": "Showing latest 5 files. Switch to \"Versions & Files\" for all."
+    },
+    "m_91f87912": {
+      "zh": "显示名（可选）",
+      "en": "Display name (optional)"
+    },
+    "m_92043bff": {
+      "zh": "动态衰减参数",
+      "en": "Dynamic attenuation parameters"
+    },
+    "m_92054f69": {
+      "zh": "站点名",
+      "en": "Site Name"
+    },
+    "m_921a3b99": {
+      "zh": "镜像为空",
+      "en": "Image is empty"
+    },
+    "m_9235c04f": {
+      "zh": "折线图已导出。",
+      "en": "Chart image exported."
+    },
+    "m_92476ad3": {
+      "zh": "static：无需运行实例，提交 flag 即可判定。",
+      "en": "static: no runtime instance is required; only flag verification is used."
+    },
+    "m_936b4b45": {
+      "zh": "队伍创建成功",
+      "en": "Team created"
+    },
+    "m_94196c3b": {
+      "zh": "回滚题目版本失败",
+      "en": "Failed to rollback challenge version"
+    },
+    "m_94c6bfc3": {
+      "zh": "实例已停止",
+      "en": "Instance stopped"
+    },
+    "m_950178a5": {
+      "zh": "no_runtime 模式仅支持 static 题型",
+      "en": "no_runtime mode only supports static challenges."
+    },
+    "m_953502fc": {
+      "zh": "邮箱",
+      "en": "Mail"
+    },
+    "m_9590d5da": {
+      "zh": "新密码",
+      "en": "New password"
+    },
+    "m_95ad6b02": {
+      "zh": "账户",
+      "en": "Profile"
+    },
+    "m_95ebd9be": {
+      "zh": "重置密码失败",
+      "en": "Failed to reset password"
+    },
+    "m_961377ed": {
+      "zh": "管理报名审核",
+      "en": "Manage registrations"
+    },
+    "m_96c50279": {
+      "zh": "按队伍名搜索",
+      "en": "Search by team name"
+    },
+    "m_977c3f73": {
+      "zh": "比赛操作",
+      "en": "Actions"
+    },
+    "m_97faf476": {
+      "zh": "队伍设置",
+      "en": "Team Settings"
+    },
+    "m_982779ed": {
+      "zh": "管理题目类别",
+      "en": "Manage challenge categories"
+    },
+    "m_9827b390": {
+      "zh": "题库列表",
+      "en": "Challenge Library"
+    },
+    "m_986e4cda": {
+      "zh": "删除题目类别失败",
+      "en": "Failed to delete challenge category"
+    },
+    "m_98bfd735": {
+      "zh": "账号已创建并完成登录。",
+      "en": "Account created and signed in."
+    },
+    "m_98d1983e": {
+      "zh": "加入队伍失败",
+      "en": "Failed to join team"
+    },
+    "m_993f318b": {
+      "zh": "实例操作失败",
+      "en": "Instance operation failed"
+    },
+    "m_996f0e43": {
+      "zh": "显示公告操作菜单",
+      "en": "Show announcement actions"
+    },
+    "m_99b0afa6": {
+      "zh": "暂无预览内容。",
+      "en": "No preview content yet."
+    },
+    "m_99ec78ae": {
+      "zh": "计分模式",
+      "en": "Scoring"
+    },
+    "m_9a0d3ea1": {
+      "zh": "复制端点",
+      "en": "Copy endpoint"
+    },
+    "m_9a175719": {
+      "zh": "节奏",
+      "en": "Rhythm"
+    },
+    "m_9af201e6": {
+      "zh": "刷新校验",
+      "en": "Refresh lint"
+    },
+    "m_9aff2e21": {
+      "zh": "配置路径",
+      "en": "Config path"
+    },
+    "m_9b1dbf17": {
+      "zh": "发布时间已清除",
+      "en": "Release time cleared"
+    },
+    "m_9b381724": {
+      "zh": "流程",
+      "en": "Flow"
+    },
+    "m_9be39f08": {
+      "zh": "包含小写字母",
+      "en": "Contains lowercase"
+    },
+    "m_9be88a44": {
+      "zh": "请再次输入密码",
+      "en": "Repeat password"
+    },
+    "m_9c56b45f": {
+      "zh": "得分",
+      "en": "Score"
+    },
+    "m_9cbafee6": {
+      "zh": "请输入队伍名称后再提交。",
+      "en": "Please enter a team name."
+    },
+    "m_9cdc9a88": {
+      "zh": "取消邀请",
+      "en": "Cancel invite"
+    },
+    "m_9d43617f": {
+      "zh": "更新角色",
+      "en": "Update role"
+    },
+    "m_9d508c41": {
+      "zh": "刷新中...",
+      "en": "Refreshing..."
+    },
+    "m_9db4d839": {
+      "zh": "已复制",
+      "en": "Copied"
+    },
+    "m_9df1c42a": {
+      "zh": "角色非法",
+      "en": "Invalid role"
+    },
+    "m_9e15a808": {
+      "zh": "已向 {username} 发送队伍邀请。",
+      "en": "Invitation sent to {username}."
+    },
+    "m_9e765b09": {
+      "zh": "置为待审",
+      "en": "Set pending"
+    },
+    "m_9e7ae955": {
+      "zh": "校验",
+      "en": "check"
+    },
+    "m_9e7e82fc": {
+      "zh": "镜像",
+      "en": "Image"
+    },
+    "m_9e8aa907": {
+      "zh": "报名模式：需管理员审批",
+      "en": "Registration: admin approval required"
+    },
+    "m_9f31bd95": {
+      "zh": "按名称加入",
+      "en": "Join by Name"
+    },
+    "m_9f7566dd": {
+      "zh": "难度",
+      "en": "difficulty"
+    },
+    "m_a01b54ad": {
+      "zh": "筛选比赛并查看详情、公告和入口。",
+      "en": "Filter contests and inspect details, announcements, and entry actions."
+    },
+    "m_a055baf7": {
+      "zh": "执行转让",
+      "en": "Transfer"
+    },
+    "m_a05b6f3a": {
+      "zh": "更新队伍信息失败",
+      "en": "Failed to update team"
+    },
+    "m_a09c69b1": {
+      "zh": "已过期未销毁",
+      "en": "Expired but not destroyed"
+    },
+    "m_a0a1eca2": {
+      "zh": "实时积分趋势",
+      "en": "Live score trend"
+    },
+    "m_a1006684": {
+      "zh": "最近回收：mode=",
+      "en": "Recent recycling: mode="
+    },
+    "m_a1138156": {
+      "zh": "暂无队伍数据。",
+      "en": "No team data."
+    },
+    "m_a14246fc": {
+      "zh": "更新于",
+      "en": "updated on"
+    },
+    "m_a17fa3ca": {
+      "zh": "关键词",
+      "en": "keywords"
+    },
+    "m_a1b0461f": {
+      "zh": "内部端口",
+      "en": "internal port"
+    },
+    "m_a1eb50b4": {
+      "zh": "你还不在队伍中，请先创建或加入队伍后再参赛。",
+      "en": "Create or join a team before entering contest workspace."
+    },
+    "m_a1f8e1c6": {
+      "zh": "邀请人",
+      "en": "Inviter"
+    },
+    "m_a286bd48": {
+      "zh": "题目已从当前比赛移除。",
+      "en": "Challenge removed from current contest."
+    },
+    "m_a2b8d211": {
+      "zh": "不健康",
+      "en": "Unhealthy"
+    },
+    "m_a2d68c21": {
+      "zh": "WireGuard 配置已生成。",
+      "en": "WireGuard config generated."
+    },
+    "m_a2db40fa": {
+      "zh": "站点首页",
+      "en": "Home"
+    },
+    "m_a2e4ebb8": {
+      "zh": "加载失败",
+      "en": "Load failed"
+    },
+    "m_a30d9d10": {
+      "zh": "· 最近",
+      "en": "· latest"
+    },
+    "m_a3332d82": {
+      "zh": "题目附件",
+      "en": "Challenge files"
+    },
+    "m_a3eed213": {
+      "zh": "模板为空",
+      "en": "Template is empty"
+    },
+    "m_a44cda93": {
+      "zh": "比赛模块",
+      "en": "Contest module"
+    },
+    "m_a523560e": {
+      "zh": "比赛空间",
+      "en": "Contest Workspace"
+    },
+    "m_a5a2abc9": {
+      "zh": "告警已恢复",
+      "en": "Alert resolved"
+    },
+    "m_a5aab354": {
+      "zh": "较强",
+      "en": "Strong"
+    },
+    "m_a62c079a": {
+      "zh": "销毁题目",
+      "en": "Destroy challenge"
+    },
+    "m_a67598d9": {
+      "zh": "邀请中心",
+      "en": "Invitations"
+    },
+    "m_a675bd5e": {
+      "zh": "新密码(>=8)",
+      "en": "New password(>=8)"
+    },
+    "m_a69a56c7": {
+      "zh": "加入成功",
+      "en": "Joined"
+    },
+    "m_a6a42e5d": {
+      "zh": "描述（可选）",
+      "en": "Description (optional)"
+    },
+    "m_a74fb838": {
+      "zh": "实例监控",
+      "en": "Instance monitoring"
+    },
+    "m_a75c1310": {
+      "zh": "编辑比赛",
+      "en": "Edit Contest"
+    },
+    "m_a7bc0615": {
+      "zh": "实例列表",
+      "en": "Instance list"
+    },
+    "m_a849aef3": {
+      "zh": "公告已发布",
+      "en": "Announcement published"
+    },
+    "m_a86e7a09": {
+      "zh": "返回赛事列表",
+      "en": "Back to contest list"
+    },
+    "m_a880ba51": {
+      "zh": "Footer 版权文案",
+      "en": "Footer Copyright"
+    },
+    "m_a88c7953": {
+      "zh": "compose 测试通过",
+      "en": "Compose test passed"
+    },
+    "m_a8a1e3de": {
+      "zh": "请先在“题库配置”中选择一个题目，再切换到版本管理。",
+      "en": "Please select a question in \"Question Bank Configuration\" first, and then switch to version management."
+    },
+    "m_a8e88f7f": {
+      "zh": "附件（快捷）",
+      "en": "Attachments (Quick)"
+    },
+    "m_a8ee1451": {
+      "zh": "排名",
+      "en": "Rank"
+    },
+    "m_a92d786d": {
+      "zh": "告警类型",
+      "en": "Alarm type"
+    },
+    "m_a94feb79": {
+      "zh": "题目子导航",
+      "en": "Challenge Tabs"
+    },
+    "m_a980b960": {
+      "zh": "分值",
+      "en": "Score"
+    },
+    "m_a995be52": {
+      "zh": "动态环境已重新初始化。",
+      "en": "Runtime instance reinitialized."
+    },
+    "m_aa5c56c2": {
+      "zh": "切换访问模式后，需要点击“启动”或“重置”实例才能生效。",
+      "en": "After changing access mode, click Start or Reset to apply."
+    },
+    "m_aa5e3e59": {
+      "zh": "条",
+      "en": "items"
+    },
+    "m_aabe980b": {
+      "zh": "链接",
+      "en": "Link"
+    },
+    "m_aafc214d": {
+      "zh": "安装工具请使用 apk（例如：sudo apk add --no-cache nmap）。",
+      "en": "Install tools via apk (e.g. sudo apk add --no-cache nmap)."
+    },
+    "m_ab05578e": {
+      "zh": "发送邀请失败",
+      "en": "Failed to send invitation"
+    },
+    "m_ab1c75df": {
+      "zh": "题目加载失败",
+      "en": "Failed to load challenges"
+    },
+    "m_ab6c5ac0": {
+      "zh": "转让队长",
+      "en": "Transfer captain"
+    },
+    "m_ac1e80c4": {
+      "zh": "direct：不注入跳板或 VPN，仅使用题目入口地址。",
+      "en": "direct: no bastion/VPN injection; only expose the challenge entrypoint."
+    },
+    "m_ac903d7b": {
+      "zh": "删除",
+      "en": "Delete"
+    },
+    "m_acb62123": {
+      "zh": "加载题目版本失败",
+      "en": "Failed to load challenge versions"
+    },
+    "m_ace88fb0": {
+      "zh": "从左侧选择一个实例查看运行指标。",
+      "en": "Select an instance from the list to view runtime metrics."
+    },
+    "m_acfabe37": {
+      "zh": "刷新日志",
+      "en": "Refresh logs"
+    },
+    "m_acfbdc6a": {
+      "zh": "动作",
+      "en": "Action"
+    },
+    "m_acfcc62b": {
+      "zh": "未选择题目",
+      "en": "No challenge selected"
+    },
+    "m_ad04daf0": {
+      "zh": "请先选择比赛",
+      "en": "请先选择比赛"
+    },
+    "m_ad08b4ae": {
+      "zh": "比赛空间",
+      "en": "Contest workspace"
+    },
+    "m_ad86b8e2": {
+      "zh": "公告已更新",
+      "en": "Announcement updated"
+    },
+    "m_adc7df6a": {
+      "zh": "提交结果",
+      "en": "Submission result"
+    },
+    "m_adcd99fe": {
+      "zh": "队伍描述",
+      "en": "Team description"
+    },
+    "m_ae11a01f": {
+      "zh": "退出",
+      "en": "Sign Out"
+    },
+    "m_ae8a9fb2": {
+      "zh": "static：固定 flag 或哈希比对。",
+      "en": "static: compare against fixed flag/hash."
+    },
+    "m_ae91cc78": {
+      "zh": "公告已取消置顶",
+      "en": "Announcement unpinned"
+    },
+    "m_aef1b531": {
+      "zh": "从左侧选择一个公告查看详情。",
+      "en": "Select an announcement on the left to view details."
+    },
+    "m_af01f5ef": {
+      "zh": "请先在中间列选择一个比赛。",
+      "en": "Please select a match in the middle column first."
+    },
+    "m_af50a2a8": {
+      "zh": "正在加载比赛数据...",
+      "en": "Loading contests..."
+    },
+    "m_af522da8": {
+      "zh": "动态环境",
+      "en": "Runtime Instance"
+    },
+    "m_af76b669": {
+      "zh": "销毁",
+      "en": "Destroy"
+    },
+    "m_afc02dd0": {
+      "zh": "结果",
+      "en": "Result"
+    },
+    "m_b0b6ec56": {
+      "zh": "取消邀请失败",
+      "en": "Failed to cancel invitation"
+    },
+    "m_b0c66b87": {
+      "zh": "暂无用户记录。",
+      "en": "There is no user record yet."
+    },
+    "m_b11c6a3a": {
+      "zh": "请先填写注册邮箱。",
+      "en": "Please provide registration email first."
+    },
+    "m_b12f1366": {
+      "zh": "题目 ID 已复制",
+      "en": "Challenge ID copied"
+    },
+    "m_b1b286b1": {
+      "zh": "动态衰减",
+      "en": "Dynamic Decay"
+    },
+    "m_b1fdf870": {
+      "zh": "wireguard（VPN）",
+      "en": "wireguard (VPN)"
+    },
+    "m_b2817a93": {
+      "zh": "时间",
+      "en": "Time"
+    },
+    "m_b28998ab": {
+      "zh": "条数",
+      "en": "Number of items"
+    },
+    "m_b2ca4bd8": {
+      "zh": "管理题目挂载",
+      "en": "Manage challenge bindings"
+    },
+    "m_b369a6b8": {
+      "zh": "邮箱激活",
+      "en": "Email Activation"
+    },
+    "m_b383efe9": {
+      "zh": "加载队伍详情失败",
+      "en": "Failed to load team details"
+    },
+    "m_b39b0f9f": {
+      "zh": "邀请已取消",
+      "en": "Invitation canceled"
+    },
+    "m_b426174b": {
+      "zh": "未选择海报",
+      "en": "No poster selected"
+    },
+    "m_b43896c9": {
+      "zh": "注册",
+      "en": "Register"
+    },
+    "m_b480e989": {
+      "zh": "删除比赛海报",
+      "en": "Delete contest poster"
+    },
+    "m_b48bc5f1": {
+      "zh": "已载入题目配置",
+      "en": "Challenge config loaded"
+    },
+    "m_b4cabecb": {
+      "zh": "置顶",
+      "en": "pin to top"
+    },
+    "m_b514887f": {
+      "zh": "实时榜单",
+      "en": "Live Scoreboard"
+    },
+    "m_b557b263": {
+      "zh": "加载到左侧表单",
+      "en": "Load to left form"
+    },
+    "m_b58ebf29": {
+      "zh": "同步中...",
+      "en": "Syncing..."
+    },
+    "m_b5b4ed1f": {
+      "zh": "人",
+      "en": "members"
+    },
+    "m_b5db2fc5": {
+      "zh": "更新资料失败",
+      "en": "Failed to update profile"
+    },
+    "m_b5e51c8b": {
+      "zh": "恢复运行告警失败",
+      "en": "Failed to resolve runtime alert"
+    },
+    "m_b6209f25": {
+      "zh": "当前未设置海报。",
+      "en": "No posters are currently set."
+    },
+    "m_b6536d5f": {
+      "zh": "dynamic/internal 题型在 compose 模式下必须提供 compose 模板",
+      "en": "dynamic/internal challenges in compose mode require a compose template."
+    },
+    "m_b690b78e": {
+      "zh": "比赛已创建",
+      "en": "Contest created"
+    },
+    "m_b743f462": {
+      "zh": "compose 模板（可选）",
+      "en": "compose template (optional)"
+    },
+    "m_b751033a": {
+      "zh": "暂无趋势数据。",
+      "en": "No trend data yet."
+    },
+    "m_b78f823f": {
+      "zh": "请选择类别",
+      "en": "Select category"
+    },
+    "m_b7a30f66": {
+      "zh": "已挂载题目",
+      "en": "Questions have been mounted"
+    },
+    "m_b7c41d65": {
+      "zh": "类别已创建",
+      "en": "Category created"
+    },
+    "m_b88508c6": {
+      "zh": "错误",
+      "en": "Error"
+    },
+    "m_b8aa1bed": {
+      "zh": "引用",
+      "en": "Quote"
+    },
+    "m_b8b87b7a": {
+      "zh": "暂无邀请。",
+      "en": "No invitations."
+    },
+    "m_b8e67a02": {
+      "zh": "暂无运行告警。",
+      "en": "There are no operational warnings yet."
+    },
+    "m_b9744b05": {
+      "zh": "服务",
+      "en": "Service"
+    },
+    "m_bac1c00c": {
+      "zh": "删除账号后会立即撤销会话，且不可恢复。",
+      "en": "Deleting the account revokes all sessions and cannot be undone."
+    },
+    "m_baf439ed": {
+      "zh": "请输入账号标识。",
+      "en": "Please enter account identifier."
+    },
+    "m_bb69d239": {
+      "zh": "内容（Markdown）",
+      "en": "Content (Markdown)"
+    },
+    "m_bb96c7da": {
+      "zh": "回滚版本号",
+      "en": "Rollback version number"
+    },
+    "m_bbdfa277": {
+      "zh": "置顶公告",
+      "en": "Pinned announcement"
+    },
+    "m_bc088033": {
+      "zh": "输入长度不能超过 {maxLength} 个字符。",
+      "en": "Input cannot exceed {maxLength} characters."
+    },
+    "m_bc157211": {
+      "zh": "队伍",
+      "en": "Team"
+    },
+    "m_bc183477": {
+      "zh": "更新用户角色失败",
+      "en": "Failed to update user role"
+    },
+    "m_bc3f9e8a": {
+      "zh": "批准",
+      "en": "Approve"
+    },
+    "m_bc815ee7": {
+      "zh": "请求失败",
+      "en": "Request failed"
+    },
+    "m_bc8a5da4": {
+      "zh": "公告已删除",
+      "en": "Announcement deleted"
+    },
+    "m_bcc0fd65": {
+      "zh": "转让中...",
+      "en": "Transferring..."
+    },
+    "m_bd4d0092": {
+      "zh": "版本与附件",
+      "en": "Versions & Files"
+    },
+    "m_bda7937c": {
+      "zh": "海报已删除",
+      "en": "Poster deleted"
+    },
+    "m_bdd4152e": {
+      "zh": "今日签名",
+      "en": "Signature"
+    },
+    "m_bdeb8cdf": {
+      "zh": "比赛题目挂载",
+      "en": "Contest Challenge Bindings"
+    },
+    "m_be487257": {
+      "zh": "密码强度不足，请按规则提升密码强度。",
+      "en": "Password is too weak. Please satisfy policy checks."
+    },
+    "m_befbaf4a": {
+      "zh": "发送重置邮件",
+      "en": "Send Reset Email"
+    },
+    "m_beff0167": {
+      "zh": "账号已删除",
+      "en": "Account deleted"
+    },
+    "m_bf1c8b7c": {
+      "zh": "该邀请已失效。",
+      "en": "The invitation is now invalid."
+    },
+    "m_bf7c753f": {
+      "zh": "总提交",
+      "en": "total commits"
+    },
+    "m_bf873b90": {
+      "zh": "挂载或更新",
+      "en": "Mount or update"
+    },
+    "m_bfd32621": {
+      "zh": "未启用",
+      "en": "Disabled"
+    },
+    "m_c05215da": {
+      "zh": "配置标签、可见策略和内容文案。",
+      "en": "Configure tags, visibility policy, and writeup content."
+    },
+    "m_c0716098": {
+      "zh": "保存修改",
+      "en": "Save changes"
+    },
+    "m_c0a8de25": {
+      "zh": "删除中...",
+      "en": "Deleting..."
+    },
+    "m_c0baa512": {
+      "zh": "退出队伍",
+      "en": "Leave team"
+    },
+    "m_c0e4ece5": {
+      "zh": "direct（直连入口）",
+      "en": "direct (direct entrance)"
+    },
+    "m_c1290ce6": {
+      "zh": "停止",
+      "en": "Stop"
+    },
+    "m_c12ce48f": {
+      "zh": "请输入用户名",
+      "en": "Enter username"
+    },
+    "m_c1483372": {
+      "zh": "· 题目",
+      "en": "· challenges"
+    },
+    "m_c150cbf0": {
+      "zh": "取消删除",
+      "en": "Cancel"
+    },
+    "m_c1945685": {
+      "zh": "已加入队伍",
+      "en": "Joined team"
+    },
+    "m_c2a15526": {
+      "zh": "确认人：",
+      "en": "Confirmed by:"
+    },
+    "m_c303b868": {
+      "zh": "导出折线图失败",
+      "en": "Failed to export chart image"
+    },
+    "m_c32c7573": {
+      "zh": "销毁比赛",
+      "en": "Destroy the game"
+    },
+    "m_c33a7bc5": {
+      "zh": "支持任意附件格式，大小不超过 {maxSize}。若上传 .zip 且包含 docker-compose.yml，会自动导入 compose，并将其余文件保存为 runtime/...。",
+      "en": "Any file type is supported, up to {maxSize}. If a .zip includes docker-compose.yml, compose is auto-imported and remaining files are saved as runtime/...."
+    },
+    "m_c35278f5": {
+      "zh": "版本号必须是大于等于 1 的整数",
+      "en": "Version number must be an integer greater than or equal to 1."
+    },
+    "m_c3cfdd4b": {
+      "zh": "立即发布",
+      "en": "Publish immediately"
+    },
+    "m_c4f43f6c": {
+      "zh": "运行告警扫描完成",
+      "en": "Runtime alert scan completed"
+    },
+    "m_c50b4607": {
+      "zh": "展示详细信息（JSON）",
+      "en": "Display details (JSON)"
+    },
+    "m_c525f433": {
+      "zh": "运行告警",
+      "en": "Alerts"
+    },
+    "m_c528f123": {
+      "zh": "运行告警：实例即将到期",
+      "en": "Runtime alert: instance expiring soon"
+    },
+    "m_c53d6066": {
+      "zh": "题目已创建",
+      "en": "Challenge created"
+    },
+    "m_c56f30e9": {
+      "zh": "队伍名",
+      "en": "Team name"
+    },
+    "m_c618d71c": {
+      "zh": "删除公告失败",
+      "en": "Failed to delete announcement"
+    },
+    "m_c6728ed8": {
+      "zh": "创建比赛",
+      "en": "Create Contest"
+    },
+    "m_c6c4ac59": {
+      "zh": "比赛管理",
+      "en": "Contest Management"
+    },
+    "m_c6c7f47c": {
+      "zh": "已创建队伍 {teamName}",
+      "en": "Team {teamName} created."
+    },
+    "m_c7572bb0": {
+      "zh": "题库概览",
+      "en": "Challenge Library Overview"
+    },
+    "m_c77884da": {
+      "zh": "比赛公告管理",
+      "en": "Contest Announcement Management"
+    },
+    "m_c88a4b42": {
+      "zh": "仅 single_image 模式支持镜像测试",
+      "en": "仅 single_image 模式支持镜像测试"
+    },
+    "m_c896dcc1": {
+      "zh": "通过",
+      "en": "Passed"
+    },
+    "m_c89b147b": {
+      "zh": "启动",
+      "en": "Start"
+    },
+    "m_c8e09cd0": {
+      "zh": "用户",
+      "en": "user"
+    },
+    "m_c8f3eed0": {
+      "zh": "管理员批准参赛",
+      "en": "Approved by admin"
+    },
+    "m_c8f567c8": {
+      "zh": "公告已撤回",
+      "en": "Announcement unpublished"
+    },
+    "m_c90e211b": {
+      "zh": "加载队伍列表失败",
+      "en": "Failed to load team list"
+    },
+    "m_c96e7392": {
+      "zh": "管理台已刷新",
+      "en": "Admin console refreshed"
+    },
+    "m_c984bd79": {
+      "zh": "排序",
+      "en": "Sort"
+    },
+    "m_c9d8d76b": {
+      "zh": "专注解题",
+      "en": "Focus on Solves"
+    },
+    "m_ca254e92": {
+      "zh": "解散队伍失败",
+      "en": "Failed to disband team"
+    },
+    "m_ca36a8c9": {
+      "zh": "删除账号失败",
+      "en": "Failed to delete account"
+    },
+    "m_ca424806": {
+      "zh": "提交 Flag",
+      "en": "Submit Flag"
+    },
+    "m_cad439a7": {
+      "zh": "即将开始",
+      "en": "Scheduled"
+    },
+    "m_cadef15a": {
+      "zh": "密码强度检测",
+      "en": "Password Strength Check"
+    },
+    "m_cae0121a": {
+      "zh": "安全校验",
+      "en": "Security Check"
+    },
+    "m_cb52efa4": {
+      "zh": "标签（逗号分隔）",
+      "en": "Tags (comma separated)"
+    },
+    "m_cb5e7046": {
+      "zh": "扫描中...",
+      "en": "Scanning..."
+    },
+    "m_cbf89de1": {
+      "zh": "compose（多容器）",
+      "en": "compose (multiple containers)"
+    },
+    "m_cc305802": {
+      "zh": "总实例",
+      "en": "Total instances"
+    },
+    "m_cc547060": {
+      "zh": "访问模式",
+      "en": "Access mode"
+    },
+    "m_ccc37284": {
+      "zh": "暂无榜单数据。",
+      "en": "No scoreboard data."
+    },
+    "m_cd1dd19b": {
+      "zh": "返回比赛",
+      "en": "Back to contest"
+    },
+    "m_cd54395d": {
+      "zh": "代码",
+      "en": "Code"
+    },
+    "m_cd5e913c": {
+      "zh": "管理公告",
+      "en": "Manage announcements"
+    },
+    "m_cdf02ee1": {
+      "zh": "你已加入队伍 {teamName}",
+      "en": "You joined {teamName}."
+    },
+    "m_cdf17038": {
+      "zh": "返回比赛",
+      "en": "Back to contests"
+    },
+    "m_ce18f466": {
+      "zh": "正在加载题目...",
+      "en": "Loading challenges..."
+    },
+    "m_ce46f123": {
+      "zh": "compose 测试失败",
+      "en": "Compose test failed"
+    },
+    "m_ce47e255": {
+      "zh": "忘记密码？",
+      "en": "Forgot password?"
+    },
+    "m_ce7f128a": {
+      "zh": "公告已创建",
+      "en": "Announcement created"
+    },
+    "m_cea5113f": {
+      "zh": "附件已上传",
+      "en": "Attachment uploaded"
+    },
+    "m_ceb71036": {
+      "zh": "删除我的账号",
+      "en": "Delete my account"
+    },
+    "m_cefad74f": {
+      "zh": "失败",
+      "en": "Failed"
+    },
+    "m_cf2b1c1b": {
+      "zh": "没有匹配的比赛。",
+      "en": "No contests matched the current filter."
+    },
+    "m_cfa79de1": {
+      "zh": "请输入密码",
+      "en": "Enter password"
+    },
+    "m_cfc54d45": {
+      "zh": "加入该队伍",
+      "en": "Join team"
+    },
+    "m_cfd59ce5": {
+      "zh": "场",
+      "en": "contests"
+    },
+    "m_cffcc91c": {
+      "zh": "销毁中...",
+      "en": "Destroying..."
+    },
+    "m_d02bad27": {
+      "zh": "加载实例失败",
+      "en": "Failed to load instance"
+    },
+    "m_d02d541b": {
+      "zh": "告警列表",
+      "en": "Alert stream"
+    },
+    "m_d0905473": {
+      "zh": "已有账号？去登录",
+      "en": "Already have an account? Sign in"
+    },
+    "m_d09cc560": {
+      "zh": "解散中...",
+      "en": "Disbanding..."
+    },
+    "m_d0b19161": {
+      "zh": "快速筛选",
+      "en": "Quick filter"
+    },
+    "m_d10fb023": {
+      "zh": "草稿",
+      "en": "Draft"
+    },
+    "m_d11c4ec3": {
+      "zh": "积分/排名趋势",
+      "en": "Score/rank trend"
+    },
+    "m_d1e59020": {
+      "zh": "拒绝",
+      "en": "Reject"
+    },
+    "m_d1f6dd7d": {
+      "zh": "浏览器不支持 WebM 导出。",
+      "en": "WebM export is not supported."
+    },
+    "m_d31161b8": {
+      "zh": "当前浏览器不支持动图导出。",
+      "en": "This browser does not support animated export."
+    },
+    "m_d3771187": {
+      "zh": "测试中...",
+      "en": "Testing..."
+    },
+    "m_d383e75c": {
+      "zh": "删除海报",
+      "en": "Delete poster"
+    },
+    "m_d39922fa": {
+      "zh": "挂载/更新题目",
+      "en": "Bind/Update Challenge"
+    },
+    "m_d39e3919": {
+      "zh": "移除成员",
+      "en": "Remove member"
+    },
+    "m_d3c025fb": {
+      "zh": "很弱",
+      "en": "Very weak"
+    },
+    "m_d3c250f1": {
+      "zh": "不包含用户名/邮箱前缀",
+      "en": "No username/email local-part"
+    },
+    "m_d43a45e6": {
+      "zh": "暂无匹配的模板校验记录。",
+      "en": "There is currently no matching template verification record."
+    },
+    "m_d4aeada2": {
+      "zh": "处理中...",
+      "en": "Processing..."
+    },
+    "m_d4b7a7a9": {
+      "zh": "核心模块",
+      "en": "Core Modules"
+    },
+    "m_d530efbc": {
+      "zh": "状态",
+      "en": "state"
+    },
+    "m_d53e357c": {
+      "zh": "公告详情",
+      "en": "Announcement details"
+    },
+    "m_d54f9345": {
+      "zh": "首页签名",
+      "en": "Home Signature"
+    },
+    "m_d58fc361": {
+      "zh": "修改密码失败",
+      "en": "Failed to change password"
+    },
+    "m_d5aae4de": {
+      "zh": "邀请已发送",
+      "en": "Invitation sent"
+    },
+    "m_d5bbd37f": {
+      "zh": "提示（每行一条）",
+      "en": "Hints (one per line)"
+    },
+    "m_d5de29ea": {
+      "zh": "你已拒绝该邀请。",
+      "en": "You rejected the invitation."
+    },
+    "m_d6b1d25a": {
+      "zh": "已在队伍中",
+      "en": "Already in a team"
+    },
+    "m_d6c6fce9": {
+      "zh": "创建中...",
+      "en": "Creating..."
+    },
+    "m_d6ed17cd": {
+      "zh": "列表",
+      "en": "List"
+    },
+    "m_d71a7926": {
+      "zh": "队长",
+      "en": "Captain"
+    },
+    "m_d80b3fa7": {
+      "zh": "欢迎登录",
+      "en": "Welcome Back"
+    },
+    "m_d8423a97": {
+      "zh": "总分",
+      "en": "Total"
+    },
+    "m_d8fe06b0": {
+      "zh": "实例已启动",
+      "en": "Instance started"
+    },
+    "m_d9377cbd": {
+      "zh": "报名被拒绝",
+      "en": "Registration rejected"
+    },
+    "m_d9664da3": {
+      "zh": "确认删除题目类别「{displayName}」？",
+      "en": "Delete challenge category \"{displayName}\"?"
+    },
+    "m_d9fe6e64": {
+      "zh": "刷新",
+      "en": "Reset"
+    },
+    "m_da0d541d": {
+      "zh": "请输入用户名。",
+      "en": "Please enter username."
+    },
+    "m_da24a92a": {
+      "zh": "上传附件",
+      "en": "Upload attachment"
+    },
+    "m_da84e2ee": {
+      "zh": "已结束",
+      "en": "Ended"
+    },
+    "m_daab5564": {
+      "zh": "预览",
+      "en": "Preview"
+    },
+    "m_db78c2fb": {
+      "zh": "刷新实例",
+      "en": "Refresh instances"
+    },
+    "m_dbca5dbc": {
+      "zh": "当前比赛未挂载题目。",
+      "en": "No challenges are bound to this contest."
+    },
+    "m_dc8eef60": {
+      "zh": "编辑题目",
+      "en": "Edit Challenge"
+    },
+    "m_dcf7e7a3": {
+      "zh": "扫描总数",
+      "en": "Total number of scans"
+    },
+    "m_dd0fd7d0": {
+      "zh": "到期时间",
+      "en": "Expires at"
+    },
+    "m_dd4a845c": {
+      "zh": "比赛已更新",
+      "en": "Contest updated"
+    },
+    "m_dd60e109": {
+      "zh": "销毁",
+      "en": "destroy"
+    },
+    "m_dd711495": {
+      "zh": "准备好后，从右上角进入登录。",
+      "en": "Use the top-right entry when you're ready."
+    },
+    "m_dd97ae20": {
+      "zh": "浏览器不允许写入剪贴板。",
+      "en": "Clipboard access is blocked by the browser."
+    },
+    "m_ddc92d70": {
+      "zh": "邀请已处理",
+      "en": "Invitation processed"
+    },
+    "m_de0a09c0": {
+      "zh": "收起操作",
+      "en": "Collapse operation"
+    },
+    "m_de0dd27f": {
+      "zh": "基础规模",
+      "en": "Base metrics"
+    },
+    "m_de245eff": {
+      "zh": "已重置为待审核状态",
+      "en": "Reset to pending review"
+    },
+    "m_de87866a": {
+      "zh": "例如：比赛赛程更新",
+      "en": "Example: Schedule update"
+    },
+    "m_df92a675": {
+      "zh": "比赛状态已更新",
+      "en": "Contest status updated"
+    },
+    "m_dfadd166": {
+      "zh": "排名动态曲线",
+      "en": "Rank trend"
+    },
+    "m_e0706b76": {
+      "zh": "清除",
+      "en": "清除"
+    },
+    "m_e0d612cd": {
+      "zh": "总服务",
+      "en": "Total services"
+    },
+    "m_e108053f": {
+      "zh": "取消中...",
+      "en": "Canceling..."
+    },
+    "m_e1816838": {
+      "zh": "选择新队长",
+      "en": "Select new captain"
+    },
+    "m_e24347d1": {
+      "zh": "找回密码",
+      "en": "Password Recovery"
+    },
+    "m_e2c01268": {
+      "zh": "发布时间（可选）",
+      "en": "Release time (optional)"
+    },
+    "m_e2c587eb": {
+      "zh": "下载中...",
+      "en": "Downloading..."
+    },
+    "m_e2f84688": {
+      "zh": "管理员",
+      "en": "Admin"
+    },
+    "m_e312bdfb": {
+      "zh": "排名曲线",
+      "en": "Rank curve"
+    },
+    "m_e3abd5e0": {
+      "zh": "重发验证邮件",
+      "en": "Resend"
+    },
+    "m_e4bf9e9b": {
+      "zh": "no_runtime（无需容器）",
+      "en": "no_runtime (no container runtime)"
+    },
+    "m_e4c2ac86": {
+      "zh": "更新用户状态失败",
+      "en": "Failed to update user status"
+    },
+    "m_e542b35b": {
+      "zh": "重置中...",
+      "en": "Resetting..."
+    },
+    "m_e5e3b268": {
+      "zh": "加载实例运行指标失败",
+      "en": "Failed to load instance metrics"
+    },
+    "m_e63449e5": {
+      "zh": "在题库配置页直接管理附件，减少“编辑题目”与“版本与附件”来回切换。",
+      "en": "Manage attachments directly here to reduce tab switching."
+    },
+    "m_e6440008": {
+      "zh": "附件过大",
+      "en": "Attachment too large"
+    },
+    "m_e69f7cf8": {
+      "zh": "确认密码",
+      "en": "Confirm Password"
+    },
+    "m_e6ae0796": {
+      "zh": "站点设置",
+      "en": "Site Settings"
+    },
+    "m_e71e4197": {
+      "zh": "题目附件大小上限（MB）",
+      "en": "Challenge attachment limit (MB)"
+    },
+    "m_e77c5316": {
+      "zh": "队伍协作",
+      "en": "Team Space"
+    },
+    "m_e78a3369": {
+      "zh": "选手可切换（仅对 compose 生效）",
+      "en": "Player-selectable modes (compose only)"
+    },
+    "m_e7f78ec8": {
+      "zh": "· 队伍",
+      "en": "· teams"
+    },
+    "m_e7fa9ac5": {
+      "zh": "实时趋势与排名",
+      "en": "Live Trend & Rankings"
+    },
+    "m_e900f5ff": {
+      "zh": "请选择题目",
+      "en": "Select a challenge"
+    },
+    "m_e94eabd5": {
+      "zh": "首页简介",
+      "en": "Home Tagline"
+    },
+    "m_e9762981": {
+      "zh": "隐藏密码",
+      "en": "Hide password"
+    },
+    "m_e99ef119": {
+      "zh": "默认访问模式",
+      "en": "Default access mode"
+    },
+    "m_e9f29a91": {
+      "zh": "更新比赛状态失败",
+      "en": "Failed to update contest status"
+    },
+    "m_ea1635a9": {
+      "zh": "申请时间",
+      "en": "Requested at"
+    },
+    "m_ea2973d9": {
+      "zh": "认证模式切换",
+      "en": "Auth mode switch"
+    },
+    "m_ea88afd6": {
+      "zh": "队伍 ID 已复制。",
+      "en": "Team ID copied."
+    },
+    "m_eade74bf": {
+      "zh": "保存成功",
+      "en": "Saved"
+    },
+    "m_eaf3e91a": {
+      "zh": "类别已删除",
+      "en": "Category removed"
+    },
+    "m_eb2cab1a": {
+      "zh": "本地时区",
+      "en": "Local timezone"
+    },
+    "m_eb5bcf88": {
+      "zh": "返回题库",
+      "en": "Back to library"
+    },
+    "m_ec3f91f2": {
+      "zh": "支持 PNG、JPG、WebP 等格式",
+      "en": "支持 PNG、JPG、WebP 等格式"
+    },
+    "m_ec806a92": {
+      "zh": "验证邮件",
+      "en": "Verification Email"
+    },
+    "m_ecc396d3": {
+      "zh": "运行模式",
+      "en": "Runtime mode"
+    },
+    "m_ed9a7207": {
+      "zh": "隐藏确认密码",
+      "en": "Hide confirm password"
+    },
+    "m_ed9d8f1b": {
+      "zh": "移除挂载",
+      "en": "Remove mount"
+    },
+    "m_eda3fa71": {
+      "zh": "分类",
+      "en": "Category"
+    },
+    "m_edaf3060": {
+      "zh": "ssh_bastion：自动注入跳板机，适合内网扫描与横向测试。",
+      "en": "ssh_bastion: inject an SSH bastion, suitable for internal scan and lateral testing."
+    },
+    "m_edb470c0": {
+      "zh": "仅错误",
+      "en": "only errors"
+    },
+    "m_ee835e18": {
+      "zh": "被邀请用户名",
+      "en": "Invitee username"
+    },
+    "m_eebd8224": {
+      "zh": "暂无可视队伍数据。",
+      "en": "No team data for trend view."
+    },
+    "m_eec7d8a7": {
+      "zh": "实例指标：",
+      "en": "Instance metrics:"
+    },
+    "m_efc8d1be": {
+      "zh": "没有匹配的比赛。",
+      "en": "No matching contests."
+    },
+    "m_efce9ebf": {
+      "zh": "新密码强度不足，请按规则提升密码强度。",
+      "en": "New password is too weak. Please satisfy policy checks."
+    },
+    "m_efd07c49": {
+      "zh": "状态筛选",
+      "en": "Status filter"
+    },
+    "m_efec42da": {
+      "zh": "队伍名为空",
+      "en": "Team name required"
+    },
+    "m_f02dbb29": {
+      "zh": "返回比赛列表",
+      "en": "Back to contests"
+    },
+    "m_f07fccd8": {
+      "zh": "正在加载队伍详情...",
+      "en": "Loading team details..."
+    },
+    "m_f08ffc37": {
+      "zh": "编辑",
+      "en": "Edit"
+    },
+    "m_f0fb08dd": {
+      "zh": "加载我的队伍失败",
+      "en": "Failed to load my team"
+    },
+    "m_f179d8c1": {
+      "zh": "站点",
+      "en": "Site"
+    },
+    "m_f1b723d8": {
+      "zh": "未登录或会话已失效",
+      "en": "Not signed in or session expired"
+    },
+    "m_f1ea66ef": {
+      "zh": "请输入内容。",
+      "en": "Please enter a value."
+    },
+    "m_f1effbcd": {
+      "zh": "收起找回密码",
+      "en": "Hide recovery"
+    },
+    "m_f2516b0f": {
+      "zh": "报名模式：自动通过",
+      "en": "Registration: auto-approved"
+    },
+    "m_f28de735": {
+      "zh": "保存题目失败",
+      "en": "Failed to save challenge"
+    },
+    "m_f2a33dcb": {
+      "zh": "公告置顶状态已更新",
+      "en": "Pin status updated"
+    },
+    "m_f2ad2b4f": {
+      "zh": "邀请留言（可选）",
+      "en": "Message (optional)"
+    },
+    "m_f3e7b0e1": {
+      "zh": "创建时间",
+      "en": "creation time"
+    },
+    "m_f3ea5f90": {
+      "zh": "复制 Team ID",
+      "en": "Copy team ID"
+    },
+    "m_f3ea6ad1": {
+      "zh": "忘记密码时可直接发起重置流程。",
+      "en": "Start reset directly when you forget your password."
+    },
+    "m_f415e491": {
+      "zh": "从左侧选择一个比赛查看详情与状态操作。",
+      "en": "Select a contest on the left to view details and status actions."
+    },
+    "m_f4169021": {
+      "zh": "处理备注（可选）",
+      "en": "Process notes (optional)"
+    },
+    "m_f4afd30f": {
+      "zh": "确认解散",
+      "en": "Confirm disband"
+    },
+    "m_f4b4b525": {
+      "zh": "回收中...",
+      "en": "Recycling..."
+    },
+    "m_f539d012": {
+      "zh": "动态环境已进入运行状态。",
+      "en": "Runtime instance is running."
+    },
+    "m_f54f9c7e": {
+      "zh": "内容与题解",
+      "en": "Content & Writeup"
+    },
+    "m_f5808c7b": {
+      "zh": "确认删除比赛「{title}」的海报？",
+      "en": "Delete poster for contest \"{title}\"?"
+    },
+    "m_f5a23e64": {
+      "zh": "公告列表",
+      "en": "Announcement list"
+    },
+    "m_f5a8faeb": {
+      "zh": "更新于",
+      "en": "Updated"
+    },
+    "m_f65fea10": {
+      "zh": "审计日志",
+      "en": "Audit Logs"
+    },
+    "m_f7057d26": {
+      "zh": "题目已回滚",
+      "en": "Challenge rolled back"
+    },
+    "m_f70ecbc6": {
+      "zh": "script：调用脚本判定，可用于复杂答案校验。",
+      "en": "script: verify via script for complex validation."
+    },
+    "m_f7312e10": {
+      "zh": "级别",
+      "en": "level"
+    },
+    "m_f79663f9": {
+      "zh": "保存失败",
+      "en": "Save failed"
+    },
+    "m_f8144eec": {
+      "zh": "清除发布时间失败",
+      "en": "Failed to clear release time"
+    },
+    "m_f8151d76": {
+      "zh": "选择文件",
+      "en": "选择文件"
+    },
+    "m_f8248680": {
+      "zh": "站点文案已更新。",
+      "en": "Site copy has been updated."
+    },
+    "m_f82fdc41": {
+      "zh": "队伍名称",
+      "en": "Team name"
+    },
+    "m_f8484a44": {
+      "zh": "首页",
+      "en": "Home"
+    },
+    "m_f899dcf7": {
+      "zh": "新密码强度",
+      "en": "New Password Strength"
+    },
+    "m_f8c391a6": {
+      "zh": "提交过快",
+      "en": "Rate limited"
+    },
+    "m_f8ef00a7": {
+      "zh": "比赛公告",
+      "en": "Announcements"
+    },
+    "m_fad52b5b": {
+      "zh": "一二三血加成必须为 0-500 的整数百分比。",
+      "en": "Blood bonuses must be integer percentages between 0 and 500."
+    },
+    "m_fb2e4b76": {
+      "zh": "显示告警操作菜单",
+      "en": "Show alert actions"
+    },
+    "m_fb5c7740": {
+      "zh": "名称",
+      "en": "Name"
+    },
+    "m_fb70bc88": {
+      "zh": "提交",
+      "en": "Submit"
+    },
+    "m_fbd48805": {
+      "zh": "暂无版本记录。",
+      "en": "There is no version record yet."
+    },
+    "m_fc766a66": {
+      "zh": "打开完整版本与附件",
+      "en": "Open full versions & files"
+    },
+    "m_fc84c782": {
+      "zh": "从左侧选择一个告警查看详情。",
+      "en": "Select an alert on the left to view details."
+    },
+    "m_fc9a3603": {
+      "zh": "挂载失败",
+      "en": "Binding failed"
+    },
+    "m_fccc67a2": {
+      "zh": "验证码已过期，请重新验证。",
+      "en": "Verification expired. Please verify again."
+    },
+    "m_fcdb0f53": {
+      "zh": "上传题目附件失败",
+      "en": "Failed to upload challenge attachment"
+    },
+    "m_fcf9d2a1": {
+      "zh": "修改密码",
+      "en": "Change Password"
+    },
+    "m_fcfbb1b7": {
+      "zh": "会话结束",
+      "en": "Session Ended"
+    },
+    "m_fd3fc6d5": {
+      "zh": "请完成邮箱验证后再登录。",
+      "en": "Complete email verification before signing in."
+    },
+    "m_fd680df0": {
+      "zh": "清除发布时间",
+      "en": "Clear publishing time"
+    },
+    "m_fd785681": {
+      "zh": "快速筛选",
+      "en": "Quick Filter"
+    },
+    "m_fde4882a": {
+      "zh": "回滚到该版本",
+      "en": "Roll back to this version"
+    },
+    "m_fde506b4": {
+      "zh": "创建题目",
+      "en": "Create challenge"
+    },
+    "m_fe316a8f": {
+      "zh": "浏览器不支持",
+      "en": "Unsupported browser"
+    },
+    "m_fe3dfd2c": {
+      "zh": "internal：题目运行在内部/裁判控制场景，通常不直接暴露给选手公网。",
+      "en": "internal: runtime is intended for internal/judge-controlled scenarios."
+    },
+    "m_fe582bef": {
+      "zh": "请先填写镜像仓库地址",
+      "en": "Please provide image registry address first."
+    },
+    "m_fea33b9d": {
+      "zh": "处理邀请失败",
+      "en": "Failed to process invitation"
+    },
+    "m_feca111e": {
+      "zh": "复制 SSH 命令",
+      "en": "Copy SSH command"
+    },
+    "m_ffadca98": {
+      "zh": "初始状态",
+      "en": "initial state"
+    },
+    "m_fff3360e": {
+      "zh": "可以继续挂载题目并调整状态。",
+      "en": "You can continue binding challenges and adjusting status."
+    }
+  },
+  "zh_to_en": {
+    "成员已移除": "Member removed",
+    "刷新失败": "Refresh failed",
+    "下移": "move down",
+    "访问模式": "access mode",
+    "密码过短": "Password too short",
+    "无重复字符序列": "No repeating run",
+    "显示确认密码": "Show confirm password",
+    "较弱": "Weak",
+    "请先选择一个附件文件": "Please select an attachment file first.",
+    "创建队伍": "Create team",
+    "账户设置": "Account Settings",
+    "密码": "Password",
+    "保存题目类别失败": "Failed to save challenge category",
+    "分": "pts",
+    "三血加成(%)": "Third blood bonus (%)",
+    "加载题目附件失败": "Failed to load challenge files",
+    "更新题目失败": "Failed to update challenge",
+    "确认中...": "Confirming...",
+    "加粗": "Bold",
+    "公告标题和内容不能为空": "公告标题和内容不能为空",
+    "请先填写 compose 模板": "Please fill in the compose template first.",
+    "加入时间": "Joined at",
+    "确认重置密码": "Confirm Password Reset",
+    "测试镜像（拉取+构建探测）": "Test image (pull + build probe)",
+    "选择并管理": "Select and manage",
+    "队伍大厅": "Team Lobby",
+    "管理该账号": "Manage this account",
+    "包含数字": "Contains digit",
+    "配置题型、flag 策略和运行环境。": "Configure challenge type, flag strategy, and runtime.",
+    "估算破解时间：{crackTime}": "Estimated crack time: {crackTime}",
+    "测试日志会实时显示（默认最长 300 秒），适合镜像拉取/构建较慢场景。": "Live logs are streamed in real time (default timeout: 300s).",
+    "加载排行榜失败": "Failed to load scoreboard wall",
+    "加载实例失败": "Failed to load instances",
+    "会话已清理。": "Session cleared.",
+    "执行过期回收": "Execute expiration recycling",
+    "{username} 已退出登录。": "{username} signed out.",
+    "浏览与筛选": "Browse & filter",
+    "暂无审计记录。": "There is no audit record yet.",
+    "你已加入 {teamName}": "You joined {teamName}.",
+    "队伍已解散": "Team disbanded",
+    "按标题、slug、状态筛选": "Filter by title, slug, status",
+    "首页主标题": "Home Title",
+    "无法测试镜像": "Cannot test image",
+    "运行概览": "Runtime Overview",
+    "报名状态已更新": "Registration status updated",
+    "全部": "All",
+    "· 运行中": "· running",
+    "未登录或会话过期": "Not signed in or session expired",
+    "进入比赛空间": "Open Contest Workspace",
+    "运行中": "Running",
+    "移除挂载失败": "Failed to remove binding",
+    "暂无队伍描述。": "No team description.",
+    "· 状态": "· status",
+    "镜像测试失败": "Image test failed",
+    "公告内容": "Announcement content",
+    "实例信息": "Instance overview",
+    "导出实时动图(WebM)": "Export realtime animation (WebM)",
+    "账号入口": "Account Access",
+    "积分动态曲线": "Score trend",
+    "当前不满足参赛条件，请稍后重试。": "Contest entry requirements are not met yet.",
+    "更新时间": "Update time",
+    "提交完成": "Submitted",
+    "收到的邀请": "Received Invitations",
+    "compose 模板（可选，可由压缩包自动导入）": "compose template (optional, can be auto-imported from zip)",
+    "导出折线图": "Export chart",
+    "版本/附件": "Version/Attachment",
+    "加载登录历史失败": "Failed to load login history",
+    "发布": "Publish",
+    "题目已销毁": "Challenge deleted",
+    "至少 {minUniqueChars} 个唯一字符": "At least {minUniqueChars} unique chars",
+    "加载运行概览失败": "Failed to load runtime overview",
+    "结束时间": "end time",
+    "公告内容不完整": "Announcement content incomplete",
+    "取消解散": "Cancel disband",
+    "类别保存失败": "Category save failed",
+    "公告内容（Markdown）": "Announcement Content (Markdown)",
+    "确认销毁比赛「{title}」？该操作将删除比赛、公告、挂载、提交与实例数据。": "Destroy contest \"{title}\"? This will remove contest data, announcements, bindings, submissions, and instances.",
+    "复制比赛 ID": "Copy Contest ID",
+    "选中队伍": "Selected Team",
+    "编辑比赛配置": "Edit match configuration",
+    "撤回发布": "Withdraw publication",
+    "未选择图片文件": "未选择图片文件",
+    "题目模块": "Challenges",
+    "无弱口令模式": "No weak/common pattern",
+    "提交正确": "Accepted",
+    "挂载已移除": "Binding removed",
+    "加载中...": "Loading...",
+    "实时变化动图已导出。": "Realtime animated chart exported.",
+    "置顶": "Pinned",
+    "再次点击执行不可恢复的解散操作：": "Click again to run irreversible disband action:",
+    "操作人": "Actor",
+    "公告已保存。": "Announcement saved.",
+    "题目状态已更新": "Challenge status updated",
+    "用户名或邮箱": "Username or email",
+    "请选择一个题目进入解题流程。": "Select a challenge to continue.",
+    "比赛总览": "Contest Overview",
+    "登录": "Sign In",
+    "服务状态": "Service status",
+    "暂无实例记录。": "There is no instance record yet.",
+    "确认告警": "Confirm alarm",
+    "移除成员失败": "Failed to remove member",
+    "账户入口": "Account Entry",
+    "暂无题目描述。": "No challenge description.",
+    "加载榜单失败": "Failed to load scoreboard",
+    "比赛": "Contest",
+    "报名审核": "Registrations",
+    "复制 SSH 密码": "Copy SSH password",
+    "报名需管理员审批": "Registration requires admin approval",
+    "复制失败": "Copy failed",
+    "从左侧选择一个挂载题目查看详情。": "Select a bound challenge on the left to view details.",
+    "未发布": "Unpublished",
+    "状态过滤": "Status filtering",
+    "角色已更新": "Role updated",
+    "加载题目详情失败": "Failed to load challenge details",
+    "判题与部署": "Validation & Runtime",
+    "重置密码": "reset password",
+    "wireguard：下发 VPN 配置，选手可从本机直接访问队伍子网。": "wireguard: issue VPN config so teams can access their subnet from local machine.",
+    "登录成功，正在跳转...": "Signed in, redirecting...",
+    "标题或 slug": "title or slug",
+    "用户名和邮箱已保存。": "Username and email saved.",
+    "开始时间": "start time",
+    "进入登录": "Sign In",
+    "single_image（单镜像）": "single_image (single image)",
+    "确认销毁题目「{title}」？该操作会删除题目、挂载关系、提交记录与运行实例。": "Destroy challenge \"{title}\"? This will remove challenge data, bindings, submissions, and instances.",
+    "管理控制台": "Admin Console",
+    "取消编辑": "Cancel edit",
+    "SSH 命令已复制": "SSH command copied",
+    "销毁题目失败": "Failed to delete challenge",
+    "创建公告编辑模式": "Create announcement editor mode",
+    "题目操作": "Actions",
+    "人机验证脚本加载失败。": "Failed to load human verification script.",
+    "下载配置": "Download config",
+    "发送失败": "Failed to send",
+    "题目挂载": "Bindings",
+    "附件已删除": "Attachment deleted",
+    "显示题目操作菜单": "Show challenge actions",
+    "禁用": "disabled",
+    "刷新告警": "Refresh alerts",
+    "single_image 模式仅支持 dynamic 或 internal 题型": "single_image mode only supports dynamic/internal challenge types.",
+    "请填写类别 slug。": "Please provide a category slug.",
+    "轻量 · 稳定": "Clean · Stable",
+    "排序已更新": "Sort updated",
+    "尚未创建动态环境实例。": "No runtime instance yet.",
+    "赛事管理": "Contest Hub",
+    "类别已更新": "Category updated",
+    "动态衰减": "Dynamic decay",
+    "重置邮箱": "Reset Email",
+    "更新公告失败": "Failed to update announcement",
+    "编辑公告内容模式": "Edit announcement content mode",
+    "确认新密码": "Confirm New Password",
+    "用户状态已更新": "User status updated",
+    "来源信息": "Source",
+    "题目管理": "Challenge Management",
+    "心跳": "Heartbeat",
+    "监控子导航": "Operations Tabs",
+    "心跳超时实例回收已执行": "Stale-heartbeat reaper executed",
+    "显示比赛操作菜单": "Show contest actions",
+    "刷新榜单": "Refresh scoreboard",
+    "已选中": "selected",
+    "实时看板": "Live Board",
+    "重启中服务": "Restarting service",
+    "运行告警：实例失败": "Runtime alert: instance failure",
+    "刷新指标": "Refresh metrics",
+    "比赛列表": "Contest Directory",
+    "请联系管理员处理报名审核。": "Contact admins for registration review.",
+    "暂无比赛描述。": "No contest description.",
+    "搜索": "Search",
+    "SSH 密码已复制": "SSH password copied",
+    "{username} 已被删除并退出登录。": "{username} was deleted and signed out.",
+    "关闭": "Close",
+    "赛事列表": "Contest list",
+    "请选择一个比赛查看详情。": "Select a contest to view details.",
+    "退出队伍失败": "Failed to leave team",
+    "重置": "Reset",
+    "验证失败": "Verification failed",
+    "很强": "Very strong",
+    "镜像仓库地址": "Image registry URL",
+    "暂无附件。": "There are no attachments yet.",
+    "加载题目类别失败": "Failed to load challenge categories",
+    "确认删除": "Confirm delete",
+    "销毁比赛": "Destroy contest",
+    "加载模板校验结果失败": "Failed to load template lint results",
+    "加载用户列表失败": "Failed to load users",
+    "上传海报": "Upload poster",
+    "包含符号": "Contains symbol",
+    "版本备注（可选）": "Version notes (optional)",
+    "编辑选中": "Edit selected",
+    "趋势维度": "Trend metric",
+    "审计日志": "Audit log",
+    "请输入重置令牌。": "Please enter reset token.",
+    "解题": "Solved",
+    "运行告警": "Runtime Alerts",
+    "删除比赛海报失败": "Failed to delete contest poster",
+    "浏览与运维": "Browse & operate",
+    "时间": "time",
+    "刷新附件": "Refresh files",
+    "解出": "Solved",
+    "请先保存题目，再上传附件。": "Save this challenge first, then upload attachments.",
+    "下线": "offline",
+    "深色": "Dark",
+    "发布时间": "Release at",
+    "比赛 ID 已复制到剪贴板。": "Contest ID copied to clipboard.",
+    "题目": "Challenge",
+    "比赛与提交": "Contests & Submissions",
+    "上传中...": "Uploading...",
+    "输入 Flag": "Enter flag",
+    "一二三血加成": "Blood bonuses",
+    "个人资料": "Profile",
+    "最后提交": "Last submission",
+    "注册成功": "Registration succeeded",
+    "题型": "Challenge type",
+    "入口": "Entry",
+    "验证令牌": "Verification Token",
+    "标题": "H2",
+    "销毁比赛失败": "Failed to delete contest",
+    "加载公告失败": "Failed to load announcements",
+    "三血": "Third blood",
+    "compose：多服务编排，支持复杂依赖场景。": "compose: multi-service orchestration for complex runtimes.",
+    "更新密码": "Update password",
+    "请输入被邀请用户名。": "Please enter invitee username.",
+    "危险操作": "Danger Zone",
+    "上传比赛海报": "Upload contest poster",
+    "版本与附件：": "Versions & Files:",
+    "创建类别": "Create category",
+    "两次输入的密码不一致。": "Passwords do not match.",
+    "dynamic_decay 必须为大于等于 1 的整数": "dynamic_decay 必须为大于等于 1 的整数",
+    "刷新用户": "Refresh users",
+    "最近失败实例": "Recent failed instances",
+    "创建比赛": "Create contest",
+    "角色必须是 player / judge / admin": "角色必须是 player / judge / admin",
+    "接受": "Accept",
+    "当前没有报名记录。": "No registration records yet.",
+    "恢复人：": "Restoration Person:",
+    "实时反馈密码强度与规则达成情况。": "Realtime feedback for password strength and policy checks.",
+    "请先完成人机验证。": "Please complete human verification first.",
+    "最近发现：": "Recently discovered:",
+    "账户模块": "Account module",
+    "请先选择要管理的题目": "Please select a challenge to manage first.",
+    "可见性": "Visibility",
+    "下载配置失败": "Failed to download config",
+    "可选两种方式：1）直接填写 compose 模板；2）在“版本与附件”上传 .zip（内含 docker-compose.yml 和相关文件），系统会自动写入 compose，并把其余文件保存为 runtime/...。若只上传单个文件而非 zip，请把文件名写成 runtime/ 开头（如 runtime/Dockerfile）。": "Two options: (1) fill compose template directly; (2) upload a .zip in Versions & Files (contains docker-compose.yml and related files). The system auto-imports compose and stores remaining files as runtime/.... For single-file uploads (non-zip), use runtime/ prefix (e.g. runtime/Dockerfile).",
+    "选手": "Player",
+    "仅 compose 模式支持模板测试": "Only compose mode supports template testing.",
+    "加载题目失败": "Failed to load challenges",
+    "重置邮件": "Reset Email",
+    "执行回滚": "perform rollback",
+    "队伍协作": "Team Collaboration",
+    "密码长度": "Password Length",
+    "我的队伍": "My Team",
+    "队伍排名": "Team ranking",
+    "未选择文件": "No file selected",
+    "· 版本 v": "· version v",
+    "密码已重置": "Password reset",
+    "查看提示": "Show hints",
+    "测试 compose（config+build探测）": "Test compose (config + build probe)",
+    "认证错误": "Authentication error",
+    "执行心跳超时回收": "Execute heartbeat timeout recycling",
+    "加载站点设置失败": "Failed to load site settings",
+    "你已退出当前队伍。": "You left the team.",
+    "上移": "move up",
+    "展开筛选条件": "Expand filters",
+    "排序": "sort",
+    "加载比赛失败": "Failed to load contests",
+    "已退出队伍": "Left team",
+    "应用筛选": "Apply filters",
+    "single_image 模式内部端口必须在 1~65535": "single_image internal port must be between 1 and 65535.",
+    "刷新": "Refresh",
+    "内容": "content",
+    "查看指标": "View metrics",
+    "dynamic：每队可创建独立运行实例，适合隔离容器题。": "dynamic: each team can start an isolated runtime instance.",
+    "加载审计日志失败": "Failed to load audit logs",
+    "无法测试 compose": "Cannot test compose",
+    "请先选择海报文件": "Please select a poster file first.",
+    "版本号非法": "Invalid version number",
+    "请先加入队伍": "Join a team first",
+    "网络 RX/TX": "Network RX/TX",
+    "二血": "Second blood",
+    "当前账号": "Current account",
+    "公告已置顶": "Announcement pinned",
+    "没有账号？去注册": "No account? Register",
+    "附件超过大小限制（最大 {maxSize}）。": "Attachment exceeds size limit (max {maxSize}).",
+    "时间显示模式": "Time display mode",
+    "导出成功": "Export completed",
+    "暂无公告。": "No announcements.",
+    "你当前不在任何队伍中。可以创建新队伍或按名称加入。": "You are not in a team. Create one or join by team name.",
+    "更新中...": "Updating...",
+    "长度至少 {minLength} 位": "Length >= {minLength}",
+    "下载成功": "Download succeeded",
+    "进行中": "Running",
+    "请输入邮箱。": "Please enter email.",
+    "时间与入口": "Timing & entrypoint",
+    "保存资料": "Save profile",
+    "下载附件失败": "Failed to download challenge file",
+    "正在加载附件...": "Loading files...",
+    "保存类别": "Save category",
+    "动态环境已停止。": "Runtime instance stopped.",
+    "暂无登录历史记录。": "No login history records.",
+    "回滚中...": "Rolling back...",
+    "当前密码": "Current password",
+    "no_runtime：不启动容器，适用于纯静态题。": "no_runtime: no container runtime, suited for static challenges.",
+    "删除题目类别": "Delete challenge category",
+    "保存后，前台时间将统一按 UTC 展示。": "Save to apply UTC display mode in player views.",
+    "执行过期实例回收失败": "Failed to run expired instance reaper",
+    "实例已销毁，连接信息已隐藏。可点击“启动”重新创建新实例。": "Instance is destroyed and access details are hidden. Click Start to create a new one.",
+    "创建题目": "Create Challenge",
+    "按标题、slug、分类筛选": "Filter by title, slug, category",
+    "提交中...": "Submitting...",
+    "用于 ack / resolve 审计记录": "for ack / resolve audit records",
+    "取消": "Cancel",
+    "描述": "Description",
+    "加载运行告警失败": "Failed to load runtime alerts",
+    "运行中比赛": "Running contests",
+    "站点副标题": "Site Subtitle",
+    "· 24h 提交": "· 24h submissions",
+    "总积分": "Total score",
+    "邮箱找回": "Email Recovery",
+    "未分类": "Uncategorized",
+    "该题将在比赛内即时可见。": "This challenge is now immediately visible in contest.",
+    "登录历史": "Login History",
+    "暂无已发送邀请。": "No sent invitations.",
+    "管理": "Admin",
+    "管理员拒绝报名": "Rejected by admin",
+    "积分曲线": "Score curve",
+    "人机验证": "Human Verification",
+    "确认后将立即退出并删除账号数据。": "This action will sign out and delete account data immediately.",
+    "重置失败": "Reset failed",
+    "题目列表": "Challenges",
+    "分数": "Score",
+    "封榜时间（可选）": "Closing time (optional)",
+    "实时排名趋势": "Live rank trend",
+    "邮箱验证成功": "Email verified",
+    "体验": "Experience",
+    "ssh_bastion（跳板）": "ssh_bastion (bastion)",
+    "导出中...": "Exporting...",
+    "加载报名记录失败": "Failed to load contest registrations",
+    "登录后即可进入比赛与队伍空间。注册支持邮箱激活，找回密码支持邮箱重置。": "Sign in to access contests and team space. Registration supports email activation and password recovery supports email reset.",
+    "等待日志输出...": "Waiting for stream output...",
+    "题目提示": "Challenge hints",
+    "解散队伍": "Disband team",
+    "密码强度": "Password Strength",
+    "验证码加载失败，请稍后重试。": "Verification failed to load. Please try again.",
+    "暂无公告内容。": "No announcement content.",
+    "暂无可见题目。": "No visible challenges.",
+    "用户名为空": "Username required",
+    "最后更新": "Last updated",
+    "角色": "Role",
+    "· 30 分钟内到期": "· expiring within 30m",
+    "保存中...": "Saving...",
+    "结果": "result",
+    "角色未变化": "Role unchanged",
+    "创建": "Created",
+    "操作": "Actions",
+    "发送中...": "Sending...",
+    "当前题目暂无附件。": "No files attached to this challenge.",
+    "过期实例回收已执行": "Expired instance reaper executed",
+    "队伍已自动解散。": "The team was automatically disbanded.",
+    "邀请成员": "Invite Members",
+    "dynamic：按队伍下发动态 flag（通常来自实例启动流程）。": "dynamic: per-team flag issued from runtime flow.",
+    "下载附件": "Download",
+    "公告标题": "Announcement title",
+    "加载挂载失败": "Failed to load bindings",
+    "暂时无法进入": "Unable to enter",
+    "队伍信息已更新": "Team updated",
+    "登录成功": "Sign in succeeded",
+    "触发运行告警扫描失败": "Failed to run runtime alert scan",
+    "邮箱验证": "Email Verification",
+    "题目已更新": "Challenge updated",
+    "复制题目 ID": "Copy challenge ID",
+    "信息": "information",
+    "进入比赛失败": "Failed to enter contest workspace",
+    "未解": "Unsolved",
+    "未选择比赛": "No contest selected",
+    "无连续字符序列": "No sequential run",
+    "确认验证": "Confirm",
+    "没有匹配的题目。": "No matching challenges.",
+    "首次发现：": "First discovered:",
+    "消息": "Message",
+    "一血": "First blood",
+    "编辑": "edit",
+    "队长已转让": "Captain transferred",
+    "已启用": "Enabled",
+    "选择图片": "选择图片",
+    "中等": "Fair",
+    "已载入比赛配置": "Contest config loaded",
+    "支持标题、列表、代码块、引用与链接。": "Supports headings, lists, code blocks, quotes and links.",
+    "刷新全部": "Refresh all",
+    "子网": "subnet",
+    "WireGuard 端点已复制": "WireGuard endpoint copied",
+    "题解内容（可选）": "Solution content (optional)",
+    "公告状态已更新": "Announcement status updated",
+    "镜像测试通过": "Image test passed",
+    "该海报当前在比赛中心不可预览（仅 public 且 scheduled/running/ended 可见）。": "This poster is currently not visible in contest center (only when visibility is public and status is scheduled/running/ended).",
+    "新密码": "New Password",
+    "欢迎回来。": "Welcome back.",
+    "密码重置成功": "Password reset succeeded",
+    "新密码至少需要 8 位字符": "New password must contain at least 8 characters.",
+    "已发送邀请": "Sent Invitations",
+    "正在加载我的队伍...": "Loading my team...",
+    "斜体": "Italic",
+    "题目管理、比赛控制、实例监控、用户管理与审计日志。": "Challenge management, contests, instance monitoring, users, and audit logs.",
+    "实例监控": "Instances",
+    "可以继续管理版本、附件或挂载到比赛。": "You can continue with versions, attachments, or contest bindings.",
+    "ssh_bastion（默认）": "ssh_bastion (default)",
+    "已切换为 UTC": "Switched to UTC",
+    "模板校验": "Template Lint",
+    "重置令牌": "Reset Token",
+    "内存": "Memory",
+    "请选择题目类别。": "Please select a challenge category.",
+    "题解可见策略": "Visible strategies for solving problems",
+    "创建公告": "Create announcement",
+    "会话已刷新。": "Session refreshed.",
+    "资料已更新": "Profile updated",
+    "最新题目、比赛、实例、审计和运行概览已同步。": "Challenges, contests, instances, audit logs, and runtime overview are synced.",
+    "发送邀请": "Send invite",
+    "队伍": "Teams",
+    "正在准备编辑器...": "Preparing editor...",
+    "模板": "template",
+    "请先在“赛事配置”中选择一个比赛。": "Please select a competition in \"Event Configuration\" first.",
+    "运行告警：过期实例未销毁": "Runtime alert: expired instance not destroyed",
+    "导出失败": "Export failed",
+    "公告管理": "Announcements",
+    "取消置顶": "Unpin",
+    "回滚备注（可选）": "Rollback notes (optional)",
+    "难度": "Difficulty",
+    "入口协议": "Entry protocol",
+    "到期": "Expires",
+    "题库配置": "Library",
+    "flag/哈希": "flag/hash",
+    "CPU 总计": "Total CPU",
+    "使用 UTC 校准显示": "Use UTC display calibration",
+    "更新排序失败": "Failed to update sort",
+    "资源汇总": "Resource summary",
+    "下载失败": "Download failed",
+    "挂载成功": "Binding updated",
+    "加入队伍": "Join team",
+    "选手排名": "Player ranking",
+    "确认运行告警失败": "Failed to acknowledge runtime alert",
+    "删除账号": "Delete account",
+    "分值": "Points",
+    "提交失败": "Submission failed",
+    "端点": "Endpoint",
+    "single_image 模式必须填写镜像仓库地址": "single_image mode requires an image registry address.",
+    "报名已提交": "Registration submitted",
+    "题目已挂载/更新到当前比赛。": "Challenge bound/updated for the current contest.",
+    "标记恢复": "mark recovery",
+    "比赛已销毁": "Contest deleted",
+    "启用": "enabled",
+    "当前队伍已被删除。": "The team has been removed.",
+    "注册后通过邮件完成激活。": "Complete activation via email after registration.",
+    "本地时间": "Local time",
+    "实例已重置": "Instance reset",
+    "新的队伍信息已保存。": "Team changes saved.",
+    "队伍队长角色已更新。": "Team captain role updated.",
+    "创建队伍失败": "Failed to create team",
+    "备注": "Note",
+    "比赛模块": "Contests",
+    "选择题目": "Select topic",
+    "更新报名状态失败": "Failed to update registration status",
+    "海报已上传": "Poster uploaded",
+    "成员管理": "Member Management",
+    "比赛子导航": "Contest Tabs",
+    "告警已确认": "Alert acknowledged",
+    "定义题目身份、类别与分值。": "Define challenge identity, category, and score.",
+    "一血加成(%)": "First blood bonus (%)",
+    "用户管理": "Users",
+    "状态": "Status",
+    "按标题、slug、状态检索": "Filter by title, slug, or status",
+    "同步最新数据": "Sync Latest Data",
+    "邮箱": "Email",
+    "用户名": "username",
+    "运行监控": "Operations",
+    "暂无失败实例。": "There are no failed instances yet.",
+    "点击查看完整公告": "Click to view full announcement",
+    "flag 模式": "flag mode",
+    "删除题目附件失败": "Failed to delete challenge attachment",
+    "实例已销毁": "Instance destroyed",
+    "积分模式": "Points mode",
+    "single_image：单镜像快速部署，适合轻量动态题。": "single_image: single-image runtime for lightweight dynamic challenges.",
+    "赛事配置": "Config",
+    "最低强度": "Minimum Score",
+    "支持 Markdown，建议分段编写公告。": "Markdown supported. Write the announcement in structured sections.",
+    "二血加成(%)": "Second blood bonus (%)",
+    "请输入验证令牌。": "Please enter verification token.",
+    "direct（直连）": "direct",
+    "浅色": "Light",
+    "基础信息": "Basics",
+    "密码已更新": "Password updated",
+    "最新公告": "Latest Announcement",
+    "当前报名待管理员审核，请稍后再进入比赛空间。": "Registration is pending admin approval.",
+    "配置与保存": "Configure & save",
+    "包含大写字母": "Contains uppercase",
+    "删除附件": "Delete attachment",
+    "裁判": "Judge",
+    "显示挂载操作菜单": "Show binding actions",
+    "审核时间": "Reviewed at",
+    "该实例暂无服务指标。": "No service metrics for this instance yet.",
+    "转让队长失败": "Failed to transfer captain",
+    "保存比赛失败": "Failed to save contest",
+    "测试日志会实时显示（默认最长 300 秒）；编辑已有题目时，会自动还原 runtime/ 附件到测试目录。": "Live logs are streamed in real time (default timeout: 300s). For existing challenges, runtime/ attachments are restored into the test directory automatically.",
+    "同步实例状态": "Sync instance status",
+    "实例健康": "Instance health",
+    "删除公告": "Delete announcement",
+    "认证失败": "Authentication failed",
+    "创建公告失败": "Failed to create announcement",
+    "排行榜大屏": "Scoreboard Wall",
+    "显示密码": "Show password",
+    "导出实时动图失败": "Failed to export animation",
+    "触发扫描": "trigger scan",
+    "运行模板校验": "Runtime template lint",
+    "执行心跳超时实例回收失败": "Failed to run stale-heartbeat reaper",
+    "{username} 已移出队伍。": "{username} was removed from team.",
+    "动态环境已销毁。": "Runtime instance destroyed.",
+    "确认删除账号「{username}」？该操作会禁用并匿名化该账号。": "Delete account \"{username}\"? This operation will disable and anonymize the account.",
+    "保存设置": "Save",
+    "输入邮件中的令牌": "Enter token from email",
+    "上传比赛海报失败": "Failed to upload contest poster",
+    "登录 · 组队 · 参赛": "Sign In · Team · Play",
+    "仅显示最近 5 个附件，更多请切换到“版本与附件”。": "Showing latest 5 files. Switch to \"Versions & Files\" for all.",
+    "显示名（可选）": "Display name (optional)",
+    "动态衰减参数": "Dynamic attenuation parameters",
+    "站点名": "Site Name",
+    "镜像为空": "Image is empty",
+    "折线图已导出。": "Chart image exported.",
+    "static：无需运行实例，提交 flag 即可判定。": "static: no runtime instance is required; only flag verification is used.",
+    "队伍创建成功": "Team created",
+    "回滚题目版本失败": "Failed to rollback challenge version",
+    "实例已停止": "Instance stopped",
+    "no_runtime 模式仅支持 static 题型": "no_runtime mode only supports static challenges.",
+    "账户": "Profile",
+    "重置密码失败": "Failed to reset password",
+    "管理报名审核": "Manage registrations",
+    "按队伍名搜索": "Search by team name",
+    "比赛操作": "Actions",
+    "队伍设置": "Team Settings",
+    "管理题目类别": "Manage challenge categories",
+    "题库列表": "Challenge Library",
+    "删除题目类别失败": "Failed to delete challenge category",
+    "账号已创建并完成登录。": "Account created and signed in.",
+    "加入队伍失败": "Failed to join team",
+    "实例操作失败": "Instance operation failed",
+    "显示公告操作菜单": "Show announcement actions",
+    "暂无预览内容。": "No preview content yet.",
+    "计分模式": "Scoring",
+    "复制端点": "Copy endpoint",
+    "节奏": "Rhythm",
+    "刷新校验": "Refresh lint",
+    "配置路径": "Config path",
+    "发布时间已清除": "Release time cleared",
+    "流程": "Flow",
+    "包含小写字母": "Contains lowercase",
+    "请再次输入密码": "Repeat password",
+    "得分": "Score",
+    "请输入队伍名称后再提交。": "Please enter a team name.",
+    "取消邀请": "Cancel invite",
+    "更新角色": "Update role",
+    "刷新中...": "Refreshing...",
+    "已复制": "Copied",
+    "角色非法": "Invalid role",
+    "已向 {username} 发送队伍邀请。": "Invitation sent to {username}.",
+    "置为待审": "Set pending",
+    "校验": "check",
+    "镜像": "Image",
+    "报名模式：需管理员审批": "Registration: admin approval required",
+    "按名称加入": "Join by Name",
+    "筛选比赛并查看详情、公告和入口。": "Filter contests and inspect details, announcements, and entry actions.",
+    "执行转让": "Transfer",
+    "更新队伍信息失败": "Failed to update team",
+    "已过期未销毁": "Expired but not destroyed",
+    "实时积分趋势": "Live score trend",
+    "最近回收：mode=": "Recent recycling: mode=",
+    "暂无队伍数据。": "No team data.",
+    "更新于": "updated on",
+    "关键词": "keywords",
+    "内部端口": "internal port",
+    "你还不在队伍中，请先创建或加入队伍后再参赛。": "Create or join a team before entering contest workspace.",
+    "邀请人": "Inviter",
+    "题目已从当前比赛移除。": "Challenge removed from current contest.",
+    "不健康": "Unhealthy",
+    "WireGuard 配置已生成。": "WireGuard config generated.",
+    "站点首页": "Home",
+    "加载失败": "Load failed",
+    "· 最近": "· latest",
+    "题目附件": "Challenge files",
+    "模板为空": "Template is empty",
+    "比赛空间": "Contest Workspace",
+    "告警已恢复": "Alert resolved",
+    "较强": "Strong",
+    "销毁题目": "Destroy challenge",
+    "邀请中心": "Invitations",
+    "新密码(>=8)": "New password(>=8)",
+    "加入成功": "Joined",
+    "描述（可选）": "Description (optional)",
+    "编辑比赛": "Edit Contest",
+    "实例列表": "Instance list",
+    "公告已发布": "Announcement published",
+    "返回赛事列表": "Back to contest list",
+    "Footer 版权文案": "Footer Copyright",
+    "compose 测试通过": "Compose test passed",
+    "请先在“题库配置”中选择一个题目，再切换到版本管理。": "Please select a question in \"Question Bank Configuration\" first, and then switch to version management.",
+    "附件（快捷）": "Attachments (Quick)",
+    "排名": "Rank",
+    "告警类型": "Alarm type",
+    "题目子导航": "Challenge Tabs",
+    "动态环境已重新初始化。": "Runtime instance reinitialized.",
+    "切换访问模式后，需要点击“启动”或“重置”实例才能生效。": "After changing access mode, click Start or Reset to apply.",
+    "条": "items",
+    "链接": "Link",
+    "安装工具请使用 apk（例如：sudo apk add --no-cache nmap）。": "Install tools via apk (e.g. sudo apk add --no-cache nmap).",
+    "发送邀请失败": "Failed to send invitation",
+    "题目加载失败": "Failed to load challenges",
+    "转让队长": "Transfer captain",
+    "direct：不注入跳板或 VPN，仅使用题目入口地址。": "direct: no bastion/VPN injection; only expose the challenge entrypoint.",
+    "删除": "Delete",
+    "加载题目版本失败": "Failed to load challenge versions",
+    "从左侧选择一个实例查看运行指标。": "Select an instance from the list to view runtime metrics.",
+    "刷新日志": "Refresh logs",
+    "动作": "Action",
+    "未选择题目": "No challenge selected",
+    "请先选择比赛": "请先选择比赛",
+    "公告已更新": "Announcement updated",
+    "提交结果": "Submission result",
+    "队伍描述": "Team description",
+    "退出": "Sign Out",
+    "static：固定 flag 或哈希比对。": "static: compare against fixed flag/hash.",
+    "公告已取消置顶": "Announcement unpinned",
+    "从左侧选择一个公告查看详情。": "Select an announcement on the left to view details.",
+    "请先在中间列选择一个比赛。": "Please select a match in the middle column first.",
+    "正在加载比赛数据...": "Loading contests...",
+    "动态环境": "Runtime Instance",
+    "销毁": "Destroy",
+    "取消邀请失败": "Failed to cancel invitation",
+    "暂无用户记录。": "There is no user record yet.",
+    "请先填写注册邮箱。": "Please provide registration email first.",
+    "题目 ID 已复制": "Challenge ID copied",
+    "wireguard（VPN）": "wireguard (VPN)",
+    "条数": "Number of items",
+    "管理题目挂载": "Manage challenge bindings",
+    "邮箱激活": "Email Activation",
+    "加载队伍详情失败": "Failed to load team details",
+    "邀请已取消": "Invitation canceled",
+    "未选择海报": "No poster selected",
+    "注册": "Register",
+    "删除比赛海报": "Delete contest poster",
+    "已载入题目配置": "Challenge config loaded",
+    "实时榜单": "Live Scoreboard",
+    "加载到左侧表单": "Load to left form",
+    "同步中...": "Syncing...",
+    "人": "members",
+    "更新资料失败": "Failed to update profile",
+    "恢复运行告警失败": "Failed to resolve runtime alert",
+    "当前未设置海报。": "No posters are currently set.",
+    "dynamic/internal 题型在 compose 模式下必须提供 compose 模板": "dynamic/internal challenges in compose mode require a compose template.",
+    "比赛已创建": "Contest created",
+    "compose 模板（可选）": "compose template (optional)",
+    "暂无趋势数据。": "No trend data yet.",
+    "请选择类别": "Select category",
+    "已挂载题目": "Questions have been mounted",
+    "类别已创建": "Category created",
+    "错误": "Error",
+    "引用": "Quote",
+    "暂无邀请。": "No invitations.",
+    "暂无运行告警。": "There are no operational warnings yet.",
+    "服务": "Service",
+    "删除账号后会立即撤销会话，且不可恢复。": "Deleting the account revokes all sessions and cannot be undone.",
+    "请输入账号标识。": "Please enter account identifier.",
+    "内容（Markdown）": "Content (Markdown)",
+    "回滚版本号": "Rollback version number",
+    "置顶公告": "Pinned announcement",
+    "输入长度不能超过 {maxLength} 个字符。": "Input cannot exceed {maxLength} characters.",
+    "更新用户角色失败": "Failed to update user role",
+    "批准": "Approve",
+    "请求失败": "Request failed",
+    "公告已删除": "Announcement deleted",
+    "转让中...": "Transferring...",
+    "版本与附件": "Versions & Files",
+    "海报已删除": "Poster deleted",
+    "今日签名": "Signature",
+    "比赛题目挂载": "Contest Challenge Bindings",
+    "密码强度不足，请按规则提升密码强度。": "Password is too weak. Please satisfy policy checks.",
+    "发送重置邮件": "Send Reset Email",
+    "账号已删除": "Account deleted",
+    "该邀请已失效。": "The invitation is now invalid.",
+    "总提交": "total commits",
+    "挂载或更新": "Mount or update",
+    "未启用": "Disabled",
+    "配置标签、可见策略和内容文案。": "Configure tags, visibility policy, and writeup content.",
+    "保存修改": "Save changes",
+    "删除中...": "Deleting...",
+    "退出队伍": "Leave team",
+    "direct（直连入口）": "direct (direct entrance)",
+    "停止": "Stop",
+    "请输入用户名": "Enter username",
+    "· 题目": "· challenges",
+    "取消删除": "Cancel",
+    "已加入队伍": "Joined team",
+    "确认人：": "Confirmed by:",
+    "导出折线图失败": "Failed to export chart image",
+    "支持任意附件格式，大小不超过 {maxSize}。若上传 .zip 且包含 docker-compose.yml，会自动导入 compose，并将其余文件保存为 runtime/...。": "Any file type is supported, up to {maxSize}. If a .zip includes docker-compose.yml, compose is auto-imported and remaining files are saved as runtime/....",
+    "版本号必须是大于等于 1 的整数": "Version number must be an integer greater than or equal to 1.",
+    "立即发布": "Publish immediately",
+    "运行告警扫描完成": "Runtime alert scan completed",
+    "展示详细信息（JSON）": "Display details (JSON)",
+    "运行告警：实例即将到期": "Runtime alert: instance expiring soon",
+    "题目已创建": "Challenge created",
+    "队伍名": "Team name",
+    "删除公告失败": "Failed to delete announcement",
+    "比赛管理": "Contest Management",
+    "已创建队伍 {teamName}": "Team {teamName} created.",
+    "题库概览": "Challenge Library Overview",
+    "比赛公告管理": "Contest Announcement Management",
+    "仅 single_image 模式支持镜像测试": "仅 single_image 模式支持镜像测试",
+    "通过": "Passed",
+    "启动": "Start",
+    "用户": "user",
+    "管理员批准参赛": "Approved by admin",
+    "公告已撤回": "Announcement unpublished",
+    "加载队伍列表失败": "Failed to load team list",
+    "管理台已刷新": "Admin console refreshed",
+    "专注解题": "Focus on Solves",
+    "解散队伍失败": "Failed to disband team",
+    "删除账号失败": "Failed to delete account",
+    "提交 Flag": "Submit Flag",
+    "即将开始": "Scheduled",
+    "密码强度检测": "Password Strength Check",
+    "安全校验": "Security Check",
+    "标签（逗号分隔）": "Tags (comma separated)",
+    "扫描中...": "Scanning...",
+    "compose（多容器）": "compose (multiple containers)",
+    "总实例": "Total instances",
+    "暂无榜单数据。": "No scoreboard data.",
+    "返回比赛": "Back to contest",
+    "代码": "Code",
+    "管理公告": "Manage announcements",
+    "你已加入队伍 {teamName}": "You joined {teamName}.",
+    "正在加载题目...": "Loading challenges...",
+    "compose 测试失败": "Compose test failed",
+    "忘记密码？": "Forgot password?",
+    "公告已创建": "Announcement created",
+    "附件已上传": "Attachment uploaded",
+    "删除我的账号": "Delete my account",
+    "失败": "Failed",
+    "没有匹配的比赛。": "No contests matched the current filter.",
+    "请输入密码": "Enter password",
+    "加入该队伍": "Join team",
+    "场": "contests",
+    "销毁中...": "Destroying...",
+    "告警列表": "Alert stream",
+    "已有账号？去登录": "Already have an account? Sign in",
+    "解散中...": "Disbanding...",
+    "快速筛选": "Quick filter",
+    "草稿": "Draft",
+    "积分/排名趋势": "Score/rank trend",
+    "拒绝": "Reject",
+    "浏览器不支持 WebM 导出。": "WebM export is not supported.",
+    "当前浏览器不支持动图导出。": "This browser does not support animated export.",
+    "测试中...": "Testing...",
+    "删除海报": "Delete poster",
+    "挂载/更新题目": "Bind/Update Challenge",
+    "移除成员": "Remove member",
+    "很弱": "Very weak",
+    "不包含用户名/邮箱前缀": "No username/email local-part",
+    "暂无匹配的模板校验记录。": "There is currently no matching template verification record.",
+    "处理中...": "Processing...",
+    "核心模块": "Core Modules",
+    "公告详情": "Announcement details",
+    "首页签名": "Home Signature",
+    "修改密码失败": "Failed to change password",
+    "邀请已发送": "Invitation sent",
+    "提示（每行一条）": "Hints (one per line)",
+    "你已拒绝该邀请。": "You rejected the invitation.",
+    "已在队伍中": "Already in a team",
+    "创建中...": "Creating...",
+    "列表": "List",
+    "队长": "Captain",
+    "欢迎登录": "Welcome Back",
+    "总分": "Total",
+    "实例已启动": "Instance started",
+    "报名被拒绝": "Registration rejected",
+    "确认删除题目类别「{displayName}」？": "Delete challenge category \"{displayName}\"?",
+    "请输入用户名。": "Please enter username.",
+    "上传附件": "Upload attachment",
+    "已结束": "Ended",
+    "预览": "Preview",
+    "刷新实例": "Refresh instances",
+    "当前比赛未挂载题目。": "No challenges are bound to this contest.",
+    "编辑题目": "Edit Challenge",
+    "扫描总数": "Total number of scans",
+    "到期时间": "Expires at",
+    "比赛已更新": "Contest updated",
+    "准备好后，从右上角进入登录。": "Use the top-right entry when you're ready.",
+    "浏览器不允许写入剪贴板。": "Clipboard access is blocked by the browser.",
+    "邀请已处理": "Invitation processed",
+    "收起操作": "Collapse operation",
+    "基础规模": "Base metrics",
+    "已重置为待审核状态": "Reset to pending review",
+    "例如：比赛赛程更新": "Example: Schedule update",
+    "比赛状态已更新": "Contest status updated",
+    "排名动态曲线": "Rank trend",
+    "清除": "清除",
+    "总服务": "Total services",
+    "取消中...": "Canceling...",
+    "选择新队长": "Select new captain",
+    "找回密码": "Password Recovery",
+    "发布时间（可选）": "Release time (optional)",
+    "下载中...": "Downloading...",
+    "管理员": "Admin",
+    "排名曲线": "Rank curve",
+    "重发验证邮件": "Resend",
+    "no_runtime（无需容器）": "no_runtime (no container runtime)",
+    "更新用户状态失败": "Failed to update user status",
+    "重置中...": "Resetting...",
+    "加载实例运行指标失败": "Failed to load instance metrics",
+    "在题库配置页直接管理附件，减少“编辑题目”与“版本与附件”来回切换。": "Manage attachments directly here to reduce tab switching.",
+    "附件过大": "Attachment too large",
+    "确认密码": "Confirm Password",
+    "站点设置": "Site Settings",
+    "题目附件大小上限（MB）": "Challenge attachment limit (MB)",
+    "选手可切换（仅对 compose 生效）": "Player-selectable modes (compose only)",
+    "· 队伍": "· teams",
+    "实时趋势与排名": "Live Trend & Rankings",
+    "请选择题目": "Select a challenge",
+    "首页简介": "Home Tagline",
+    "隐藏密码": "Hide password",
+    "默认访问模式": "Default access mode",
+    "更新比赛状态失败": "Failed to update contest status",
+    "申请时间": "Requested at",
+    "认证模式切换": "Auth mode switch",
+    "队伍 ID 已复制。": "Team ID copied.",
+    "保存成功": "Saved",
+    "类别已删除": "Category removed",
+    "本地时区": "Local timezone",
+    "返回题库": "Back to library",
+    "支持 PNG、JPG、WebP 等格式": "支持 PNG、JPG、WebP 等格式",
+    "验证邮件": "Verification Email",
+    "运行模式": "Runtime mode",
+    "隐藏确认密码": "Hide confirm password",
+    "移除挂载": "Remove mount",
+    "分类": "Category",
+    "ssh_bastion：自动注入跳板机，适合内网扫描与横向测试。": "ssh_bastion: inject an SSH bastion, suitable for internal scan and lateral testing.",
+    "仅错误": "only errors",
+    "被邀请用户名": "Invitee username",
+    "暂无可视队伍数据。": "No team data for trend view.",
+    "实例指标：": "Instance metrics:",
+    "新密码强度不足，请按规则提升密码强度。": "New password is too weak. Please satisfy policy checks.",
+    "状态筛选": "Status filter",
+    "队伍名为空": "Team name required",
+    "返回比赛列表": "Back to contests",
+    "正在加载队伍详情...": "Loading team details...",
+    "加载我的队伍失败": "Failed to load my team",
+    "站点": "Site",
+    "未登录或会话已失效": "Not signed in or session expired",
+    "请输入内容。": "Please enter a value.",
+    "收起找回密码": "Hide recovery",
+    "报名模式：自动通过": "Registration: auto-approved",
+    "保存题目失败": "Failed to save challenge",
+    "公告置顶状态已更新": "Pin status updated",
+    "邀请留言（可选）": "Message (optional)",
+    "创建时间": "creation time",
+    "复制 Team ID": "Copy team ID",
+    "忘记密码时可直接发起重置流程。": "Start reset directly when you forget your password.",
+    "从左侧选择一个比赛查看详情与状态操作。": "Select a contest on the left to view details and status actions.",
+    "处理备注（可选）": "Process notes (optional)",
+    "确认解散": "Confirm disband",
+    "回收中...": "Recycling...",
+    "动态环境已进入运行状态。": "Runtime instance is running.",
+    "内容与题解": "Content & Writeup",
+    "确认删除比赛「{title}」的海报？": "Delete poster for contest \"{title}\"?",
+    "公告列表": "Announcement list",
+    "题目已回滚": "Challenge rolled back",
+    "script：调用脚本判定，可用于复杂答案校验。": "script: verify via script for complex validation.",
+    "级别": "level",
+    "保存失败": "Save failed",
+    "清除发布时间失败": "Failed to clear release time",
+    "选择文件": "选择文件",
+    "站点文案已更新。": "Site copy has been updated.",
+    "队伍名称": "Team name",
+    "首页": "Home",
+    "新密码强度": "New Password Strength",
+    "提交过快": "Rate limited",
+    "比赛公告": "Announcements",
+    "一二三血加成必须为 0-500 的整数百分比。": "Blood bonuses must be integer percentages between 0 and 500.",
+    "显示告警操作菜单": "Show alert actions",
+    "名称": "Name",
+    "提交": "Submit",
+    "暂无版本记录。": "There is no version record yet.",
+    "打开完整版本与附件": "Open full versions & files",
+    "从左侧选择一个告警查看详情。": "Select an alert on the left to view details.",
+    "挂载失败": "Binding failed",
+    "验证码已过期，请重新验证。": "Verification expired. Please verify again.",
+    "上传题目附件失败": "Failed to upload challenge attachment",
+    "修改密码": "Change Password",
+    "会话结束": "Session Ended",
+    "请完成邮箱验证后再登录。": "Complete email verification before signing in.",
+    "清除发布时间": "Clear publishing time",
+    "回滚到该版本": "Roll back to this version",
+    "浏览器不支持": "Unsupported browser",
+    "internal：题目运行在内部/裁判控制场景，通常不直接暴露给选手公网。": "internal: runtime is intended for internal/judge-controlled scenarios.",
+    "请先填写镜像仓库地址": "Please provide image registry address first.",
+    "处理邀请失败": "Failed to process invitation",
+    "复制 SSH 命令": "Copy SSH command",
+    "初始状态": "initial state",
+    "可以继续挂载题目并调整状态。": "You can continue binding challenges and adjusting status."
+  }
+}

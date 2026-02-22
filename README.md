@@ -169,6 +169,7 @@ rust-ctf/
 - 心跳上报接入：`docs/RUNTIME_HEARTBEAT_REPORTER.md`
 - 心跳故障处置：`docs/STALE_HEARTBEAT_REMEDIATION_RUNBOOK.md`
 - M5 验收指南：`docs/M5_ACCEPTANCE.md`
+- 前端 i18n 文案流程：`frontend/src/locales/README.md`
 
 ## CI 与验收
 

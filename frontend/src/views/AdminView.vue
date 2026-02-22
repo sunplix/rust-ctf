@@ -2409,7 +2409,7 @@ import { useUiStore } from "../stores/ui";
 
 const authStore = useAuthStore();
 const uiStore = useUiStore();
-const { locale, tr } = useL10n();
+const { locale, tr, tl: globalTl } = useL10n();
 
 const adminTextMap: Record<string, string> = {
   "· 24h 提交": "· 24h submissions",
@@ -2761,6 +2761,10 @@ const adminTextMap: Record<string, string> = {
 function tl(text: string): string {
   if (locale.value === "zh") {
     return text;
+  }
+  const fromCatalog = globalTl(text);
+  if (fromCatalog !== text) {
+    return fromCatalog;
   }
   const exact = adminTextMap[text];
   if (exact) {
@@ -3379,9 +3383,9 @@ const challengeRuntimeComposeStreamOutput = computed(() => {
 
 const challengeAttachmentUploadHint = computed(() => {
   return tr(
-    `支持任意附件格式，大小不超过 ${formatSize(challengeAttachmentMaxBytes.value)}。若上传 .zip 且包含 docker-compose.yml，会自动导入 compose，并将其余文件保存为 runtime/...。`,
-    `Any file type is supported, up to ${formatSize(challengeAttachmentMaxBytes.value)}. If a .zip includes docker-compose.yml, compose is auto-imported and remaining files are saved as runtime/....`
-  );
+    "支持任意附件格式，大小不超过 {maxSize}。若上传 .zip 且包含 docker-compose.yml，会自动导入 compose，并将其余文件保存为 runtime/...。",
+    "Any file type is supported, up to {maxSize}. If a .zip includes docker-compose.yml, compose is auto-imported and remaining files are saved as runtime/...."
+  ).replace("{maxSize}", formatSize(challengeAttachmentMaxBytes.value));
 });
 
 const contestFormTitle = computed(() => {
@@ -3842,9 +3846,9 @@ async function handleDeleteChallengeCategory(item: AdminChallengeCategoryItem) {
   const confirmed = await uiStore.confirm({
     title: tr("删除题目类别", "Delete challenge category"),
     message: tr(
-      `确认删除题目类别「${item.display_name}」？`,
-      `Delete challenge category "${item.display_name}"?`
-    ),
+      "确认删除题目类别「{displayName}」？",
+      "Delete challenge category \"{displayName}\"?"
+    ).replace("{displayName}", item.display_name),
     confirmLabel: tr("删除", "Delete"),
     cancelLabel: tr("取消", "Cancel"),
     intent: "danger"
@@ -4803,9 +4807,9 @@ async function handleDestroyChallenge(item: AdminChallengeItem) {
   const confirmed = await uiStore.confirm({
     title: tr("销毁题目", "Destroy challenge"),
     message: tr(
-      `确认销毁题目「${item.title}」？该操作会删除题目、挂载关系、提交记录与运行实例。`,
-      `Destroy challenge "${item.title}"? This will remove challenge data, bindings, submissions, and instances.`
-    ),
+      "确认销毁题目「{title}」？该操作会删除题目、挂载关系、提交记录与运行实例。",
+      "Destroy challenge \"{title}\"? This will remove challenge data, bindings, submissions, and instances."
+    ).replace("{title}", item.title),
     confirmLabel: tr("销毁", "Destroy"),
     cancelLabel: tr("取消", "Cancel"),
     intent: "danger"
@@ -4891,9 +4895,9 @@ async function handleUploadChallengeAttachment() {
   if (selectedAttachmentFile.value.size > challengeAttachmentMaxBytes.value) {
     const limitText = formatSize(challengeAttachmentMaxBytes.value);
     challengeAttachmentError.value = tr(
-      `附件超过大小限制（最大 ${limitText}）。`,
-      `Attachment exceeds size limit (max ${limitText}).`
-    );
+      "附件超过大小限制（最大 {maxSize}）。",
+      "Attachment exceeds size limit (max {maxSize})."
+    ).replace("{maxSize}", limitText);
     notify.warning(tr("附件过大", "Attachment too large"), challengeAttachmentError.value);
     return;
   }
@@ -5167,9 +5171,9 @@ async function handleDeleteContestPoster(item: AdminContestItem) {
   const confirmed = await uiStore.confirm({
     title: tr("删除比赛海报", "Delete contest poster"),
     message: tr(
-      `确认删除比赛「${item.title}」的海报？`,
-      `Delete poster for contest "${item.title}"?`
-    ),
+      "确认删除比赛「{title}」的海报？",
+      "Delete poster for contest \"{title}\"?"
+    ).replace("{title}", item.title),
     confirmLabel: tr("删除", "Delete"),
     cancelLabel: tr("取消", "Cancel"),
     intent: "danger"
@@ -5197,9 +5201,9 @@ async function handleDestroyContest(item: AdminContestItem) {
   const confirmed = await uiStore.confirm({
     title: tr("销毁比赛", "Destroy contest"),
     message: tr(
-      `确认销毁比赛「${item.title}」？该操作将删除比赛、公告、挂载、提交与实例数据。`,
-      `Destroy contest "${item.title}"? This will remove contest data, announcements, bindings, submissions, and instances.`
-    ),
+      "确认销毁比赛「{title}」？该操作将删除比赛、公告、挂载、提交与实例数据。",
+      "Destroy contest \"{title}\"? This will remove contest data, announcements, bindings, submissions, and instances."
+    ).replace("{title}", item.title),
     confirmLabel: tr("销毁", "Destroy"),
     cancelLabel: tr("取消", "Cancel"),
     intent: "danger"
@@ -5311,9 +5315,9 @@ async function handleDeleteUserAccount(item: AdminUserItem) {
   const confirmed = await uiStore.confirm({
     title: tr("删除账号", "Delete account"),
     message: tr(
-      `确认删除账号「${item.username}」？该操作会禁用并匿名化该账号。`,
-      `Delete account "${item.username}"? This operation will disable and anonymize the account.`
-    ),
+      "确认删除账号「{username}」？该操作会禁用并匿名化该账号。",
+      "Delete account \"{username}\"? This operation will disable and anonymize the account."
+    ).replace("{username}", item.username),
     confirmLabel: tr("删除", "Delete"),
     cancelLabel: tr("取消", "Cancel"),
     intent: "danger"
