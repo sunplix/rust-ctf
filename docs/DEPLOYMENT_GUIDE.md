@@ -1,7 +1,7 @@
 # Rust-CTF 部署指南（单机 Docker 版）
 
-最后更新：2026-02-20  
-适用范围：当前仓库 `master`（以 `deploy/docker-compose.dev.yml` 为基础）
+最后更新：2026-02-22  
+适用范围：当前仓库（以 `deploy/docker-compose.dev.yml` 为基础）
 
 ## 1. 目标与范围
 
@@ -38,6 +38,8 @@
 - 放通端口：
   - `80/443`（反向代理 + HTTPS）
   - 题目实例访问端口范围（与你配置的 `INSTANCE_HOST_PORT_MIN/MAX` 一致）
+    - 至少放通 TCP
+    - 若使用 WireGuard 接入模式，还需放通同一端口范围的 UDP
 
 ### 3.2 服务器基础环境
 
@@ -84,6 +86,7 @@ cp backend/.env.example backend/.env.prod
 - `JWT_SECRET`：改为强随机值（建议 32+ 字符）
 - `DEFAULT_ADMIN_USERNAME` / `DEFAULT_ADMIN_EMAIL` / `DEFAULT_ADMIN_PASSWORD`
 - `DEFAULT_ADMIN_FORCE_PASSWORD_RESET=false`（按需）
+- `AUTH_EMAIL_BASE_URL=https://ctf.example.com`（邮件验证/重置链接基地址）
 - `INSTANCE_PUBLIC_HOST=ctf.example.com`
 - `INSTANCE_HOST_PORT_MIN=40000`
 - `INSTANCE_HOST_PORT_MAX=40100`
@@ -105,6 +108,7 @@ POSTGRES_PASSWORD=replace_with_strong_db_password
 POSTGRES_DB=rust_ctf
 CTF_DOMAIN=ctf.example.com
 VITE_ALLOWED_HOSTS=ctf.example.com
+VITE_TURNSTILE_SITE_KEY=
 ```
 
 ### 5.3 生产编排文件（`deploy/docker-compose.prod.yml`）
@@ -179,8 +183,10 @@ services:
     container_name: rust-ctf-frontend
     restart: unless-stopped
     environment:
-      VITE_API_BASE_URL: https://${CTF_DOMAIN}/api/v1
+      # 注意：不要带 /api/v1，前端会自动拼接
+      VITE_API_BASE_URL: https://${CTF_DOMAIN}
       VITE_ALLOWED_HOSTS: ${VITE_ALLOWED_HOSTS}
+      VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY}
     ports:
       - "127.0.0.1:5173:5173"
     depends_on:
@@ -201,12 +207,18 @@ networks:
 - `postgres` / `redis` 不对公网暴露端口。
 - `backend` / `frontend` 仅绑定到本机回环地址（`127.0.0.1`），由反向代理对外发布。
 - 保留 `/var/run/docker.sock` 挂载，支持题目实例生命周期管理。
+- 生产环境请优先使用固定镜像 tag（而非 `latest`）以降低不可预期升级风险。
 
 ## 6. 反向代理与 HTTPS（Nginx 示例）
 
 安装 Nginx 后，新增站点配置（例如 `/etc/nginx/sites-available/rust-ctf`）：
 
 ```nginx
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    '' close;
+}
+
 server {
     listen 80;
     server_name ctf.example.com;
@@ -230,6 +242,10 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        # 支持排行榜 WebSocket
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_read_timeout 3600s;
     }
 
     location / {
@@ -242,6 +258,11 @@ server {
     }
 }
 ```
+
+补充：
+
+- 当前前端容器运行的是 Vite dev server，域名访问需设置 `VITE_ALLOWED_HOSTS`。
+- `VITE_API_BASE_URL` 需设置为站点根地址（如 `https://ctf.example.com`），不要写成 `.../api/v1`。
 
 ## 7. 首次启动
 
@@ -387,3 +408,11 @@ sudo docker compose \
   -f deploy/docker-compose.prod.yml \
   up -d --build frontend
 ```
+
+### 13.2 接口请求路径出现 `/api/v1/api/v1/...`
+
+原因：`VITE_API_BASE_URL` 配置成了带 `/api/v1` 的地址。前端客户端会自动再拼接一次 `/api/v1`。  
+处理：
+
+- 把 `VITE_API_BASE_URL` 改为仅包含站点根地址，例如：
+  - `VITE_API_BASE_URL=https://ctf.example.com`

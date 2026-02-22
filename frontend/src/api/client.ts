@@ -152,6 +152,7 @@ export type ContestChallengeItem = {
   challenge_type: string;
   static_score: number;
   release_at: string | null;
+  runtime_access_modes: string[];
 };
 
 export type ContestChallengeAttachmentItem = {
@@ -1321,7 +1322,7 @@ export function buildScoreboardWsUrl(contestId: string, accessToken: string): st
 }
 
 export async function startInstance(
-  payload: { contest_id: string; challenge_id: string },
+  payload: { contest_id: string; challenge_id: string; access_mode?: string },
   accessToken: string
 ): Promise<InstanceResponse> {
   try {
@@ -1345,7 +1346,7 @@ export async function stopInstance(
 }
 
 export async function resetInstance(
-  payload: { contest_id: string; challenge_id: string },
+  payload: { contest_id: string; challenge_id: string; access_mode?: string },
   accessToken: string
 ): Promise<InstanceResponse> {
   try {

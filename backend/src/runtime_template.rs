@@ -56,6 +56,7 @@ pub enum RuntimeAccessMode {
 pub struct RuntimeMetadataOptions {
     pub mode: RuntimeMode,
     pub access_mode: RuntimeAccessMode,
+    pub access_mode_candidates: Vec<RuntimeAccessMode>,
     pub single_image: Option<SingleImageRuntimeConfig>,
 }
 
@@ -101,15 +102,8 @@ pub fn parse_runtime_metadata_options(metadata: &Value) -> Result<RuntimeMetadat
         .and_then(Value::as_str)
         .map(|value| value.trim().to_ascii_lowercase())
     {
-        Some(value) if value == "direct" => RuntimeAccessMode::Direct,
-        Some(value) if value == "ssh_bastion" || value == "ssh-bastion" || value == "bastion" => {
-            RuntimeAccessMode::SshBastion
-        }
-        Some(value) if value == "wireguard" || value == "wg" => RuntimeAccessMode::Wireguard,
         Some(value) => {
-            return Err(format!(
-                "metadata.runtime.access_mode is invalid: '{value}', allowed: direct,ssh_bastion,wireguard"
-            ));
+            parse_runtime_access_mode_with_field(value.as_str(), "metadata.runtime.access_mode")?
         }
         None => {
             if mode == RuntimeMode::Compose {
@@ -119,6 +113,14 @@ pub fn parse_runtime_metadata_options(metadata: &Value) -> Result<RuntimeMetadat
             }
         }
     };
+
+    let mut access_mode_candidates = parse_runtime_access_mode_candidates(&runtime)?;
+    if access_mode_candidates.is_empty() {
+        access_mode_candidates.push(access_mode);
+    }
+    if !access_mode_candidates.contains(&access_mode) {
+        access_mode_candidates.insert(0, access_mode);
+    }
 
     let single_image = if mode == RuntimeMode::SingleImage {
         let image = runtime
@@ -179,11 +181,78 @@ pub fn parse_runtime_metadata_options(metadata: &Value) -> Result<RuntimeMetadat
         None
     };
 
+    if mode == RuntimeMode::SingleImage {
+        access_mode_candidates = vec![RuntimeAccessMode::Direct];
+    }
+
     Ok(RuntimeMetadataOptions {
         mode,
-        access_mode,
+        access_mode: if mode == RuntimeMode::SingleImage {
+            RuntimeAccessMode::Direct
+        } else {
+            access_mode
+        },
+        access_mode_candidates,
         single_image,
     })
+}
+
+pub fn runtime_access_mode_as_str(mode: RuntimeAccessMode) -> &'static str {
+    match mode {
+        RuntimeAccessMode::Direct => "direct",
+        RuntimeAccessMode::SshBastion => "ssh_bastion",
+        RuntimeAccessMode::Wireguard => "wireguard",
+    }
+}
+
+pub fn parse_runtime_access_mode(value: &str) -> Result<RuntimeAccessMode, String> {
+    parse_runtime_access_mode_with_field(value, "access_mode")
+}
+
+fn parse_runtime_access_mode_with_field(
+    value: &str,
+    field: &str,
+) -> Result<RuntimeAccessMode, String> {
+    let normalized = value.trim().to_ascii_lowercase();
+    match normalized.as_str() {
+        "direct" => Ok(RuntimeAccessMode::Direct),
+        "ssh_bastion" | "ssh-bastion" | "bastion" => Ok(RuntimeAccessMode::SshBastion),
+        "wireguard" | "wg" => Ok(RuntimeAccessMode::Wireguard),
+        _ => Err(format!(
+            "{field} is invalid: '{normalized}', allowed: direct,ssh_bastion,wireguard"
+        )),
+    }
+}
+
+fn parse_runtime_access_mode_candidates(
+    runtime: &serde_json::Map<String, Value>,
+) -> Result<Vec<RuntimeAccessMode>, String> {
+    let Some(raw_modes) = runtime
+        .get("access_mode_options")
+        .or_else(|| runtime.get("access_modes"))
+    else {
+        return Ok(Vec::new());
+    };
+
+    let array = raw_modes.as_array().ok_or_else(|| {
+        "metadata.runtime.access_mode_options must be an array of strings".to_string()
+    })?;
+
+    let mut modes = Vec::new();
+    for (index, value) in array.iter().enumerate() {
+        let item = value.as_str().ok_or_else(|| {
+            format!("metadata.runtime.access_mode_options[{index}] must be a string")
+        })?;
+        let parsed = parse_runtime_access_mode_with_field(
+            item,
+            format!("metadata.runtime.access_mode_options[{index}]").as_str(),
+        )?;
+        if !modes.contains(&parsed) {
+            modes.push(parsed);
+        }
+    }
+
+    Ok(modes)
 }
 
 pub fn build_single_image_compose_template(image: &str, internal_port: u16) -> String {
@@ -507,6 +576,10 @@ mod tests {
         let options = parse_runtime_metadata_options(&metadata).unwrap();
         assert_eq!(options.mode, RuntimeMode::SingleImage);
         assert_eq!(options.access_mode, RuntimeAccessMode::Direct);
+        assert_eq!(
+            options.access_mode_candidates,
+            vec![RuntimeAccessMode::Direct]
+        );
 
         let single = options.single_image.unwrap();
         assert_eq!(single.image, "nginx:alpine");
@@ -520,6 +593,10 @@ mod tests {
         let options = parse_runtime_metadata_options(&metadata).unwrap();
         assert_eq!(options.mode, RuntimeMode::Compose);
         assert_eq!(options.access_mode, RuntimeAccessMode::SshBastion);
+        assert_eq!(
+            options.access_mode_candidates,
+            vec![RuntimeAccessMode::SshBastion]
+        );
     }
 
     #[test]
@@ -533,6 +610,44 @@ mod tests {
         let options = parse_runtime_metadata_options(&metadata).unwrap();
         assert_eq!(options.mode, RuntimeMode::Compose);
         assert_eq!(options.access_mode, RuntimeAccessMode::Wireguard);
+        assert_eq!(
+            options.access_mode_candidates,
+            vec![RuntimeAccessMode::Wireguard]
+        );
+    }
+
+    #[test]
+    fn parses_compose_access_mode_options() {
+        let metadata = json!({
+            "runtime": {
+                "mode": "compose",
+                "access_mode": "ssh_bastion",
+                "access_mode_options": ["wireguard", "ssh_bastion"]
+            }
+        });
+        let options = parse_runtime_metadata_options(&metadata).unwrap();
+        assert_eq!(options.mode, RuntimeMode::Compose);
+        assert_eq!(options.access_mode, RuntimeAccessMode::SshBastion);
+        assert_eq!(
+            options.access_mode_candidates,
+            vec![RuntimeAccessMode::Wireguard, RuntimeAccessMode::SshBastion]
+        );
+    }
+
+    #[test]
+    fn compose_access_mode_injected_into_options_when_missing() {
+        let metadata = json!({
+            "runtime": {
+                "mode": "compose",
+                "access_mode": "ssh_bastion",
+                "access_mode_options": ["wireguard"]
+            }
+        });
+        let options = parse_runtime_metadata_options(&metadata).unwrap();
+        assert_eq!(
+            options.access_mode_candidates,
+            vec![RuntimeAccessMode::SshBastion, RuntimeAccessMode::Wireguard]
+        );
     }
 
     #[test]

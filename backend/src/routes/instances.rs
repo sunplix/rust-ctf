@@ -30,8 +30,9 @@ use crate::{
     error::{AppError, AppResult},
     routes::contest_access::ensure_team_contest_workspace_access,
     runtime_template::{
-        build_single_image_compose_template, parse_runtime_metadata_options,
-        render_compose_template_variables, validate_compose_template_schema, RuntimeAccessMode,
+        build_single_image_compose_template, parse_runtime_access_mode,
+        parse_runtime_metadata_options, render_compose_template_variables,
+        runtime_access_mode_as_str, validate_compose_template_schema, RuntimeAccessMode,
         RuntimeEndpointProtocol, RuntimeMode,
     },
     state::AppState,
@@ -68,6 +69,7 @@ const RUNTIME_ATTACHMENT_PREFIX: &str = "runtime/";
 struct InstanceActionRequest {
     contest_id: Uuid,
     challenge_id: Uuid,
+    access_mode: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -252,9 +254,10 @@ async fn start_instance(
     ensure_team_contest_workspace_access(state.as_ref(), req.contest_id, team_id, &current_user)
         .await?;
     let policy = fetch_runtime_policy(state.as_ref(), req.contest_id, req.challenge_id).await?;
+    let requested_access_mode = parse_requested_runtime_access_mode(req.access_mode.as_deref())?;
 
     validate_runtime_policy(&policy, &current_user.role, true)?;
-    let compose_source = compose_source_from_policy(policy)?;
+    let compose_source = compose_source_from_policy(policy, requested_access_mode)?;
 
     let now = Utc::now();
     let expires_at = now + Duration::hours(INSTANCE_TTL_HOURS);
@@ -262,7 +265,12 @@ async fn start_instance(
     if let Some(instance) =
         fetch_instance_row(state.as_ref(), req.contest_id, req.challenge_id, team_id).await?
     {
-        if instance.status == "running" && !is_expired(&instance, now) {
+        let current_access_mode =
+            infer_runtime_access_mode_from_entrypoint(instance.entrypoint_url.as_str());
+        if instance.status == "running"
+            && !is_expired(&instance, now)
+            && current_access_mode == Some(compose_source.network_access_mode)
+        {
             return Ok(Json(instance_to_response(
                 state.as_ref(),
                 instance,
@@ -346,9 +354,10 @@ async fn reset_instance(
     ensure_team_contest_workspace_access(state.as_ref(), req.contest_id, team_id, &current_user)
         .await?;
     let policy = fetch_runtime_policy(state.as_ref(), req.contest_id, req.challenge_id).await?;
+    let requested_access_mode = parse_requested_runtime_access_mode(req.access_mode.as_deref())?;
 
     validate_runtime_policy(&policy, &current_user.role, true)?;
-    let compose_source = compose_source_from_policy(policy)?;
+    let compose_source = compose_source_from_policy(policy, requested_access_mode)?;
 
     let now = Utc::now();
     let expires_at = now + Duration::hours(INSTANCE_TTL_HOURS);
@@ -688,9 +697,14 @@ fn validate_runtime_policy(
     Ok(())
 }
 
-fn compose_source_from_policy(policy: RuntimePolicyRow) -> AppResult<ComposeRenderSource> {
+fn compose_source_from_policy(
+    policy: RuntimePolicyRow,
+    requested_access_mode: Option<RuntimeAccessMode>,
+) -> AppResult<ComposeRenderSource> {
     let runtime_options =
         parse_runtime_metadata_options(&policy.metadata).map_err(AppError::BadRequest)?;
+    let effective_access_mode =
+        resolve_effective_runtime_access_mode(&runtime_options, requested_access_mode)?;
 
     match runtime_options.mode {
         RuntimeMode::SingleImage => {
@@ -707,7 +721,7 @@ fn compose_source_from_policy(policy: RuntimePolicyRow) -> AppResult<ComposeRend
                 flag_mode: policy.flag_mode,
                 metadata: policy.metadata,
                 entrypoint_mode: RuntimeEntrypointMode::HostMapped(single.protocol),
-                network_access_mode: RuntimeAccessMode::Direct,
+                network_access_mode: effective_access_mode,
             })
         }
         RuntimeMode::Compose => {
@@ -726,9 +740,9 @@ fn compose_source_from_policy(policy: RuntimePolicyRow) -> AppResult<ComposeRend
             validate_compose_template_schema(&template, &policy.metadata)
                 .map_err(AppError::BadRequest)?;
 
-            let entrypoint_mode = if runtime_options.access_mode == RuntimeAccessMode::SshBastion {
+            let entrypoint_mode = if effective_access_mode == RuntimeAccessMode::SshBastion {
                 RuntimeEntrypointMode::SshBastion
-            } else if runtime_options.access_mode == RuntimeAccessMode::Wireguard {
+            } else if effective_access_mode == RuntimeAccessMode::Wireguard {
                 RuntimeEntrypointMode::Wireguard
             } else {
                 RuntimeEntrypointMode::InternalSubnet
@@ -739,15 +753,20 @@ fn compose_source_from_policy(policy: RuntimePolicyRow) -> AppResult<ComposeRend
                 flag_mode: policy.flag_mode,
                 metadata: policy.metadata,
                 entrypoint_mode,
-                network_access_mode: runtime_options.access_mode,
+                network_access_mode: effective_access_mode,
             })
         }
     }
 }
 
-fn compose_source_from_row(row: ComposeTemplateRow) -> AppResult<ComposeRenderSource> {
+fn compose_source_from_row(
+    row: ComposeTemplateRow,
+    requested_access_mode: Option<RuntimeAccessMode>,
+) -> AppResult<ComposeRenderSource> {
     let runtime_options =
         parse_runtime_metadata_options(&row.metadata).map_err(AppError::BadRequest)?;
+    let effective_access_mode =
+        resolve_effective_runtime_access_mode(&runtime_options, requested_access_mode)?;
 
     match runtime_options.mode {
         RuntimeMode::SingleImage => {
@@ -764,7 +783,7 @@ fn compose_source_from_row(row: ComposeTemplateRow) -> AppResult<ComposeRenderSo
                 flag_mode: row.flag_mode,
                 metadata: row.metadata,
                 entrypoint_mode: RuntimeEntrypointMode::HostMapped(single.protocol),
-                network_access_mode: RuntimeAccessMode::Direct,
+                network_access_mode: effective_access_mode,
             })
         }
         RuntimeMode::Compose => {
@@ -778,9 +797,9 @@ fn compose_source_from_row(row: ComposeTemplateRow) -> AppResult<ComposeRenderSo
             validate_compose_template_schema(&template, &row.metadata)
                 .map_err(AppError::BadRequest)?;
 
-            let entrypoint_mode = if runtime_options.access_mode == RuntimeAccessMode::SshBastion {
+            let entrypoint_mode = if effective_access_mode == RuntimeAccessMode::SshBastion {
                 RuntimeEntrypointMode::SshBastion
-            } else if runtime_options.access_mode == RuntimeAccessMode::Wireguard {
+            } else if effective_access_mode == RuntimeAccessMode::Wireguard {
                 RuntimeEntrypointMode::Wireguard
             } else {
                 RuntimeEntrypointMode::InternalSubnet
@@ -791,10 +810,52 @@ fn compose_source_from_row(row: ComposeTemplateRow) -> AppResult<ComposeRenderSo
                 flag_mode: row.flag_mode,
                 metadata: row.metadata,
                 entrypoint_mode,
-                network_access_mode: runtime_options.access_mode,
+                network_access_mode: effective_access_mode,
             })
         }
     }
+}
+
+fn parse_requested_runtime_access_mode(
+    value: Option<&str>,
+) -> AppResult<Option<RuntimeAccessMode>> {
+    let Some(raw) = value else {
+        return Ok(None);
+    };
+    let normalized = raw.trim();
+    if normalized.is_empty() {
+        return Ok(None);
+    }
+
+    parse_runtime_access_mode(normalized)
+        .map(Some)
+        .map_err(AppError::BadRequest)
+}
+
+fn resolve_effective_runtime_access_mode(
+    runtime_options: &crate::runtime_template::RuntimeMetadataOptions,
+    requested_access_mode: Option<RuntimeAccessMode>,
+) -> AppResult<RuntimeAccessMode> {
+    let effective = requested_access_mode.unwrap_or(runtime_options.access_mode);
+    if runtime_options.access_mode_candidates.contains(&effective) {
+        return Ok(effective);
+    }
+
+    let allowed = runtime_options
+        .access_mode_candidates
+        .iter()
+        .map(|mode| runtime_access_mode_as_str(*mode).to_string())
+        .collect::<Vec<_>>()
+        .join(",");
+    Err(AppError::BadRequest(format!(
+        "requested access_mode '{}' is not allowed by challenge runtime; allowed: {}",
+        runtime_access_mode_as_str(effective),
+        if allowed.is_empty() {
+            "<none>"
+        } else {
+            allowed.as_str()
+        }
+    )))
 }
 
 fn is_privileged_role(role: &str) -> bool {
@@ -2284,7 +2345,9 @@ async fn ensure_compose_file_for_existing(
     }
 
     let row = fetch_compose_template_row(state, instance.contest_id, instance.challenge_id).await?;
-    let source = compose_source_from_row(row)?;
+    let requested_access_mode =
+        infer_runtime_access_mode_from_entrypoint(instance.entrypoint_url.as_str());
+    let source = compose_source_from_row(row, requested_access_mode)?;
     persist_compose_file(state, instance, &source).await
 }
 
@@ -2744,6 +2807,22 @@ fn parse_entrypoint_host_port(url: &str) -> Option<(String, u16)> {
     Some((host.trim().to_string(), port))
 }
 
+fn infer_runtime_access_mode_from_entrypoint(entrypoint_url: &str) -> Option<RuntimeAccessMode> {
+    if entrypoint_url.starts_with("ssh://") {
+        return Some(RuntimeAccessMode::SshBastion);
+    }
+    if entrypoint_url.starts_with("wg://") {
+        return Some(RuntimeAccessMode::Wireguard);
+    }
+    if entrypoint_url.starts_with("http://")
+        || entrypoint_url.starts_with("https://")
+        || entrypoint_url.starts_with("tcp://")
+    {
+        return Some(RuntimeAccessMode::Direct);
+    }
+    None
+}
+
 fn instance_ssh_gateway_username() -> String {
     INSTANCE_SSH_GATEWAY_USERNAME.to_string()
 }
@@ -3188,7 +3267,9 @@ fn is_expired(instance: &InstanceRow, now: DateTime<Utc>) -> bool {
 }
 
 fn instance_to_response(state: &AppState, row: InstanceRow, message: String) -> InstanceResponse {
-    let network_access = if row.entrypoint_url.starts_with("ssh://") {
+    let network_access = if row.status == "destroyed" {
+        None
+    } else if row.entrypoint_url.starts_with("ssh://") {
         parse_entrypoint_host_port(&row.entrypoint_url).map(|(host, port)| InstanceNetworkAccess {
             mode: "ssh_bastion".to_string(),
             host,
@@ -3196,7 +3277,7 @@ fn instance_to_response(state: &AppState, row: InstanceRow, message: String) -> 
             username: Some(instance_ssh_gateway_username()),
             password: Some(instance_ssh_gateway_password(state, &row)),
             download_url: None,
-            note: "Use SSH access box to scan your isolated 10.x.x.0/24 subnet; install extra tools when needed via sudo".to_string(),
+            note: "Use SSH bastion to scan your isolated 10.x.x.0/24 subnet. Install tools via 'sudo apk add --no-cache <pkg>'.".to_string(),
         })
     } else if row.entrypoint_url.starts_with("wg://") {
         parse_entrypoint_host_port(&row.entrypoint_url).map(|(host, port)| InstanceNetworkAccess {
@@ -3244,9 +3325,11 @@ fn instance_wireguard_config_download_url(instance: &InstanceRow) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        collect_compose_network_names, normalize_wireguard_fetch_host,
-        parse_default_gateway_ipv4_from_route_table, runtime_attachment_relative_path,
+        collect_compose_network_names, infer_runtime_access_mode_from_entrypoint,
+        normalize_wireguard_fetch_host, parse_default_gateway_ipv4_from_route_table,
+        runtime_attachment_relative_path,
     };
+    use crate::runtime_template::RuntimeAccessMode;
 
     #[test]
     fn runtime_attachment_path_extracts_relative_path() {
@@ -3313,6 +3396,22 @@ networks:
         assert_eq!(
             parse_default_gateway_ipv4_from_route_table(table),
             Some("172.17.0.1".to_string())
+        );
+    }
+
+    #[test]
+    fn infers_runtime_access_mode_from_entrypoint_url() {
+        assert_eq!(
+            infer_runtime_access_mode_from_entrypoint("ssh://inst.example.com:2222"),
+            Some(RuntimeAccessMode::SshBastion)
+        );
+        assert_eq!(
+            infer_runtime_access_mode_from_entrypoint("wg://inst.example.com:51820"),
+            Some(RuntimeAccessMode::Wireguard)
+        );
+        assert_eq!(
+            infer_runtime_access_mode_from_entrypoint("http://inst.example.com:32001"),
+            Some(RuntimeAccessMode::Direct)
         );
     }
 }

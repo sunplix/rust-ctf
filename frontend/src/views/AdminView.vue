@@ -374,13 +374,31 @@
                       <small class="field-note">{{ runtimeModeDescription }}</small>
                     </label>
                     <label v-if="newChallenge.runtime_mode === 'compose'" class="runtime-access-field">
-                      <span>{{ tl('访问模式') }}</span>
+                      <span>{{ tr("默认访问模式", "Default access mode") }}</span>
                       <select v-model="newChallenge.runtime_access_mode">
                         <option value="ssh_bastion">{{ tl('ssh_bastion（默认）') }}</option>
                         <option value="wireguard">wireguard（VPN）</option>
                         <option value="direct">{{ tl('direct（直连入口）') }}</option>
                       </select>
                       <small class="field-note">{{ runtimeAccessModeDescription }}</small>
+                      <div class="runtime-access-switches">
+                        <span class="muted">
+                          {{
+                            tr(
+                              "选手可切换（仅对 compose 生效）",
+                              "Player-selectable modes (compose only)"
+                            )
+                          }}
+                        </span>
+                        <label>
+                          <input v-model="newChallenge.runtime_allow_ssh_bastion" type="checkbox" />
+                          <span>ssh_bastion</span>
+                        </label>
+                        <label>
+                          <input v-model="newChallenge.runtime_allow_wireguard" type="checkbox" />
+                          <span>wireguard</span>
+                        </label>
+                      </div>
                     </label>
                     <label v-if="newChallenge.runtime_mode === 'single_image'" class="field-span-2">
                       <span>{{ tl('镜像仓库地址') }}</span>
@@ -2999,6 +3017,8 @@ const newChallenge = reactive({
   compose_template: "",
   runtime_mode: "none",
   runtime_access_mode: "ssh_bastion",
+  runtime_allow_ssh_bastion: true,
+  runtime_allow_wireguard: false,
   runtime_image: "",
   runtime_internal_port: 80,
   runtime_protocol: "http",
@@ -3461,6 +3481,8 @@ function resetChallengeForm() {
   newChallenge.compose_template = "";
   newChallenge.runtime_mode = "none";
   newChallenge.runtime_access_mode = "ssh_bastion";
+  newChallenge.runtime_allow_ssh_bastion = true;
+  newChallenge.runtime_allow_wireguard = false;
   newChallenge.runtime_image = "";
   newChallenge.runtime_internal_port = 80;
   newChallenge.runtime_protocol = "http";
@@ -3516,6 +3538,18 @@ function applyChallengeDetailToForm(detail: AdminChallengeDetailItem) {
       : accessModeRaw === "direct"
         ? "direct"
         : "ssh_bastion";
+  const accessModeOptionsRaw = Array.isArray(runtime.access_mode_options)
+    ? runtime.access_mode_options
+    : Array.isArray(runtime.access_modes)
+      ? runtime.access_modes
+      : [];
+  const accessModeOptions = accessModeOptionsRaw
+    .map((value) => (typeof value === "string" ? value.trim().toLowerCase() : ""))
+    .filter((value): value is string => value === "ssh_bastion" || value === "wireguard" || value === "direct");
+  const selectableSsh =
+    accessModeOptions.includes("ssh_bastion") || runtimeAccessMode === "ssh_bastion";
+  const selectableWireguard =
+    accessModeOptions.includes("wireguard") || runtimeAccessMode === "wireguard";
   const runtimeProtocolRaw = typeof runtime.protocol === "string" ? runtime.protocol.trim().toLowerCase() : "http";
   const runtimeProtocol =
     runtimeProtocolRaw === "https" || runtimeProtocolRaw === "tcp" ? runtimeProtocolRaw : "http";
@@ -3545,6 +3579,8 @@ function applyChallengeDetailToForm(detail: AdminChallengeDetailItem) {
   newChallenge.change_note = "";
   newChallenge.runtime_mode = runtimeMode;
   newChallenge.runtime_access_mode = runtimeAccessMode;
+  newChallenge.runtime_allow_ssh_bastion = selectableSsh;
+  newChallenge.runtime_allow_wireguard = selectableWireguard;
   newChallenge.runtime_image = typeof runtime.image === "string" ? runtime.image : "";
   newChallenge.runtime_internal_port = runtimeInternalPort;
   newChallenge.runtime_protocol = runtimeProtocol;
@@ -3584,8 +3620,27 @@ function buildChallengeRuntimeMetadata() {
     runtime.internal_port = Number(newChallenge.runtime_internal_port);
     runtime.protocol = newChallenge.runtime_protocol;
     runtime.access_mode = "direct";
+    runtime.access_mode_options = ["direct"];
   } else {
+    const options: string[] = [];
+    if (newChallenge.runtime_allow_ssh_bastion) {
+      options.push("ssh_bastion");
+    }
+    if (newChallenge.runtime_allow_wireguard) {
+      options.push("wireguard");
+    }
+    if (newChallenge.runtime_access_mode === "direct") {
+      options.push("direct");
+    }
+    if (options.length === 0) {
+      options.push(newChallenge.runtime_access_mode);
+    }
+    if (!options.includes(newChallenge.runtime_access_mode)) {
+      options.unshift(newChallenge.runtime_access_mode);
+    }
+
     runtime.access_mode = newChallenge.runtime_access_mode;
+    runtime.access_mode_options = Array.from(new Set(options));
   }
 
   return { runtime };
@@ -5939,6 +5994,23 @@ onUnmounted(() => {
   font-size: 0.75rem;
   color: rgba(18, 18, 18, 0.62);
   line-height: 1.45;
+}
+
+.runtime-access-switches {
+  margin-top: 0.4rem;
+  display: grid;
+  gap: 0.32rem;
+}
+
+.runtime-access-switches .muted {
+  font-size: 0.75rem;
+}
+
+.runtime-access-switches label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
 }
 
 .challenge-submit-row {

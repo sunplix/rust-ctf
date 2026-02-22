@@ -1,6 +1,6 @@
 # Rust CTF API Reference
 
-最后更新：2026-02-19  
+最后更新：2026-02-22  
 适用后端版本：`backend`（Axum / `/api/v1` 路由）
 
 ## 1. 维护约定
@@ -92,6 +92,7 @@
   - `home_tagline`
   - `home_signature`
   - `footer_text`
+  - `time_display_mode`（`local|utc`）
 
 ## `GET /auth/password-policy`
 
@@ -346,26 +347,80 @@
   - 比赛不存在或海报不存在：`400`
   - 比赛不对公众可见：`403`
 
+## `GET /contests/{contest_id}/registration`
+
+- 鉴权：必须
+- 用途：查询当前用户在指定比赛下的报名状态
+- 返回字段：
+  - `contest_id`
+  - `team_id`
+  - `registration_requires_approval`
+  - `registration_status`（`no_team|not_registered|pending|approved|rejected`）
+  - `review_note`
+  - `requested_at`
+  - `reviewed_at`
+  - `can_enter_workspace`
+- 特殊行为：
+  - `admin|judge` 返回视为已通过（`registration_status=approved`，`can_enter_workspace=true`）
+
+## `POST /contests/{contest_id}/registration`
+
+- 鉴权：必须
+- 用途：提交/重提比赛报名申请（无请求体）
+- 行为：
+  - 普通选手必须已加入队伍
+  - `registration_requires_approval=true` 时写入 `pending`
+  - `registration_requires_approval=false` 时自动写入 `approved`
+  - 已通过报名时重复提交会返回当前状态（幂等）
+- 成功：`200`，响应结构同 `GET /contests/{contest_id}/registration`
+- 失败：
+  - 未加入队伍：`400`
+  - 私有/不可访问比赛：`403`
+  - `admin|judge` 调用该接口：`400`
+
 ## `GET /contests/{contest_id}/challenges`
 
 - 鉴权：必须
-- 访问控制：
-  - 私有比赛：仅 `admin|judge`
-  - `draft|archived` 比赛：仅 `admin|judge`
+- 访问控制（工作区准入）：
+  - 私有比赛、`draft|archived`：仅 `admin|judge`
+  - 普通选手必须先加入队伍
+  - 普通选手必须满足报名准入（自动通过或人工审核通过）
 - 仅返回：
   - `is_visible=true` 的题目
   - 比赛状态 `running|ended`
   - 已到发布时间（`release_at <= now` 或为空）
 - 响应字段：
-  - `id,title,category,difficulty,challenge_type,static_score,release_at`
+  - `id,title,category,difficulty,description,hints,challenge_type,static_score,release_at,runtime_access_modes`
 
 ## `GET /contests/{contest_id}/announcements`
 
 - 鉴权：必须
-- 访问控制同上
+- 访问控制同上（工作区准入）
 - 仅返回已发布公告（`is_published=true` 且 `published_at<=now` 或为空）
 - 排序：置顶优先，再按发布时间/创建时间倒序
 - `content` 支持 Markdown 文本；前端按安全策略渲染为富文本展示
+
+## `GET /contests/{contest_id}/challenges/{challenge_id}/attachments`
+
+- 鉴权：必须
+- 访问控制：
+  - 与比赛工作区准入一致
+  - 仅可访问该比赛内可访问题目的附件
+- 返回字段：
+  - `id,challenge_id,filename,content_type,size_bytes,created_at,download_url`
+- 说明：
+  - 自动过滤 `runtime/` 前缀的运行时附件（该类文件仅用于实例编排，不向选手展示）
+
+## `GET /contests/{contest_id}/challenges/{challenge_id}/attachments/{attachment_id}`
+
+- 鉴权：必须
+- 用途：下载题目附件（二进制）
+- 响应头：
+  - `Content-Type`：附件内容类型
+  - `Content-Disposition: attachment; filename=\"...\"`
+- 失败：
+  - 附件不存在或不可访问：`400`
+  - 无访问权限：`403`
 
 ## 7. 判题提交 API
 
@@ -377,7 +432,8 @@
   - `challenge_id`：UUID
   - `flag`：字符串（去除首尾空白后不能为空）
 - 前置约束：
-  - 用户必须属于某个队伍，否则 `403`
+  - 用户必须属于某个队伍，否则 `400`
+  - 普通选手需满足比赛报名准入（自动通过或人工审核通过）
   - 题目必须已挂载到比赛
   - 题目需可见且已到发布时间
   - 比赛状态必须是 `running`
@@ -550,6 +606,25 @@
     - `entries[]` 结构同 `ScoreboardEntry`
   - `latest_entries[]`（当前榜单快照，结构同 `ScoreboardEntry`）
 
+### `GET /contests/{contest_id}/scoreboard/rankings`
+
+- 鉴权：必须
+- 用途：返回“队伍排名 + 选手排名 + 分类题目矩阵”，用于大屏排行矩阵渲染
+- 访问控制：同 `GET /contests/{contest_id}/scoreboard`
+- 返回：
+  - `contest_id,generated_at`
+  - `categories[]`：`category,challenges[]`
+    - `challenges[]`：`challenge_id,challenge_title,challenge_slug`
+  - `team_rankings[]` 与 `player_rankings[]`：
+    - `rank,subject_id,subject_name,total_score,solved_count,last_submit_at,categories[]`
+    - `categories[]`：`category,solved_count,challenges[]`
+    - `challenges[]`：`challenge_id,challenge_title,challenge_slug,marker,score_awarded,submitted_at`
+- `marker`：
+  - `first_blood`
+  - `second_blood`
+  - `third_blood`
+  - `solved`
+
 ### `GET /contests/{contest_id}/scoreboard/ws`
 
 - 鉴权：必须（两种方式二选一）
@@ -594,10 +669,12 @@
     - `home_tagline`（0..2000）
     - `home_signature`（0..200）
     - `footer_text`（0..240）
+    - `challenge_attachment_max_bytes`（`1048576..=268435456`）
+    - `time_display_mode`（`local|utc`）
   - 说明：仅更新请求中提供的字段；会记录审计日志 `admin.site.settings.update`
 
 `AdminSiteSettingsItem`：
-`site_name,site_subtitle,home_title,home_tagline,home_signature,footer_text,updated_by,updated_at`
+`site_name,site_subtitle,home_title,home_tagline,home_signature,footer_text,challenge_attachment_max_bytes,time_display_mode,updated_by,updated_at`
 
 ## 10.2 用户管理（admin only）
 
@@ -654,7 +731,7 @@
 
 - 返回题目完整配置（用于管理端“编辑题目”）
 - 字段包含：  
-  `id,title,slug,category,difficulty,description,static_score,min_score,max_score,challenge_type,flag_mode,status,flag_hash,compose_template,metadata,is_visible,tags,writeup_visibility,writeup_content,current_version,created_at,updated_at`
+  `id,title,slug,category,difficulty,description,static_score,min_score,max_score,challenge_type,flag_mode,status,flag_hash,compose_template,metadata,is_visible,tags,hints,writeup_visibility,writeup_content,current_version,created_at,updated_at`
 
 ### `GET /admin/challenges/runtime-template/lint`
 
@@ -692,10 +769,50 @@
   - 常见 step：`runtime_pull`、`runtime_config_validate`、`runtime_build_probe`、`runtime_cleanup_probe`
   - 执行器策略：优先 `docker compose`，不可用时自动回退 `docker-compose`（`output` 会带 `[executor=docker-compose]` 前缀）
 
+### `POST /admin/challenges/runtime-template/test-image/stream`
+
+- 用途：与 `test-image` 相同，但以 NDJSON 流式返回每一步日志
+- 请求体：同 `POST /admin/challenges/runtime-template/test-image`
+- 响应类型：`application/x-ndjson`
+- 事件模型（`event`）：
+  - `start`
+  - `step_start`
+  - `step_log`
+  - `step_finish`
+  - `completed`（包含完整 `TestChallengeRuntimeImageResponse`）
+  - `error`
+
+### `POST /admin/challenges/runtime-template/test-compose`
+
+- 用途：对 compose 模板进行“渲染 + config/pull/build/cleanup”连通性测试
+- Body：
+  - `compose_template`（必填）
+  - `metadata`（可选；用于变量渲染与 schema 校验）
+  - `challenge_id`（可选；提供后会把该题目的 `runtime/` 附件还原到测试目录）
+  - `force_pull`（可选，默认 `true`）
+  - `run_build_probe`（可选，默认 `true`）
+  - `timeout_seconds`（可选，范围 10..900）
+- 返回：
+  - `compose_template_preview,force_pull,run_build_probe,succeeded,generated_at,steps[]`
+  - 常见 step：`runtime_compose_config_validate`、`runtime_compose_pull`、`runtime_compose_build_probe`、`runtime_compose_cleanup_probe`
+
+### `POST /admin/challenges/runtime-template/test-compose/stream`
+
+- 用途：与 `test-compose` 相同，但以 NDJSON 流式返回日志
+- 请求体：同 `POST /admin/challenges/runtime-template/test-compose`
+- 响应类型：`application/x-ndjson`
+- 事件模型：
+  - `start`
+  - `step_start`
+  - `step_log`
+  - `step_finish`
+  - `completed`（包含完整 `TestChallengeRuntimeComposeResponse`）
+  - `error`
+
 ### `POST /admin/challenges`
 
 - 支持字段：
-  - 基础：`title,slug,category,description,difficulty,tags`
+  - 基础：`title,slug,category,description,difficulty,tags,hints`
   - 判题：`challenge_type,flag_mode,flag_hash,metadata`
   - 分值：`static_score,min_score,max_score`
   - 环境：`compose_template`
@@ -785,20 +902,23 @@
 
 - `id,challenge_id,filename,content_type,storage_path,size_bytes,uploaded_by,uploaded_by_username,created_at`
 
-说明：当前仅提供“上传/查询/删除”元数据接口，未提供单独下载 API。
+说明：
+
+- 管理端当前仅提供“上传/查询/删除”接口（无管理端专用下载 API）。
+- 选手侧下载接口为：`GET /contests/{contest_id}/challenges/{challenge_id}/attachments/{attachment_id}`。
 
 ## 10.5 比赛管理（admin|judge）
 
 ### `GET /admin/contests`
 
 - 返回字段：  
-  `id,title,slug,description,poster_url,visibility,status,scoring_mode,dynamic_decay,first_blood_bonus_percent,second_blood_bonus_percent,third_blood_bonus_percent,start_at,end_at,freeze_at,created_at,updated_at`
+  `id,title,slug,description,poster_url,visibility,status,scoring_mode,dynamic_decay,first_blood_bonus_percent,second_blood_bonus_percent,third_blood_bonus_percent,registration_requires_approval,start_at,end_at,freeze_at,created_at,updated_at`
 
 ### `POST /admin/contests`
 
 - Body：
   - `title,slug,start_at,end_at` 必填
-  - 可选：`description,visibility,status,scoring_mode,dynamic_decay,first_blood_bonus_percent,second_blood_bonus_percent,third_blood_bonus_percent,freeze_at`
+  - 可选：`description,visibility,status,scoring_mode,dynamic_decay,first_blood_bonus_percent,second_blood_bonus_percent,third_blood_bonus_percent,registration_requires_approval,freeze_at`
 - 约束：
   - `visibility`：`public|private`
   - `status`：`draft|scheduled|running|ended|archived`
@@ -807,13 +927,14 @@
   - `first_blood_bonus_percent`：`0..500`（默认 10）
   - `second_blood_bonus_percent`：`0..500`（默认 5）
   - `third_blood_bonus_percent`：`0..500`（默认 2）
+  - `registration_requires_approval`：`true|false`（默认 `true`）
   - `end_at` 必须晚于 `start_at`
   - `freeze_at` 必须在 `[start_at, end_at]` 区间内
   - `slug` 唯一
 
 ### `PATCH /admin/contests/{contest_id}`
 
-- 可更新字段：`title,slug,description,visibility,status,scoring_mode,dynamic_decay,first_blood_bonus_percent,second_blood_bonus_percent,third_blood_bonus_percent,start_at,end_at,freeze_at,clear_freeze_at`
+- 可更新字段：`title,slug,description,visibility,status,scoring_mode,dynamic_decay,first_blood_bonus_percent,second_blood_bonus_percent,third_blood_bonus_percent,registration_requires_approval,start_at,end_at,freeze_at,clear_freeze_at`
 - `clear_freeze_at=true` 时清空封榜时间
 - 时间窗口、`dynamic_decay`、血量加成百分比约束同创建
 
@@ -844,6 +965,25 @@
 
 - 删除比赛海报
 - 成功：`204`
+
+### 报名审核
+
+- `GET /admin/contests/{contest_id}/registrations`
+  - Query：
+    - `status`（`pending|approved|rejected`）
+    - `limit`（默认 200，范围 `1..1000`）
+- `PATCH /admin/contests/{contest_id}/registrations/{registration_id}`
+  - Body：
+    - `status`（必填：`pending|approved|rejected`）
+    - `review_note`（可选，<=1000）
+  - 行为：
+    - 更新 `status`
+    - 当 `status != pending` 时自动写入 `reviewed_by/reviewed_at`
+    - 当 `status = pending` 时清空审核人和审核时间
+
+`AdminContestRegistrationItem`：
+
+- `id,contest_id,contest_title,team_id,team_name,status,requested_by,requested_by_username,requested_at,reviewed_by,reviewed_by_username,reviewed_at,review_note,created_at,updated_at`
 
 ## 10.6 比赛题目挂载（admin|judge）
 

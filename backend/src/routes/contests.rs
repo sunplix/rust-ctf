@@ -9,8 +9,10 @@ use axum::{
 };
 use chrono::{DateTime, Utc};
 use serde::Serialize;
+use serde_json::Value;
 use sqlx::FromRow;
 use tokio::fs;
+use tracing::warn;
 use uuid::Uuid;
 
 use crate::{
@@ -21,6 +23,7 @@ use crate::{
         ensure_user_contest_workspace_access, ensure_user_has_team, get_user_team_id_optional,
         is_privileged_role, load_contest_gate, load_contest_registration, ContestRegistrationRow,
     },
+    runtime_template::{parse_runtime_metadata_options, runtime_access_mode_as_str, RuntimeMode},
     state::AppState,
 };
 
@@ -43,7 +46,7 @@ struct ContestListItem {
     end_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, FromRow)]
+#[derive(Debug, Serialize)]
 struct ContestChallengeItem {
     id: Uuid,
     title: String,
@@ -54,6 +57,21 @@ struct ContestChallengeItem {
     challenge_type: String,
     static_score: i32,
     release_at: Option<DateTime<Utc>>,
+    runtime_access_modes: Vec<String>,
+}
+
+#[derive(Debug, FromRow)]
+struct ContestChallengeRow {
+    id: Uuid,
+    title: String,
+    category: String,
+    difficulty: String,
+    description: String,
+    hints: Vec<String>,
+    challenge_type: String,
+    static_score: i32,
+    release_at: Option<DateTime<Utc>>,
+    metadata: Value,
 }
 
 #[derive(Debug, Serialize)]
@@ -433,7 +451,7 @@ async fn list_contest_challenges(
 ) -> AppResult<Json<Vec<ContestChallengeItem>>> {
     ensure_user_contest_workspace_access(state.as_ref(), contest_id, &current_user).await?;
 
-    let challenge_items = sqlx::query_as::<_, ContestChallengeItem>(
+    let rows = sqlx::query_as::<_, ContestChallengeRow>(
         "SELECT c.id,
                 c.title,
                 c.category,
@@ -442,7 +460,8 @@ async fn list_contest_challenges(
                 c.hints,
                 c.challenge_type,
                 c.static_score,
-                cc.release_at
+                cc.release_at,
+                c.metadata
          FROM contest_challenges cc
          JOIN challenges c ON c.id = cc.challenge_id
          JOIN contests ct ON ct.id = cc.contest_id
@@ -456,6 +475,25 @@ async fn list_contest_challenges(
     .fetch_all(&state.db)
     .await
     .map_err(AppError::internal)?;
+
+    let challenge_items = rows
+        .into_iter()
+        .map(|row| ContestChallengeItem {
+            id: row.id,
+            title: row.title,
+            category: row.category,
+            difficulty: row.difficulty,
+            description: row.description,
+            hints: row.hints,
+            challenge_type: row.challenge_type.clone(),
+            static_score: row.static_score,
+            release_at: row.release_at,
+            runtime_access_modes: contest_challenge_runtime_access_modes(
+                row.challenge_type.as_str(),
+                &row.metadata,
+            ),
+        })
+        .collect::<Vec<_>>();
 
     Ok(Json(challenge_items))
 }
@@ -584,6 +622,33 @@ async fn download_contest_challenge_attachment(
         ],
         bytes,
     ))
+}
+
+fn contest_challenge_runtime_access_modes(challenge_type: &str, metadata: &Value) -> Vec<String> {
+    if challenge_type != "dynamic" && challenge_type != "internal" {
+        return Vec::new();
+    }
+
+    let runtime_options = match parse_runtime_metadata_options(metadata) {
+        Ok(value) => value,
+        Err(err) => {
+            warn!(
+                challenge_type,
+                error = %err,
+                "failed to parse runtime metadata while building contest challenge access modes"
+            );
+            return vec!["ssh_bastion".to_string()];
+        }
+    };
+
+    match runtime_options.mode {
+        RuntimeMode::SingleImage => vec!["direct".to_string()],
+        RuntimeMode::Compose => runtime_options
+            .access_mode_candidates
+            .into_iter()
+            .map(|mode| runtime_access_mode_as_str(mode).to_string())
+            .collect(),
+    }
 }
 
 async fn ensure_contest_challenge_access(

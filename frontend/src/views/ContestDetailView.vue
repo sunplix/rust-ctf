@@ -165,6 +165,21 @@
             <header class="row-between">
               <h3>{{ tr("动态环境", "Runtime Instance") }}</h3>
               <div class="context-menu" v-if="selectedChallengeId">
+                <label
+                  v-if="instanceAccessModeOptions.length > 1"
+                  class="instance-access-mode-select"
+                >
+                  <span class="soft">{{ tr("访问模式", "Access mode") }}</span>
+                  <select v-model="selectedInstanceAccessMode" :disabled="instanceBusy">
+                    <option
+                      v-for="mode in instanceAccessModeOptions"
+                      :key="mode"
+                      :value="mode"
+                    >
+                      {{ formatInstanceAccessMode(mode) }}
+                    </option>
+                  </select>
+                </label>
                 <button class="btn-solid" type="button" @click="handleInstanceAction('start')" :disabled="instanceBusy">
                   {{ tr("启动", "Start") }}
                 </button>
@@ -179,21 +194,48 @@
                 </button>
               </div>
             </header>
+            <p v-if="instanceAccessModeOptions.length > 1" class="soft">
+              {{
+                tr(
+                  "切换访问模式后，需要点击“启动”或“重置”实例才能生效。",
+                  "After changing access mode, click Start or Reset to apply."
+                )
+              }}
+            </p>
 
             <div v-if="instance" class="surface stack instance-panel">
               <p class="mono">{{ tr("状态", "Status") }}: {{ instance.status }}</p>
-              <p class="soft mono">{{ tr("子网", "Subnet") }}: {{ instance.subnet }}</p>
-              <p class="soft mono">{{ tr("入口", "Entrypoint") }}: {{ instance.entrypoint_url || "-" }}</p>
-              <p class="soft mono">
-                {{ tr("到期时间", "Expires at") }}: {{ instance.expires_at ? formatTime(instance.expires_at) : "-" }}
+              <template v-if="instance.status !== 'destroyed'">
+                <p class="soft mono">{{ tr("子网", "Subnet") }}: {{ instance.subnet }}</p>
+                <p class="soft mono">{{ tr("入口", "Entrypoint") }}: {{ instance.entrypoint_url || "-" }}</p>
+                <p class="soft mono">
+                  {{ tr("到期时间", "Expires at") }}: {{ instance.expires_at ? formatTime(instance.expires_at) : "-" }}
+                </p>
+              </template>
+              <p v-else class="soft">
+                {{
+                  tr(
+                    "实例已销毁，连接信息已隐藏。可点击“启动”重新创建新实例。",
+                    "Instance is destroyed and access details are hidden. Click Start to create a new one."
+                  )
+                }}
               </p>
               <p class="soft mono">{{ tr("消息", "Message") }}: {{ instance.message }}</p>
 
-              <template v-if="instance.network_access?.mode === 'ssh_bastion'">
+              <template v-if="instance.status !== 'destroyed' && instance.network_access?.mode === 'ssh_bastion'">
                 <div class="split-line"></div>
                 <p class="soft mono">ssh: {{ instanceSshCommand || "-" }}</p>
                 <p class="soft mono">{{ tr("用户名", "Username") }}: {{ instance.network_access.username || "-" }}</p>
                 <p class="soft mono">{{ tr("密码", "Password") }}: {{ instance.network_access.password || "-" }}</p>
+                <p class="soft mono">
+                  {{
+                    tr(
+                      "安装工具请使用 apk（例如：sudo apk add --no-cache nmap）。",
+                      "Install tools via apk (e.g. sudo apk add --no-cache nmap)."
+                    )
+                  }}
+                </p>
+                <p v-if="instance.network_access.note" class="soft">{{ instance.network_access.note }}</p>
                 <div class="row">
                   <button class="btn-line" type="button" @click="copyNetworkAccessCommand" :disabled="!instanceSshCommand">
                     {{ tr("复制 SSH 命令", "Copy SSH command") }}
@@ -209,10 +251,11 @@
                 </div>
               </template>
 
-              <template v-if="instance.network_access?.mode === 'wireguard'">
+              <template v-if="instance.status !== 'destroyed' && instance.network_access?.mode === 'wireguard'">
                 <div class="split-line"></div>
                 <p class="soft mono">{{ tr("端点", "Endpoint") }}: {{ instanceWireguardEndpoint || "-" }}</p>
                 <p class="soft mono">{{ tr("配置路径", "Config path") }}: {{ instance.network_access.download_url || "-" }}</p>
+                <p v-if="instance.network_access.note" class="soft">{{ instance.network_access.note }}</p>
                 <div class="row">
                   <button
                     class="btn-line"
@@ -522,6 +565,9 @@ const HINT_DISMISSED_STORAGE_KEY = "rust-ctf.dismissed-hints";
 
 const SCOREBOARD_TREND_MAX_SNAPSHOTS = 1200;
 const SCOREBOARD_TREND_TOP_N = 12;
+type InstanceAccessMode = "ssh_bastion" | "wireguard" | "direct";
+
+const selectedInstanceAccessMode = ref<InstanceAccessMode>("ssh_bastion");
 
 const selectedChallenge = computed(() => {
   if (!selectedChallengeId.value) {
@@ -562,6 +608,25 @@ const canManageInstance = computed(() => {
 
 const instanceBusy = computed(() => loadingInstance.value || mutatingInstance.value);
 
+const instanceAccessModeOptions = computed<InstanceAccessMode[]>(() => {
+  const challenge = selectedChallenge.value;
+  if (!challenge) {
+    return [];
+  }
+
+  const options = normalizeInstanceAccessModes(challenge.runtime_access_modes ?? []);
+  if (options.length > 0) {
+    return options;
+  }
+
+  const inferred = inferInstanceAccessMode(instance.value);
+  if (inferred) {
+    return [inferred];
+  }
+
+  return ["ssh_bastion"];
+});
+
 const instanceSshCommand = computed(() => {
   const network = instance.value?.network_access;
   if (!network || network.mode !== "ssh_bastion") {
@@ -580,6 +645,81 @@ const instanceWireguardEndpoint = computed(() => {
   }
   return `${network.host}:${network.port}`;
 });
+
+function normalizeInstanceAccessMode(raw: string): InstanceAccessMode | null {
+  const normalized = raw.trim().toLowerCase();
+  if (normalized === "ssh_bastion" || normalized === "ssh-bastion" || normalized === "bastion") {
+    return "ssh_bastion";
+  }
+  if (normalized === "wireguard" || normalized === "wg") {
+    return "wireguard";
+  }
+  if (normalized === "direct") {
+    return "direct";
+  }
+  return null;
+}
+
+function normalizeInstanceAccessModes(modes: string[]): InstanceAccessMode[] {
+  const out: InstanceAccessMode[] = [];
+  for (const item of modes) {
+    const normalized = normalizeInstanceAccessMode(item);
+    if (!normalized || out.includes(normalized)) {
+      continue;
+    }
+    out.push(normalized);
+  }
+  return out;
+}
+
+function inferInstanceAccessMode(value: InstanceResponse | null): InstanceAccessMode | null {
+  if (!value) {
+    return null;
+  }
+  const fromNetwork = normalizeInstanceAccessMode(value.network_access?.mode ?? "");
+  if (fromNetwork) {
+    return fromNetwork;
+  }
+  const entrypoint = value.entrypoint_url.trim().toLowerCase();
+  if (entrypoint.startsWith("ssh://")) {
+    return "ssh_bastion";
+  }
+  if (entrypoint.startsWith("wg://")) {
+    return "wireguard";
+  }
+  if (entrypoint.startsWith("http://") || entrypoint.startsWith("https://") || entrypoint.startsWith("tcp://")) {
+    return "direct";
+  }
+  return null;
+}
+
+function syncSelectedInstanceAccessMode() {
+  const options = instanceAccessModeOptions.value;
+  if (options.length === 0) {
+    selectedInstanceAccessMode.value = "ssh_bastion";
+    return;
+  }
+
+  const current = inferInstanceAccessMode(instance.value);
+  if (current && options.includes(current)) {
+    selectedInstanceAccessMode.value = current;
+    return;
+  }
+
+  if (!options.includes(selectedInstanceAccessMode.value)) {
+    selectedInstanceAccessMode.value = options[0];
+  }
+}
+
+function formatInstanceAccessMode(mode: InstanceAccessMode): string {
+  if (mode === "wireguard") {
+    return tr("wireguard（VPN）", "wireguard (VPN)");
+  }
+  if (mode === "direct") {
+    return tr("direct（直连）", "direct");
+  }
+  return tr("ssh_bastion（跳板）", "ssh_bastion (bastion)");
+}
 
 watch(
   () => challenges.value,
@@ -618,6 +758,18 @@ watch(
       await loadInstance();
     }
   }
+);
+
+watch(
+  () => [
+    instanceAccessModeOptions.value.join(","),
+    instance.value?.entrypoint_url ?? "",
+    instance.value?.network_access?.mode ?? ""
+  ],
+  () => {
+    syncSelectedInstanceAccessMode();
+  },
+  { immediate: true }
 );
 
 watch(
@@ -1507,10 +1659,13 @@ async function handleInstanceAction(action: "start" | "stop" | "reset" | "destro
 
   try {
     const token = accessTokenOrThrow();
-    const payload = {
+    const payload: { contest_id: string; challenge_id: string; access_mode?: string } = {
       contest_id: props.contestId,
       challenge_id: challenge.id
     };
+    if ((action === "start" || action === "reset") && instanceAccessModeOptions.value.length > 0) {
+      payload.access_mode = selectedInstanceAccessMode.value;
+    }
 
     if (action === "start") {
       instance.value = await startInstance(payload, token);
@@ -1634,6 +1789,16 @@ onUnmounted(() => {
 
 .instance-panel {
   background: rgba(255, 255, 255, 0.24);
+}
+
+.instance-access-mode-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.instance-access-mode-select select {
+  min-width: 9.8rem;
 }
 
 .notice-card {
