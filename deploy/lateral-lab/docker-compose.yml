@@ -1,18 +1,13 @@
-name: lateral-weakpass-lab
-
 services:
   jumpbox:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ctf-jumpbox
     hostname: jumpbox
     environment:
       ROOT_PASSWORD: root
       USERNAME: alice
       USER_PASSWORD: 123456
-    ports:
-      - "2222:22"
     networks:
       lab_net:
         ipv4_address: {{SUBNET_HOST_10}}
@@ -21,7 +16,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ctf-internal-host
     hostname: internal-host
     environment:
       ROOT_PASSWORD: root
