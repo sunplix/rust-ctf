@@ -15,7 +15,7 @@ services:
       - "2222:22"
     networks:
       lab_net:
-        ipv4_address: 172.30.0.10
+        ipv4_address: {{SUBNET_HOST_10}}
 
   internal-host:
     build:
@@ -29,11 +29,11 @@ services:
       USER_PASSWORD: 123456
     networks:
       lab_net:
-        ipv4_address: 172.30.0.20
+        ipv4_address: {{SUBNET_HOST_20}}
 
 networks:
   lab_net:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.30.0.0/24
+        - subnet: {{SUBNET}}

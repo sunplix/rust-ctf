@@ -3369,8 +3369,8 @@ const runtimeAccessModeDescription = computed(() => {
 
 const composeRuntimeAttachmentHint = computed(() => {
   return tr(
-    "可选两种方式：1）直接填写 compose 模板；2）在“版本与附件”上传 .zip（内含 docker-compose.yml 和相关文件），系统会自动写入 compose，并把其余文件保存为 runtime/...。若只上传单个文件而非 zip，请把文件名写成 runtime/ 开头（如 runtime/Dockerfile）。",
-    "Two options: (1) fill compose template directly; (2) upload a .zip in Versions & Files (contains docker-compose.yml and related files). The system auto-imports compose and stores remaining files as runtime/.... For single-file uploads (non-zip), use runtime/ prefix (e.g. runtime/Dockerfile)."
+    "可选两种方式：1）直接填写 compose 模板；2）在“版本与附件”上传 .zip（内含 docker-compose.yml 和相关文件），系统会自动写入 compose，并把其余文件保存为 runtime/...。若只上传单个文件而非 zip，请把文件名写成 runtime/ 开头（如 runtime/Dockerfile）。子网请写 subnet: \"{{SUBNET}}\"（或 \"{{SUBNET_CIDR}}\"）；静态容器 IP 请写 ipv4_address: \"{{SUBNET_HOST_10}}\"、\"{{SUBNET_HOST_20}}\" 这类占位符，不要硬编码 172.x/10.x 网段。若访问模式包含 ssh_bastion/wireguard，请不要设置 container_name 或 ports。",
+    "Two options: (1) fill compose template directly; (2) upload a .zip in Versions & Files (contains docker-compose.yml and related files). The system auto-imports compose and stores remaining files as runtime/.... For single-file uploads (non-zip), use runtime/ prefix (e.g. runtime/Dockerfile). For subnets, use subnet: \"{{SUBNET}}\" (or \"{{SUBNET_CIDR}}\"); for static container IPs, use placeholders like ipv4_address: \"{{SUBNET_HOST_10}}\" and \"{{SUBNET_HOST_20}}\" instead of hardcoded 172.x/10.x ranges. If access mode includes ssh_bastion/wireguard, do not set container_name or ports."
   );
 });
 

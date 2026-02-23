@@ -164,7 +164,7 @@
             <div class="split-line"></div>
             <header class="row-between">
               <h3>{{ tr("动态环境", "Runtime Instance") }}</h3>
-              <div class="context-menu" v-if="selectedChallengeId">
+              <div class="context-menu instance-controls" v-if="selectedChallengeId">
                 <label
                   v-if="instanceAccessModeOptions.length > 1"
                   class="instance-access-mode-select"
@@ -1782,23 +1782,47 @@ onUnmounted(() => {
 .scoreboard-actions {
   margin-left: auto;
   max-width: 100%;
-  justify-content: flex-end;
+  justify-content: flex-start;
   row-gap: 0.35rem;
   flex-wrap: wrap;
+  border-radius: var(--radius-md);
 }
 
 .instance-panel {
   background: rgba(255, 255, 255, 0.24);
 }
 
+.scoreboard-actions .btn-line {
+  white-space: nowrap;
+}
+
+.instance-controls {
+  margin-left: auto;
+  max-width: 100%;
+  row-gap: 0.35rem;
+  border-radius: var(--radius-md);
+}
+
+.instance-controls .btn-line,
+.instance-controls .btn-solid,
+.instance-controls .btn-danger {
+  white-space: nowrap;
+}
+
 .instance-access-mode-select {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.instance-access-mode-select .soft {
+  white-space: nowrap;
 }
 
 .instance-access-mode-select select {
-  min-width: 9.8rem;
+  min-width: 11rem;
+  max-width: 16rem;
 }
 
 .notice-card {
@@ -1938,6 +1962,23 @@ onUnmounted(() => {
 @media (max-width: 1180px) {
   .workspace-grid {
     grid-template-columns: 1fr;
+  }
+
+  .scoreboard-actions,
+  .instance-controls {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .instance-access-mode-select {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .instance-access-mode-select select {
+    flex: 1;
+    min-width: 0;
+    max-width: 100%;
   }
 }
 </style>

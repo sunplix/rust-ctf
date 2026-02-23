@@ -4,6 +4,7 @@ use serde_json::Value;
 
 const COMPOSE_VARIABLES_KEY: &str = "compose_variables";
 const RUNTIME_KEY: &str = "runtime";
+const SUBNET_HOST_PLACEHOLDER_PREFIX: &str = "SUBNET_HOST_";
 
 const RESERVED_PLACEHOLDERS: &[&str] = &[
     "PROJECT_NAME",
@@ -339,8 +340,58 @@ pub fn render_compose_template_variables(
     Ok(rendered)
 }
 
+pub fn replace_subnet_host_placeholders(template: &str, subnet_cidr: &str) -> String {
+    let Ok(tokens) = collect_placeholder_tokens(template) else {
+        return template.to_string();
+    };
+
+    let mut rendered = template.to_string();
+    let mut unique_tokens = HashSet::new();
+    for token in tokens {
+        if !unique_tokens.insert(token.clone()) {
+            continue;
+        }
+        let Some(host_octet) = parse_subnet_host_placeholder_token(token.as_str()) else {
+            continue;
+        };
+        let Some(host_ip) = subnet_host_ip_from_cidr(subnet_cidr, host_octet) else {
+            continue;
+        };
+        let placeholder = format!("{{{{{token}}}}}");
+        rendered = rendered.replace(&placeholder, &host_ip);
+    }
+
+    rendered
+}
+
 fn is_reserved_placeholder(token: &str) -> bool {
     RESERVED_PLACEHOLDERS.iter().any(|item| item == &token)
+        || parse_subnet_host_placeholder_token(token).is_some()
+}
+
+fn parse_subnet_host_placeholder_token(token: &str) -> Option<u8> {
+    let raw_octet = token.strip_prefix(SUBNET_HOST_PLACEHOLDER_PREFIX)?;
+    if raw_octet.is_empty() || !raw_octet.chars().all(|ch| ch.is_ascii_digit()) {
+        return None;
+    }
+
+    let octet = raw_octet.parse::<u16>().ok()?;
+    if !(2..=254).contains(&octet) {
+        return None;
+    }
+
+    Some(octet as u8)
+}
+
+fn subnet_host_ip_from_cidr(subnet_cidr: &str, host_octet: u8) -> Option<String> {
+    let base = subnet_cidr.split('/').next()?;
+    let mut parts = base.split('.');
+
+    let first = parts.next()?.parse::<u8>().ok()?;
+    let second = parts.next()?.parse::<u8>().ok()?;
+    let third = parts.next()?.parse::<u8>().ok()?;
+
+    Some(format!("{}.{}.{}.{}", first, second, third, host_octet))
 }
 
 fn collect_placeholder_tokens(template: &str) -> Result<Vec<String>, String> {
@@ -518,8 +569,8 @@ mod tests {
 
     use super::{
         build_single_image_compose_template, parse_runtime_metadata_options,
-        render_compose_template_variables, validate_compose_template_schema, RuntimeAccessMode,
-        RuntimeEndpointProtocol, RuntimeMode,
+        render_compose_template_variables, replace_subnet_host_placeholders,
+        validate_compose_template_schema, RuntimeAccessMode, RuntimeEndpointProtocol, RuntimeMode,
     };
 
     #[test]
@@ -560,6 +611,22 @@ mod tests {
         let metadata = json!({});
         let res = validate_compose_template_schema(template, &metadata);
         assert!(res.is_err());
+    }
+
+    #[test]
+    fn accepts_subnet_host_placeholder_token() {
+        let template = "services:\n  app:\n    networks:\n      default:\n        ipv4_address: \"{{SUBNET_HOST_10}}\"";
+        let metadata = json!({});
+        let res = validate_compose_template_schema(template, &metadata);
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn renders_subnet_host_placeholder_tokens() {
+        let template = "services:\n  app:\n    networks:\n      default:\n        ipv4_address: \"{{SUBNET_HOST_10}}\"\n  db:\n    networks:\n      default:\n        ipv4_address: \"{{SUBNET_HOST_20}}\"\n";
+        let rendered = replace_subnet_host_placeholders(template, "10.197.231.0/24");
+        assert!(rendered.contains("ipv4_address: \"10.197.231.10\""));
+        assert!(rendered.contains("ipv4_address: \"10.197.231.20\""));
     }
 
     #[test]

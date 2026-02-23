@@ -32,8 +32,8 @@ use crate::{
     runtime_template::{
         build_single_image_compose_template, parse_runtime_access_mode,
         parse_runtime_metadata_options, render_compose_template_variables,
-        runtime_access_mode_as_str, validate_compose_template_schema, RuntimeAccessMode,
-        RuntimeEndpointProtocol, RuntimeMode,
+        replace_subnet_host_placeholders, runtime_access_mode_as_str,
+        validate_compose_template_schema, RuntimeAccessMode, RuntimeEndpointProtocol, RuntimeMode,
     },
     state::AppState,
 };
@@ -2159,6 +2159,7 @@ fn render_compose_template(
 
     rendered = rendered.replace("{{DYNAMIC_FLAG}}", dynamic_flag.unwrap_or(""));
     rendered = rendered.replace("{{FLAG}}", dynamic_flag.unwrap_or(""));
+    rendered = replace_subnet_host_placeholders(&rendered, instance.subnet.as_str());
 
     rendered
 }

@@ -35,8 +35,8 @@ use crate::{
     routes::instances,
     runtime_template::{
         build_single_image_compose_template, parse_runtime_metadata_options,
-        render_compose_template_variables, validate_compose_template_schema, RuntimeAccessMode,
-        RuntimeMode,
+        render_compose_template_variables, replace_subnet_host_placeholders,
+        validate_compose_template_schema, RuntimeAccessMode, RuntimeMetadataOptions, RuntimeMode,
     },
     state::AppState,
 };
@@ -1993,14 +1993,6 @@ async fn lint_challenge_runtime_templates(
         }
 
         if lint_errors.is_empty() {
-            if let Some(message) =
-                lint_compose_hardcoded_subnet(row.compose_template.as_deref(), &row.metadata)?
-            {
-                lint_errors.push(message);
-            }
-        }
-
-        if lint_errors.is_empty() {
             ok_count += 1;
             if !only_errors {
                 items.push(AdminChallengeRuntimeLintItem {
@@ -2558,7 +2550,7 @@ fn render_compose_template_for_admin_test(
     metadata: &Value,
     compose_project_name: &str,
 ) -> AppResult<String> {
-    validate_compose_template_schema(compose_template, metadata).map_err(AppError::BadRequest)?;
+    validate_compose_runtime_configuration("dynamic", Some(compose_template), metadata)?;
 
     let mut rendered = render_compose_template_variables(compose_template, metadata)
         .map_err(AppError::BadRequest)?;
@@ -2597,6 +2589,7 @@ fn render_compose_template_for_admin_test(
 
     rendered = rendered.replace("{{DYNAMIC_FLAG}}", "ctf{runtime_test_dynamic_flag}");
     rendered = rendered.replace("{{FLAG}}", "ctf{runtime_test_dynamic_flag}");
+    rendered = replace_subnet_host_placeholders(&rendered, "10.66.0.0/24");
 
     Ok(rendered)
 }
@@ -7025,42 +7018,22 @@ fn validate_compose_runtime_configuration(
 
     match compose_template.and_then(normalize_optional_text) {
         Some(template) => {
-            validate_compose_template_schema(template, metadata).map_err(AppError::BadRequest)
+            validate_compose_template_schema(template, metadata).map_err(AppError::BadRequest)?;
+            validate_compose_network_placeholder_policy(template, &runtime_options)
         }
         None if requires_runtime => Ok(()),
         None => Ok(()),
     }
 }
 
-fn lint_compose_hardcoded_subnet(
-    compose_template: Option<&str>,
-    metadata: &Value,
-) -> AppResult<Option<String>> {
-    let runtime_options = parse_runtime_metadata_options(metadata).map_err(AppError::BadRequest)?;
-    if runtime_options.mode != RuntimeMode::Compose {
-        return Ok(None);
-    }
-
-    let has_ssh_or_wireguard = runtime_options.access_mode_candidates.iter().any(|mode| {
-        matches!(
-            mode,
-            RuntimeAccessMode::SshBastion | RuntimeAccessMode::Wireguard
-        )
-    });
-    if !has_ssh_or_wireguard {
-        return Ok(None);
-    }
-
-    let Some(template) = compose_template.and_then(normalize_optional_text) else {
-        return Ok(None);
-    };
-
-    if template.contains("{{SUBNET}}") || template.contains("{{SUBNET_CIDR}}") {
-        return Ok(None);
-    }
-
-    if !compose_template_contains_hardcoded_subnet_cidr(template) {
-        return Ok(None);
+fn validate_compose_network_placeholder_policy(
+    template: &str,
+    runtime_options: &RuntimeMetadataOptions,
+) -> AppResult<()> {
+    if runtime_options.mode != RuntimeMode::Compose
+        || !runtime_requires_isolated_subnet(runtime_options)
+    {
+        return Ok(());
     }
 
     let access_modes = runtime_options
@@ -7078,9 +7051,42 @@ fn lint_compose_hardcoded_subnet(
         access_modes.join(",")
     };
 
-    Ok(Some(format!(
-        "compose template contains a hardcoded subnet CIDR but does not use '{{{{SUBNET}}}}'; this breaks isolated team subnets for access mode(s): {mode_hint}. Use subnet: \"{{{{SUBNET}}}}\" (or \"{{{{SUBNET_CIDR}}}}\")."
-    )))
+    let uses_subnet_placeholder =
+        template.contains("{{SUBNET}}") || template.contains("{{SUBNET_CIDR}}");
+    if compose_template_contains_hardcoded_subnet_cidr(template) && !uses_subnet_placeholder {
+        return Err(AppError::BadRequest(format!(
+            "compose template contains a hardcoded subnet CIDR but does not use '{{{{SUBNET}}}}'; this breaks isolated team subnets for access mode(s): {mode_hint}. Use subnet: \"{{{{SUBNET}}}}\" (or \"{{{{SUBNET_CIDR}}}}\")."
+        )));
+    }
+
+    if compose_template_contains_hardcoded_ipv4_address(template) {
+        return Err(AppError::BadRequest(format!(
+            "compose template contains hardcoded 'ipv4_address' values for access mode(s): {mode_hint}. Use '{{{{SUBNET_HOST_10}}}}' style placeholders instead (for example ipv4_address: \"{{{{SUBNET_HOST_10}}}}\", \"{{{{SUBNET_HOST_20}}}}\")."
+        )));
+    }
+
+    if compose_template_contains_service_container_name(template) {
+        return Err(AppError::BadRequest(format!(
+            "compose template contains 'container_name' for access mode(s): {mode_hint}. In isolated team runtimes, fixed container names cause cross-team name collisions. Remove 'container_name' and rely on service names."
+        )));
+    }
+
+    if compose_template_contains_service_ports(template) {
+        return Err(AppError::BadRequest(format!(
+            "compose template contains service 'ports' for access mode(s): {mode_hint}. In ssh_bastion/wireguard mode, challenge services should not publish host ports. Remove 'ports' (use internal networks / service DNS), or switch to direct mode if public host ports are required."
+        )));
+    }
+
+    Ok(())
+}
+
+fn runtime_requires_isolated_subnet(runtime_options: &RuntimeMetadataOptions) -> bool {
+    runtime_options.access_mode_candidates.iter().any(|mode| {
+        matches!(
+            mode,
+            RuntimeAccessMode::SshBastion | RuntimeAccessMode::Wireguard
+        )
+    })
 }
 
 fn compose_template_contains_hardcoded_subnet_cidr(template: &str) -> bool {
@@ -7088,6 +7094,65 @@ fn compose_template_contains_hardcoded_subnet_cidr(template: &str) -> bool {
         .lines()
         .filter(|line| line.to_ascii_lowercase().contains("subnet"))
         .any(line_contains_ipv4_cidr_literal)
+}
+
+fn compose_template_contains_hardcoded_ipv4_address(template: &str) -> bool {
+    template
+        .lines()
+        .filter(|line| line.to_ascii_lowercase().contains("ipv4_address"))
+        .any(|line| {
+            line_contains_ipv4_literal(line)
+                && !line.contains("{{SUBNET_HOST_")
+                && !line.contains("{{VAR:")
+        })
+}
+
+fn compose_template_contains_service_container_name(template: &str) -> bool {
+    let Ok(value) = serde_yaml::from_str::<serde_yaml::Value>(template) else {
+        return false;
+    };
+    let Some(root) = value.as_mapping() else {
+        return false;
+    };
+    let services_key = serde_yaml::Value::String("services".to_string());
+    let container_name_key = serde_yaml::Value::String("container_name".to_string());
+    let Some(services) = root
+        .get(&services_key)
+        .and_then(serde_yaml::Value::as_mapping)
+    else {
+        return false;
+    };
+
+    services.values().any(|service| {
+        service
+            .as_mapping()
+            .map(|service_map| service_map.contains_key(&container_name_key))
+            .unwrap_or(false)
+    })
+}
+
+fn compose_template_contains_service_ports(template: &str) -> bool {
+    let Ok(value) = serde_yaml::from_str::<serde_yaml::Value>(template) else {
+        return false;
+    };
+    let Some(root) = value.as_mapping() else {
+        return false;
+    };
+    let services_key = serde_yaml::Value::String("services".to_string());
+    let ports_key = serde_yaml::Value::String("ports".to_string());
+    let Some(services) = root
+        .get(&services_key)
+        .and_then(serde_yaml::Value::as_mapping)
+    else {
+        return false;
+    };
+
+    services.values().any(|service| {
+        service
+            .as_mapping()
+            .map(|service_map| service_map.contains_key(&ports_key))
+            .unwrap_or(false)
+    })
 }
 
 fn line_contains_ipv4_cidr_literal(line: &str) -> bool {
@@ -7126,6 +7191,11 @@ fn line_contains_ipv4_cidr_literal(line: &str) -> bool {
         }
     }
     false
+}
+
+fn line_contains_ipv4_literal(line: &str) -> bool {
+    line.split(|ch: char| !(ch.is_ascii_digit() || ch == '.'))
+        .any(is_valid_ipv4_address)
 }
 
 fn parse_cidr_prefix(bytes: &[u8], start_index: usize) -> Option<(u8, usize)> {
@@ -8581,7 +8651,10 @@ async fn record_audit_log(
 mod tests {
     use serde_json::json;
 
-    use super::{line_contains_ipv4_cidr_literal, lint_compose_hardcoded_subnet};
+    use super::{
+        line_contains_ipv4_cidr_literal, line_contains_ipv4_literal,
+        validate_compose_runtime_configuration,
+    };
 
     #[test]
     fn detects_hardcoded_subnet_for_wireguard() {
@@ -8593,9 +8666,9 @@ mod tests {
         });
         let template = "services:\n  app:\n    image: alpine:3.20\nnetworks:\n  default:\n    ipam:\n      config:\n        - subnet: \"10.197.231.0/24\"\n";
 
-        let lint = lint_compose_hardcoded_subnet(Some(template), &metadata).unwrap();
+        let res = validate_compose_runtime_configuration("dynamic", Some(template), &metadata);
 
-        assert!(lint.is_some());
+        assert!(res.is_err());
     }
 
     #[test]
@@ -8609,9 +8682,9 @@ mod tests {
         let template =
             "networks:\n  default:\n    ipam:\n      config:\n        - subnet: \"{{SUBNET}}\"\n";
 
-        let lint = lint_compose_hardcoded_subnet(Some(template), &metadata).unwrap();
+        let res = validate_compose_runtime_configuration("dynamic", Some(template), &metadata);
 
-        assert!(lint.is_none());
+        assert!(res.is_ok());
     }
 
     #[test]
@@ -8625,9 +8698,69 @@ mod tests {
         });
         let template = "networks:\n  default:\n    ipam:\n      config:\n        - subnet: \"10.197.231.0/24\"\n";
 
-        let lint = lint_compose_hardcoded_subnet(Some(template), &metadata).unwrap();
+        let res = validate_compose_runtime_configuration("dynamic", Some(template), &metadata);
 
-        assert!(lint.is_none());
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn detects_hardcoded_ipv4_address_for_wireguard() {
+        let metadata = json!({
+            "runtime": {
+                "mode": "compose",
+                "access_mode": "wireguard"
+            }
+        });
+        let template = "services:\n  jumpbox:\n    image: alpine:3.20\n    networks:\n      default:\n        ipv4_address: \"172.30.0.10\"\nnetworks:\n  default:\n    ipam:\n      config:\n        - subnet: \"{{SUBNET}}\"\n";
+
+        let res = validate_compose_runtime_configuration("dynamic", Some(template), &metadata);
+
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn detects_fixed_container_name_for_wireguard() {
+        let metadata = json!({
+            "runtime": {
+                "mode": "compose",
+                "access_mode": "wireguard"
+            }
+        });
+        let template = "services:\n  jumpbox:\n    image: alpine:3.20\n    container_name: ctf-jumpbox\n    networks:\n      default:\n        ipv4_address: \"{{SUBNET_HOST_10}}\"\nnetworks:\n  default:\n    ipam:\n      config:\n        - subnet: \"{{SUBNET}}\"\n";
+
+        let res = validate_compose_runtime_configuration("dynamic", Some(template), &metadata);
+
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn detects_service_ports_for_wireguard() {
+        let metadata = json!({
+            "runtime": {
+                "mode": "compose",
+                "access_mode": "wireguard"
+            }
+        });
+        let template = "services:\n  jumpbox:\n    image: alpine:3.20\n    ports:\n      - \"2222:22\"\n    networks:\n      default:\n        ipv4_address: \"{{SUBNET_HOST_10}}\"\nnetworks:\n  default:\n    ipam:\n      config:\n        - subnet: \"{{SUBNET}}\"\n";
+
+        let res = validate_compose_runtime_configuration("dynamic", Some(template), &metadata);
+
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn allows_subnet_host_placeholders_for_wireguard() {
+        let metadata = json!({
+            "runtime": {
+                "mode": "compose",
+                "access_mode": "wireguard"
+            }
+        });
+        let template = "services:\n  jumpbox:\n    image: alpine:3.20\n    networks:\n      default:\n        ipv4_address: \"{{SUBNET_HOST_10}}\"\nnetworks:\n  default:\n    ipam:\n      config:\n        - subnet: \"{{SUBNET}}\"\n";
+
+        let res = validate_compose_runtime_configuration("dynamic", Some(template), &metadata);
+
+        assert!(res.is_ok());
     }
 
     #[test]
@@ -8637,5 +8770,14 @@ mod tests {
             "subnet: host.docker.internal"
         ));
         assert!(!line_contains_ipv4_cidr_literal("subnet: 10.x.x.0/24"));
+    }
+
+    #[test]
+    fn ipv4_line_detection_rejects_non_ipv4_text() {
+        assert!(line_contains_ipv4_literal("ipv4_address: 10.10.10.12"));
+        assert!(!line_contains_ipv4_literal(
+            "ipv4_address: host.docker.internal"
+        ));
+        assert!(!line_contains_ipv4_literal("ipv4_address: 10.x.x.12"));
     }
 }
