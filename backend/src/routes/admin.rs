@@ -1104,6 +1104,14 @@ pub fn router() -> Router<Arc<AppState>> {
         )
         .route("/admin/instances", get(list_instances))
         .route(
+            "/admin/instances/{instance_id}/stop",
+            post(stop_instance_for_admin),
+        )
+        .route(
+            "/admin/instances/{instance_id}/destroy",
+            post(destroy_instance_for_admin),
+        )
+        .route(
             "/admin/instances/{instance_id}/runtime-metrics",
             get(get_instance_runtime_metrics),
         )
@@ -5547,6 +5555,62 @@ async fn get_instance_runtime_metrics(
         services,
         warnings,
     }))
+}
+
+async fn stop_instance_for_admin(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Path(instance_id): Path<Uuid>,
+) -> AppResult<Json<AdminInstanceItem>> {
+    ensure_admin(&current_user)?;
+
+    let result = instances::stop_instance_by_id(state.as_ref(), instance_id).await?;
+    let row = load_admin_instance_item(state.as_ref(), result.instance_id).await?;
+
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.instance.stop",
+        "instance",
+        Some(result.instance_id),
+        json!({
+            "contest_id": result.contest_id,
+            "challenge_id": result.challenge_id,
+            "team_id": result.team_id,
+            "status": result.status
+        }),
+    )
+    .await;
+
+    Ok(Json(row))
+}
+
+async fn destroy_instance_for_admin(
+    State(state): State<Arc<AppState>>,
+    current_user: AuthenticatedUser,
+    Path(instance_id): Path<Uuid>,
+) -> AppResult<Json<AdminInstanceItem>> {
+    ensure_admin(&current_user)?;
+
+    let result = instances::destroy_instance_by_id(state.as_ref(), instance_id).await?;
+    let row = load_admin_instance_item(state.as_ref(), result.instance_id).await?;
+
+    record_audit_log(
+        state.as_ref(),
+        &current_user,
+        "admin.instance.destroy",
+        "instance",
+        Some(result.instance_id),
+        json!({
+            "contest_id": result.contest_id,
+            "challenge_id": result.challenge_id,
+            "team_id": result.team_id,
+            "status": result.status
+        }),
+    )
+    .await;
+
+    Ok(Json(row))
 }
 
 async fn run_expired_instance_reaper_now(

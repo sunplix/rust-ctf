@@ -978,94 +978,152 @@
                 </button>
               </div>
             </div>
-            <form class="form-grid compact-grid" @submit.prevent="handleCreateContest">
-              <label>
-                <span>{{ tl('标题') }}</span>
-                <input v-model.trim="newContest.title" required />
-              </label>
-              <label>
-                <span>slug</span>
-                <input v-model.trim="newContest.slug" required />
-              </label>
-              <label>
-                <span>{{ tl('描述') }}</span>
-                <input v-model="newContest.description" />
-              </label>
-              <label>
-                <span>{{ tl('可见性') }}</span>
-                <select v-model="newContest.visibility">
-                  <option value="public">public</option>
-                  <option value="private">private</option>
-                </select>
-              </label>
-              <label>
-                <span>{{ tl('初始状态') }}</span>
-                <select v-model="newContest.status">
-                  <option value="draft">draft</option>
-                  <option value="scheduled">scheduled</option>
-                  <option value="running">running</option>
-                  <option value="ended">ended</option>
-                  <option value="archived">archived</option>
-                </select>
-              </label>
-              <label>
-                <span>{{ tl('积分模式') }}</span>
-                <select v-model="newContest.scoring_mode">
-                  <option value="static">static</option>
-                  <option value="dynamic">dynamic</option>
-                </select>
-              </label>
-              <label>
-                <span>{{ tl('动态衰减参数') }}</span>
-                <input v-model.number="newContest.dynamic_decay" type="number" min="1" max="100000" />
-              </label>
-              <label>
-                <span>{{ tr("一血加成(%)", "First blood bonus (%)") }}</span>
-                <input
-                  v-model.number="newContest.first_blood_bonus_percent"
-                  type="number"
-                  min="0"
-                  max="500"
-                />
-              </label>
-              <label>
-                <span>{{ tr("二血加成(%)", "Second blood bonus (%)") }}</span>
-                <input
-                  v-model.number="newContest.second_blood_bonus_percent"
-                  type="number"
-                  min="0"
-                  max="500"
-                />
-              </label>
-              <label>
-                <span>{{ tr("三血加成(%)", "Third blood bonus (%)") }}</span>
-                <input
-                  v-model.number="newContest.third_blood_bonus_percent"
-                  type="number"
-                  min="0"
-                  max="500"
-                />
-              </label>
-              <label class="inline-check">
-                <input v-model="newContest.registration_requires_approval" type="checkbox" />
-                <span>{{ tr("报名需管理员审批", "Registration requires admin approval") }}</span>
-              </label>
-              <label>
-                <span>{{ tl('开始时间') }}</span>
-                <input v-model="newContest.start_at" type="datetime-local" required />
-              </label>
-              <label>
-                <span>{{ tl('结束时间') }}</span>
-                <input v-model="newContest.end_at" type="datetime-local" required />
-              </label>
-              <label>
-                <span>{{ tl('封榜时间（可选）') }}</span>
-                <input v-model="newContest.freeze_at" type="datetime-local" />
-              </label>
+            <form class="form-grid contest-create-form" @submit.prevent="handleCreateContest">
+              <section class="contest-form-block">
+                <div class="contest-form-block-head">
+                  <h4>{{ tr("基础信息", "Basic info") }}</h4>
+                  <p>{{ tr("设置比赛名称、slug 与展示属性。", "Set contest title, slug, and visibility.") }}</p>
+                </div>
+                <div class="form-grid contest-form-grid">
+                  <label>
+                    <span>{{ tl('标题') }}</span>
+                    <input v-model.trim="newContest.title" required />
+                  </label>
+                  <label>
+                    <span>slug</span>
+                    <input v-model.trim="newContest.slug" required />
+                    <small class="field-note">
+                      {{
+                        tr(
+                          "slug 用于 URL 与 API 标识，建议小写英文、数字和连字符（如 spring-2026-final）。",
+                          "Slug is used in URLs and APIs. Prefer lowercase letters, numbers, and hyphens (e.g. spring-2026-final)."
+                        )
+                      }}
+                    </small>
+                  </label>
+                  <label class="contest-field-span-2">
+                    <span>{{ tl('描述') }}</span>
+                    <input v-model="newContest.description" />
+                  </label>
+                  <label>
+                    <span>{{ tl('可见性') }}</span>
+                    <select v-model="newContest.visibility">
+                      <option value="public">public</option>
+                      <option value="private">private</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>{{ tl('初始状态') }}</span>
+                    <select v-model="newContest.status">
+                      <option value="draft">draft</option>
+                      <option value="scheduled">scheduled</option>
+                      <option value="running">running</option>
+                      <option value="ended">ended</option>
+                      <option value="archived">archived</option>
+                    </select>
+                  </label>
+                </div>
+              </section>
 
-              <button class="primary" type="submit" :disabled="creatingContest">
-                {{ contestSubmitLabel }}
-              </button>
+              <section class="contest-form-block">
+                <div class="contest-form-block-head">
+                  <h4>{{ tr("计分规则", "Scoring") }}</h4>
+                  <p>{{ tr("配置积分模式、动态衰减和一二三血加成。", "Configure scoring mode, dynamic decay, and blood bonuses.") }}</p>
+                </div>
+                <div class="form-grid contest-form-grid">
+                  <label>
+                    <span>{{ tl('积分模式') }}</span>
+                    <select v-model="newContest.scoring_mode">
+                      <option value="static">static</option>
+                      <option value="dynamic">dynamic</option>
+                    </select>
+                    <small class="field-note">
+                      {{
+                        tr(
+                          "static：基础分固定为题目 static_score；dynamic：基础分会随解出队伍数增加而衰减。",
+                          "static: base score stays at challenge static_score; dynamic: base score decays as more teams solve."
+                        )
+                      }}
+                    </small>
+                  </label>
+                  <label>
+                    <span>{{ tl('动态衰减参数') }}</span>
+                    <input
+                      v-model.number="newContest.dynamic_decay"
+                      type="number"
+                      min="1"
+                      max="100000"
+                      :disabled="newContest.scoring_mode !== 'dynamic'"
+                    />
+                    <small class="field-note">
+                      {{
+                        tr(
+                          "衰减函数：score = min + (max - min) * (k / (k + solves))，k=动态衰减参数。k 越大，降分越慢。",
+                          "Decay function: score = min + (max - min) * (k / (k + solves)), where k is dynamic_decay. Larger k means slower decay."
+                        )
+                      }}
+                    </small>
+                  </label>
+                  <label>
+                    <span>{{ tr("一血加成(%)", "First blood bonus (%)") }}</span>
+                    <input
+                      v-model.number="newContest.first_blood_bonus_percent"
+                      type="number"
+                      min="0"
+                      max="500"
+                    />
+                  </label>
+                  <label>
+                    <span>{{ tr("二血加成(%)", "Second blood bonus (%)") }}</span>
+                    <input
+                      v-model.number="newContest.second_blood_bonus_percent"
+                      type="number"
+                      min="0"
+                      max="500"
+                    />
+                  </label>
+                  <label>
+                    <span>{{ tr("三血加成(%)", "Third blood bonus (%)") }}</span>
+                    <input
+                      v-model.number="newContest.third_blood_bonus_percent"
+                      type="number"
+                      min="0"
+                      max="500"
+                    />
+                  </label>
+                </div>
+              </section>
+
+              <section class="contest-form-block">
+                <div class="contest-form-block-head">
+                  <h4>{{ tr("时间与报名", "Schedule & registration") }}</h4>
+                  <p>{{ tr("配置比赛时间窗口和报名审批策略。", "Set the contest time window and registration policy.") }}</p>
+                </div>
+                <div class="form-grid contest-form-grid">
+                  <label>
+                    <span>{{ tl('开始时间') }}</span>
+                    <input v-model="newContest.start_at" type="datetime-local" required />
+                  </label>
+                  <label>
+                    <span>{{ tl('结束时间') }}</span>
+                    <input v-model="newContest.end_at" type="datetime-local" required />
+                  </label>
+                  <label>
+                    <span>{{ tl('封榜时间（可选）') }}</span>
+                    <input v-model="newContest.freeze_at" type="datetime-local" />
+                  </label>
+                  <label class="inline-check contest-field-span-2 contest-registration-check">
+                    <input v-model="newContest.registration_requires_approval" type="checkbox" />
+                    <span>{{ tr("报名需管理员审批", "Registration requires admin approval") }}</span>
+                  </label>
+                </div>
+              </section>
+
+              <div class="contest-submit-row">
+                <button class="primary" type="submit" :disabled="creatingContest">
+                  {{ contestSubmitLabel }}
+                </button>
+              </div>
             </form>
           </div>
 
@@ -2129,6 +2187,38 @@
                         : tr("查看指标", "View metrics")
                   }}
                 </button>
+                <button
+                  class="ghost"
+                  type="button"
+                  @click.stop="handleAdminStopInstance(item)"
+                  :disabled="
+                    !canStopInstance(item) ||
+                    stoppingInstanceId === item.id ||
+                    destroyingInstanceId === item.id
+                  "
+                >
+                  {{
+                    stoppingInstanceId === item.id
+                      ? tr("停止中...", "Stopping...")
+                      : tr("停止", "Stop")
+                  }}
+                </button>
+                <button
+                  class="danger"
+                  type="button"
+                  @click.stop="handleAdminDestroyInstance(item)"
+                  :disabled="
+                    !canDestroyInstance(item) ||
+                    stoppingInstanceId === item.id ||
+                    destroyingInstanceId === item.id
+                  "
+                >
+                  {{
+                    destroyingInstanceId === item.id
+                      ? tr("销毁中...", "Destroying...")
+                      : tr("销毁", "Destroy")
+                  }}
+                </button>
                 <a
                   v-if="item.entrypoint_url"
                   class="instance-entry-link mono"
@@ -2149,9 +2239,59 @@
           <template v-if="selectedInstanceRuntimeMetrics">
             <div class="row-between">
               <h3>{{ tl('实例指标：') }}{{ selectedInstance?.team_name ?? selectedInstanceRuntimeMetrics.instance.team_name }}</h3>
-              <span class="badge instance-status-badge" :class="instanceStatusClass(selectedInstanceRuntimeMetrics.instance.status)">
-                {{ selectedInstanceRuntimeMetrics.instance.status }}
-              </span>
+              <div class="actions-row compact-actions">
+                <button
+                  class="ghost"
+                  type="button"
+                  @click="loadInstanceRuntimeMetrics(selectedInstanceRuntimeMetrics.instance.id)"
+                  :disabled="
+                    loadingInstanceRuntimeMetricsId === selectedInstanceRuntimeMetrics.instance.id ||
+                    stoppingInstanceId === selectedInstanceRuntimeMetrics.instance.id ||
+                    destroyingInstanceId === selectedInstanceRuntimeMetrics.instance.id
+                  "
+                >
+                  {{
+                    loadingInstanceRuntimeMetricsId === selectedInstanceRuntimeMetrics.instance.id
+                      ? tr("刷新中...", "Refreshing...")
+                      : tr("刷新指标", "Refresh metrics")
+                  }}
+                </button>
+                <button
+                  class="ghost"
+                  type="button"
+                  @click="handleAdminStopInstance(selectedInstanceRuntimeMetrics.instance)"
+                  :disabled="
+                    !canStopInstance(selectedInstanceRuntimeMetrics.instance) ||
+                    stoppingInstanceId === selectedInstanceRuntimeMetrics.instance.id ||
+                    destroyingInstanceId === selectedInstanceRuntimeMetrics.instance.id
+                  "
+                >
+                  {{
+                    stoppingInstanceId === selectedInstanceRuntimeMetrics.instance.id
+                      ? tr("停止中...", "Stopping...")
+                      : tr("停止", "Stop")
+                  }}
+                </button>
+                <button
+                  class="danger"
+                  type="button"
+                  @click="handleAdminDestroyInstance(selectedInstanceRuntimeMetrics.instance)"
+                  :disabled="
+                    !canDestroyInstance(selectedInstanceRuntimeMetrics.instance) ||
+                    stoppingInstanceId === selectedInstanceRuntimeMetrics.instance.id ||
+                    destroyingInstanceId === selectedInstanceRuntimeMetrics.instance.id
+                  "
+                >
+                  {{
+                    destroyingInstanceId === selectedInstanceRuntimeMetrics.instance.id
+                      ? tr("销毁中...", "Destroying...")
+                      : tr("销毁", "Destroy")
+                  }}
+                </button>
+                <span class="badge instance-status-badge" :class="instanceStatusClass(selectedInstanceRuntimeMetrics.instance.status)">
+                  {{ selectedInstanceRuntimeMetrics.instance.status }}
+                </span>
+              </div>
             </div>
 
             <p class="muted mono">
@@ -2340,6 +2480,7 @@ import {
   deleteAdminContestAnnouncement,
   deleteAdminContestPoster,
   deleteAdminContestChallenge,
+  destroyAdminInstance,
   deleteAdminUser,
   getAdminInstanceRuntimeMetrics,
   getAdminRuntimeOverview,
@@ -2364,6 +2505,7 @@ import {
   runAdminExpiredInstanceReaper,
   runAdminStaleInstanceReaper,
   scanAdminRuntimeAlerts,
+  stopAdminInstance,
   streamAdminChallengeRuntimeComposeTest,
   streamAdminChallengeRuntimeImageTest,
   uploadAdminContestPoster,
@@ -2949,6 +3091,8 @@ const runtimeAlertScanBusy = ref(false);
 const runtimeAlertUpdatingId = ref("");
 const runtimeReaperBusy = ref<"" | "expired" | "stale">("");
 const loadingInstanceRuntimeMetricsId = ref("");
+const stoppingInstanceId = ref("");
+const destroyingInstanceId = ref("");
 
 const instanceFilter = ref("");
 const challengeKeyword = ref("");
@@ -3703,6 +3847,15 @@ function instanceStatusClass(status: string): string {
   return "status-default";
 }
 
+function canStopInstance(item: AdminInstanceItem): boolean {
+  const status = item.status.trim().toLowerCase();
+  return status !== "destroyed" && status !== "stopped";
+}
+
+function canDestroyInstance(item: AdminInstanceItem): boolean {
+  return item.status.trim().toLowerCase() !== "destroyed";
+}
+
 function canPreviewContestPoster(item: AdminContestItem) {
   if (!item.poster_url) {
     return false;
@@ -4222,6 +4375,75 @@ async function loadInstanceRuntimeMetrics(
     }
   } finally {
     loadingInstanceRuntimeMetricsId.value = "";
+  }
+}
+
+async function handleAdminStopInstance(item: AdminInstanceItem) {
+  if (!canStopInstance(item)) {
+    return;
+  }
+
+  stoppingInstanceId.value = item.id;
+  instanceError.value = "";
+
+  try {
+    await stopAdminInstance(item.id, accessTokenOrThrow());
+    await loadInstances();
+    notify.info(
+      tr("实例已停止", "Instance stopped"),
+      `${item.team_name} · ${item.challenge_title}`
+    );
+  } catch (err) {
+    instanceError.value = err instanceof ApiClientError ? err.message : tr("停止实例失败", "Failed to stop instance");
+    notify.error(
+      tr("停止实例失败", "Failed to stop instance"),
+      instanceError.value
+    );
+  } finally {
+    stoppingInstanceId.value = "";
+  }
+}
+
+async function handleAdminDestroyInstance(item: AdminInstanceItem) {
+  if (!canDestroyInstance(item)) {
+    return;
+  }
+
+  const confirmed = await uiStore.confirm({
+    title: tr("销毁实例", "Destroy instance"),
+    message: tr(
+      "确认销毁实例「{team} / {challenge}」？该操作会终止并清理该运行环境。",
+      "Destroy instance \"{team} / {challenge}\"? This will stop and clean up the runtime environment."
+    )
+      .replace("{team}", item.team_name)
+      .replace("{challenge}", item.challenge_title),
+    confirmLabel: tr("销毁", "Destroy"),
+    cancelLabel: tr("取消", "Cancel"),
+    intent: "danger"
+  });
+  if (!confirmed) {
+    return;
+  }
+
+  destroyingInstanceId.value = item.id;
+  instanceError.value = "";
+
+  try {
+    await destroyAdminInstance(item.id, accessTokenOrThrow());
+    await loadInstances();
+    notify.warning(
+      tr("实例已销毁", "Instance destroyed"),
+      `${item.team_name} · ${item.challenge_title}`
+    );
+  } catch (err) {
+    instanceError.value =
+      err instanceof ApiClientError ? err.message : tr("销毁实例失败", "Failed to destroy instance");
+    notify.error(
+      tr("销毁实例失败", "Failed to destroy instance"),
+      instanceError.value
+    );
+  } finally {
+    destroyingInstanceId.value = "";
   }
 }
 
@@ -5905,6 +6127,79 @@ onUnmounted(() => {
   justify-self: stretch;
 }
 
+.contest-create-form {
+  margin-top: 0.72rem;
+  gap: 0.72rem;
+}
+
+.contest-form-block {
+  position: relative;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.44);
+  padding: 0.66rem;
+  display: grid;
+  gap: 0.58rem;
+}
+
+.contest-form-block::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(rgba(12, 12, 12, 0.14), rgba(12, 12, 12, 0.14)) top / 100% 1px no-repeat,
+    linear-gradient(rgba(12, 12, 12, 0.14), rgba(12, 12, 12, 0.14)) left / 1px 100% no-repeat;
+}
+
+.contest-form-block-head {
+  display: grid;
+  gap: 0.1rem;
+  padding-bottom: 0.46rem;
+  border-bottom: 1px dashed rgba(12, 12, 12, 0.24);
+}
+
+.contest-form-block-head h4 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.contest-form-block-head p {
+  margin: 0;
+  font-size: 0.79rem;
+  color: rgba(18, 18, 18, 0.58);
+}
+
+.contest-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.58rem 0.62rem;
+}
+
+.contest-form-grid .field-note {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.74rem;
+  color: rgba(18, 18, 18, 0.62);
+  line-height: 1.45;
+}
+
+.contest-field-span-2 {
+  grid-column: 1 / -1;
+}
+
+.contest-registration-check {
+  align-self: start;
+}
+
+.contest-submit-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.contest-submit-row .primary {
+  min-width: min(100%, 220px);
+}
+
 .contest-catalog-column {
   min-height: 0;
 }
@@ -6481,6 +6776,7 @@ onUnmounted(() => {
   grid-template-columns: minmax(320px, 0.92fr) minmax(0, 1.5fr);
   gap: 0.8rem;
   min-height: 560px;
+  align-items: start;
 }
 
 .instance-list-panel,
@@ -6492,6 +6788,17 @@ onUnmounted(() => {
   gap: 0.65rem;
   min-height: 0;
   position: relative;
+}
+
+.instance-list-panel {
+  align-self: start;
+}
+
+.instance-detail-panel {
+  align-self: start;
+  max-height: 72vh;
+  overflow: auto;
+  align-content: start;
 }
 
 .instance-list-panel::before,
@@ -6776,6 +7083,7 @@ onUnmounted(() => {
 :root[data-theme="dark"] .action-sheet,
 :root[data-theme="dark"] .filter-sheet,
 :root[data-theme="dark"] .challenge-form-block,
+:root[data-theme="dark"] .contest-form-block,
 :root[data-theme="dark"] .runtime-alert-list-panel,
 :root[data-theme="dark"] .runtime-alert-detail-panel,
 :root[data-theme="dark"] .instance-list-panel,
@@ -6805,6 +7113,7 @@ onUnmounted(() => {
 :root[data-theme="dark"] .action-sheet::before,
 :root[data-theme="dark"] .filter-sheet::before,
 :root[data-theme="dark"] .challenge-form-block::before,
+:root[data-theme="dark"] .contest-form-block::before,
 :root[data-theme="dark"] .runtime-alert-list-panel::before,
 :root[data-theme="dark"] .runtime-alert-detail-panel::before,
 :root[data-theme="dark"] .instance-list-panel::before,
@@ -6840,6 +7149,10 @@ onUnmounted(() => {
   color: rgba(228, 228, 228, 0.7);
 }
 
+:root[data-theme="dark"] .contest-form-grid .field-note {
+  color: rgba(228, 228, 228, 0.7);
+}
+
 :root[data-theme="dark"] .instance-entry-link {
   color: rgba(244, 244, 244, 0.9);
 }
@@ -6852,7 +7165,15 @@ onUnmounted(() => {
   color: rgba(228, 228, 228, 0.7);
 }
 
+:root[data-theme="dark"] .contest-form-block-head p {
+  color: rgba(228, 228, 228, 0.7);
+}
+
 :root[data-theme="dark"] .challenge-form-block-head {
+  border-bottom-color: var(--line-mid);
+}
+
+:root[data-theme="dark"] .contest-form-block-head {
   border-bottom-color: var(--line-mid);
 }
 
@@ -6913,6 +7234,10 @@ onUnmounted(() => {
     grid-template-columns: 1fr;
   }
 
+  .instance-detail-panel {
+    max-height: none;
+  }
+
   .instance-list-body {
     max-height: 340px;
   }
@@ -6925,6 +7250,14 @@ onUnmounted(() => {
 
   .challenge-form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .contest-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contest-field-span-2 {
+    grid-column: auto;
   }
 
   .instance-meta-grid {

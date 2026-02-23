@@ -224,6 +224,27 @@ pub(crate) struct InstanceReaperSummary {
     pub skipped: i64,
 }
 
+#[derive(Debug, Clone)]
+pub(crate) struct InstanceAdminActionOutcome {
+    pub instance_id: Uuid,
+    pub contest_id: Uuid,
+    pub challenge_id: Uuid,
+    pub team_id: Uuid,
+    pub status: String,
+}
+
+impl InstanceAdminActionOutcome {
+    fn from_row(row: &InstanceRow) -> Self {
+        Self {
+            instance_id: row.id,
+            contest_id: row.contest_id,
+            challenge_id: row.challenge_id,
+            team_id: row.team_id,
+            status: row.status.clone(),
+        }
+    }
+}
+
 pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/instances/start", post(start_instance))
@@ -319,25 +340,7 @@ async fn stop_instance(
         .await?
         .ok_or(AppError::BadRequest("instance not found".to_string()))?;
 
-    if instance.status == "destroyed" {
-        return Err(AppError::BadRequest(
-            "instance has already been destroyed".to_string(),
-        ));
-    }
-
-    let compose_file = ensure_compose_file_for_existing(state.as_ref(), &instance).await?;
-    if let Err(err) = compose_stop(
-        state.as_ref(),
-        &instance.compose_project_name,
-        &compose_file,
-    )
-    .await
-    {
-        let _ = update_instance_status(state.as_ref(), instance.id, "failed").await;
-        return Err(err);
-    }
-
-    let updated = update_instance_status(state.as_ref(), instance.id, "stopped").await?;
+    let updated = stop_instance_row(state.as_ref(), instance).await?;
     Ok(Json(instance_to_response(
         state.as_ref(),
         updated,
@@ -415,49 +418,7 @@ async fn destroy_instance(
         .await?
         .ok_or(AppError::BadRequest("instance not found".to_string()))?;
 
-    if instance.status != "destroyed" {
-        let compose_file = ensure_compose_file_for_existing(state.as_ref(), &instance).await?;
-        if let Err(err) = compose_down(
-            state.as_ref(),
-            &instance.compose_project_name,
-            &compose_file,
-        )
-        .await
-        {
-            let _ = update_instance_status(state.as_ref(), instance.id, "failed").await;
-            return Err(err);
-        }
-    }
-
-    let updated = sqlx::query_as::<_, InstanceRow>(
-        "UPDATE instances
-         SET status = 'destroyed',
-             destroyed_at = NOW(),
-             expires_at = NULL,
-             updated_at = NOW()
-         WHERE id = $1
-         RETURNING id,
-                   contest_id,
-                   challenge_id,
-                   team_id,
-                   status,
-                   subnet::text AS subnet,
-                   compose_project_name,
-                   entrypoint_url,
-                   cpu_limit::text AS cpu_limit,
-                   memory_limit_mb,
-                   started_at,
-                   expires_at,
-                   destroyed_at,
-                   last_heartbeat_at",
-    )
-    .bind(instance.id)
-    .fetch_one(&state.db)
-    .await
-    .map_err(AppError::internal)?;
-
-    cleanup_runtime_dir(state.as_ref(), &updated.compose_project_name).await;
-
+    let updated = destroy_instance_row(state.as_ref(), instance).await?;
     Ok(Json(instance_to_response(
         state.as_ref(),
         updated,
@@ -557,12 +518,17 @@ async fn get_instance_wireguard_config(
     }
 
     let content = read_instance_wireguard_config(state.as_ref(), &instance).await?;
-
-    let filename = format!(
-        "{}-{}-{}.conf",
-        contest_id.as_simple(),
-        challenge_id.as_simple(),
-        team_id.as_simple()
+    let team_name = fetch_team_name(state.as_ref(), team_id).await?;
+    let contest_hash = contest_id
+        .as_simple()
+        .to_string()
+        .chars()
+        .take(12)
+        .collect::<String>();
+    let filename = wireguard_config_filename(
+        team_name.as_str(),
+        instance.subnet.as_str(),
+        contest_hash.as_str(),
     );
 
     Ok(Json(WireguardConfigResponse {
@@ -588,6 +554,73 @@ async fn fetch_user_team_id(state: &AppState, user_id: Uuid) -> AppResult<Uuid> 
     ))?;
 
     Ok(team.team_id)
+}
+
+async fn fetch_team_name(state: &AppState, team_id: Uuid) -> AppResult<String> {
+    let team_name = sqlx::query_scalar::<_, String>("SELECT name FROM teams WHERE id = $1 LIMIT 1")
+        .bind(team_id)
+        .fetch_optional(&state.db)
+        .await
+        .map_err(AppError::internal)?
+        .ok_or(AppError::BadRequest("team not found".to_string()))?;
+    Ok(team_name)
+}
+
+pub(crate) async fn stop_instance_by_id(
+    state: &AppState,
+    instance_id: Uuid,
+) -> AppResult<InstanceAdminActionOutcome> {
+    let instance = fetch_instance_row_by_id(state, instance_id)
+        .await?
+        .ok_or(AppError::BadRequest("instance not found".to_string()))?;
+    let updated = stop_instance_row(state, instance).await?;
+    Ok(InstanceAdminActionOutcome::from_row(&updated))
+}
+
+pub(crate) async fn destroy_instance_by_id(
+    state: &AppState,
+    instance_id: Uuid,
+) -> AppResult<InstanceAdminActionOutcome> {
+    let instance = fetch_instance_row_by_id(state, instance_id)
+        .await?
+        .ok_or(AppError::BadRequest("instance not found".to_string()))?;
+    let updated = destroy_instance_row(state, instance).await?;
+    Ok(InstanceAdminActionOutcome::from_row(&updated))
+}
+
+async fn stop_instance_row(state: &AppState, instance: InstanceRow) -> AppResult<InstanceRow> {
+    if instance.status == "destroyed" {
+        return Err(AppError::BadRequest(
+            "instance has already been destroyed".to_string(),
+        ));
+    }
+
+    let compose_file = ensure_compose_file_for_existing(state, &instance).await?;
+    if let Err(err) = compose_stop(state, &instance.compose_project_name, &compose_file).await {
+        let _ = update_instance_status(state, instance.id, "failed").await;
+        return Err(err);
+    }
+
+    update_instance_status(state, instance.id, "stopped").await
+}
+
+async fn destroy_instance_row(state: &AppState, instance: InstanceRow) -> AppResult<InstanceRow> {
+    if instance.status == "destroyed" {
+        cleanup_runtime_dir(state, &instance.compose_project_name).await;
+        return Ok(instance);
+    }
+
+    let compose_file = ensure_compose_file_for_existing(state, &instance).await?;
+    if let Err(err) = compose_down(state, &instance.compose_project_name, &compose_file).await {
+        let _ = update_instance_status(state, instance.id, "failed").await;
+        return Err(err);
+    }
+
+    let updated = mark_instance_destroyed(state, instance.id)
+        .await?
+        .ok_or(AppError::BadRequest("instance not found".to_string()))?;
+    cleanup_runtime_dir(state, &updated.compose_project_name).await;
+    Ok(updated)
 }
 
 async fn fetch_runtime_policy(
@@ -890,6 +923,35 @@ async fn fetch_instance_row(
     .bind(contest_id)
     .bind(challenge_id)
     .bind(team_id)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(AppError::internal)
+}
+
+async fn fetch_instance_row_by_id(
+    state: &AppState,
+    instance_id: Uuid,
+) -> AppResult<Option<InstanceRow>> {
+    sqlx::query_as::<_, InstanceRow>(
+        "SELECT id,
+                contest_id,
+                challenge_id,
+                team_id,
+                status,
+                subnet::text AS subnet,
+                compose_project_name,
+                entrypoint_url,
+                cpu_limit::text AS cpu_limit,
+                memory_limit_mb,
+                started_at,
+                expires_at,
+                destroyed_at,
+                last_heartbeat_at
+         FROM instances
+         WHERE id = $1
+         LIMIT 1",
+    )
+    .bind(instance_id)
     .fetch_optional(&state.db)
     .await
     .map_err(AppError::internal)
@@ -3316,6 +3378,34 @@ fn instance_to_response(state: &AppState, row: InstanceRow, message: String) -> 
     }
 }
 
+fn wireguard_config_filename(team_name: &str, subnet: &str, contest_hash: &str) -> String {
+    let team = sanitize_wireguard_filename_token(team_name);
+    let subnet_token = sanitize_wireguard_filename_token(subnet);
+    let contest = sanitize_wireguard_filename_token(contest_hash);
+    format!("{team}-{subnet_token}-{contest}.conf")
+}
+
+fn sanitize_wireguard_filename_token(value: &str) -> String {
+    let mut normalized = String::with_capacity(value.len());
+    let mut last_dash = false;
+    for ch in value.chars() {
+        let lower = ch.to_ascii_lowercase();
+        if lower.is_ascii_alphanumeric() {
+            normalized.push(lower);
+            last_dash = false;
+        } else if !last_dash {
+            normalized.push('-');
+            last_dash = true;
+        }
+    }
+    let trimmed = normalized.trim_matches('-').to_string();
+    if trimmed.is_empty() {
+        "unknown".to_string()
+    } else {
+        trimmed
+    }
+}
+
 fn instance_wireguard_config_download_url(instance: &InstanceRow) -> String {
     format!(
         "/api/v1/instances/{}/{}/wireguard-config",
@@ -3328,7 +3418,8 @@ mod tests {
     use super::{
         collect_compose_network_names, infer_runtime_access_mode_from_entrypoint,
         normalize_wireguard_fetch_host, parse_default_gateway_ipv4_from_route_table,
-        runtime_attachment_relative_path,
+        runtime_attachment_relative_path, sanitize_wireguard_filename_token,
+        wireguard_config_filename,
     };
     use crate::runtime_template::RuntimeAccessMode;
 
@@ -3414,5 +3505,27 @@ networks:
             infer_runtime_access_mode_from_entrypoint("http://inst.example.com:32001"),
             Some(RuntimeAccessMode::Direct)
         );
+    }
+
+    #[test]
+    fn sanitize_wireguard_filename_token_normalizes_symbols() {
+        assert_eq!(
+            sanitize_wireguard_filename_token(" Sunplix Team / A "),
+            "sunplix-team-a".to_string()
+        );
+        assert_eq!(
+            sanitize_wireguard_filename_token("10.132.20.0/24"),
+            "10-132-20-0-24".to_string()
+        );
+        assert_eq!(
+            sanitize_wireguard_filename_token("___"),
+            "unknown".to_string()
+        );
+    }
+
+    #[test]
+    fn wireguard_config_filename_matches_expected_pattern() {
+        let filename = wireguard_config_filename("sunplix", "10.132.20.0/24", "c6f9e7a9d102");
+        assert_eq!(filename, "sunplix-10-132-20-0-24-c6f9e7a9d102.conf");
     }
 }

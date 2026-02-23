@@ -2043,6 +2043,38 @@ export async function getAdminInstanceRuntimeMetrics(
   }
 }
 
+export async function stopAdminInstance(
+  instanceId: string,
+  accessToken: string
+): Promise<AdminInstanceItem> {
+  try {
+    const { data } = await api.post<AdminInstanceItem>(
+      `/admin/instances/${instanceId}/stop`,
+      {},
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function destroyAdminInstance(
+  instanceId: string,
+  accessToken: string
+): Promise<AdminInstanceItem> {
+  try {
+    const { data } = await api.post<AdminInstanceItem>(
+      `/admin/instances/${instanceId}/destroy`,
+      {},
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
 export async function listAdminAuditLogs(
   accessToken: string,
   query?: {
