@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: rust-ctf
+data:
+  APP__HOST: "0.0.0.0"
+  APP__PORT: "8080"
+  INSTANCE_RUNTIME_ROOT: "/runtime/instances"
+  COMPOSE_COMMAND_TIMEOUT_SECONDS: "120"
+  INSTANCE_DEFAULT_CPU_LIMIT: "1.0"
+  INSTANCE_DEFAULT_MEMORY_LIMIT_MB: "512"
+  INSTANCE_PUBLIC_HOST: "ctf.example.com"
+  INSTANCE_HOST_PORT_MIN: "40000"
+  INSTANCE_HOST_PORT_MAX: "40100"
+  DEFAULT_ADMIN_ENABLED: "true"
+  DEFAULT_ADMIN_USERNAME: "admin"
+  DEFAULT_ADMIN_EMAIL: "admin@ctf.example.com"
+  DEFAULT_ADMIN_FORCE_PASSWORD_RESET: "false"
+  AUTH_HUMAN_VERIFICATION_ENABLED: "false"
+  AUTH_EMAIL_BASE_URL: "https://ctf.example.com"
+  AUTH_EMAIL_DELIVERY_MODE: "log"
+  AUTH_EMAIL_FROM_NAME: "Rust-CTF"
+  AUTH_EMAIL_FROM_ADDRESS: "no-reply@ctf.example.com"
+  AUTH_SMTP_HOST: ""
+  AUTH_SMTP_PORT: "587"
+  AUTH_SMTP_USERNAME: ""
+  AUTH_SMTP_USE_TLS: "true"
+  RUNTIME_ALERT_SCAN_ENABLED: "false"
+  INSTANCE_REAPER_ENABLED: "false"
+  INSTANCE_HEARTBEAT_STALE_SECONDS: "300"
+  INSTANCE_HEARTBEAT_REPORT_URL: "https://ctf.example.com/api/v1/instances/heartbeat/report"
+  INSTANCE_HEARTBEAT_REPORT_INTERVAL_SECONDS: "30"
+  INSTANCE_STALE_REAPER_ENABLED: "false"
+  INSTANCE_STALE_REAPER_BATCH_SIZE: "20"
+  RUST_LOG: "rust_ctf_backend=info,tower_http=info"

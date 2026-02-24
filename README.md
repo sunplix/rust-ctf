@@ -5,7 +5,7 @@ Rust-CTF 是一个面向教学与实战演练的 CTF 平台，支持传统题目
 
 - 后端：Rust + Axum + Tokio + SQLx + PostgreSQL + Redis
 - 前端：Vue 3 + TypeScript + Pinia + Vue Router
-- 运行环境：Docker / Docker Compose
+- 运行环境：Docker / Docker Compose / Kubernetes
 
 ## 功能总览（已实现）
 
@@ -157,7 +157,7 @@ npm run dev
 rust-ctf/
   backend/      Rust 后端服务（API、判题、实例生命周期、审计）
   frontend/     Vue3 前端（选手端 + 管理端）
-  deploy/       Docker Compose 与部署相关文件
+  deploy/       Docker Compose 与 Kubernetes 部署相关文件
   docs/         API 文档、部署指南、运行手册、验收指南
   runtime/      运行时目录（实例与附件等）
 ```
@@ -166,6 +166,7 @@ rust-ctf/
 
 - API 文档：`docs/API_REFERENCE.md`
 - 部署指南：`docs/DEPLOYMENT_GUIDE.md`
+- Kubernetes 部署指南：`docs/K8S_DEPLOYMENT_GUIDE.md`
 - 心跳上报接入：`docs/RUNTIME_HEARTBEAT_REPORTER.md`
 - 心跳故障处置：`docs/STALE_HEARTBEAT_REMEDIATION_RUNBOOK.md`
 - M5 验收指南：`docs/M5_ACCEPTANCE.md`
@@ -181,5 +182,6 @@ rust-ctf/
 
 ## 部署
 
-生产部署请直接参考：`docs/DEPLOYMENT_GUIDE.md`。  
-该文档包含生产 compose 模板、Nginx 反向代理（含 WebSocket）、升级回滚、备份恢复与常见故障处理。
+单机 Docker 部署请参考：`docs/DEPLOYMENT_GUIDE.md`。  
+Kubernetes 部署请参考：`docs/K8S_DEPLOYMENT_GUIDE.md`。  
+文档包含生产编排、反向代理（含 WebSocket）、升级回滚、备份恢复与常见故障处理。

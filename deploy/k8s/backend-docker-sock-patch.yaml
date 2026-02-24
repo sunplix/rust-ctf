@@ -1,0 +1,18 @@
+spec:
+  template:
+    spec:
+      containers:
+        - name: backend
+          env:
+            - name: RUNTIME_ALERT_SCAN_ENABLED
+              value: "true"
+            - name: INSTANCE_REAPER_ENABLED
+              value: "true"
+          volumeMounts:
+            - name: docker-sock
+              mountPath: /var/run/docker.sock
+      volumes:
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket

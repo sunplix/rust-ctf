@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: rust-ctf
+data:
+  VITE_API_BASE_URL: "https://ctf.example.com"
+  VITE_ALLOWED_HOSTS: "ctf.example.com"
+  VITE_TURNSTILE_SITE_KEY: ""

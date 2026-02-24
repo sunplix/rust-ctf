@@ -1,7 +1,9 @@
 # Rust-CTF 部署指南（单机 Docker 版）
 
-最后更新：2026-02-22  
+最后更新：2026-02-24  
 适用范围：当前仓库（以 `deploy/docker-compose.dev.yml` 为基础）
+
+如需 Kubernetes 部署，请参考：`docs/K8S_DEPLOYMENT_GUIDE.md`。
 
 ## 1. 目标与范围
 
