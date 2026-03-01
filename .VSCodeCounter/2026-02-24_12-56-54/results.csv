@@ -1,0 +1,13 @@
+"filename", "language", "Rust", "comment", "blank", "total"
+"/Users/sunplix/rust-ctf/backend/src/routes/admin.rs", "Rust", 8114, 0, 734, 8848
+"/Users/sunplix/rust-ctf/backend/src/routes/auth.rs", "Rust", 1271, 0, 170, 1441
+"/Users/sunplix/rust-ctf/backend/src/routes/contest_access.rs", "Rust", 161, 0, 23, 184
+"/Users/sunplix/rust-ctf/backend/src/routes/contests.rs", "Rust", 708, 0, 69, 777
+"/Users/sunplix/rust-ctf/backend/src/routes/health.rs", "Rust", 57, 0, 10, 67
+"/Users/sunplix/rust-ctf/backend/src/routes/instances.rs", "Rust", 3207, 0, 325, 3532
+"/Users/sunplix/rust-ctf/backend/src/routes/mod.rs", "Rust", 25, 0, 5, 30
+"/Users/sunplix/rust-ctf/backend/src/routes/scoreboard.rs", "Rust", 1244, 0, 132, 1376
+"/Users/sunplix/rust-ctf/backend/src/routes/site.rs", "Rust", 42, 0, 7, 49
+"/Users/sunplix/rust-ctf/backend/src/routes/submissions.rs", "Rust", 624, 0, 73, 697
+"/Users/sunplix/rust-ctf/backend/src/routes/teams.rs", "Rust", 1128, 0, 152, 1280
+"Total", "-", 16581, 0, 1700, 18281

@@ -1,0 +1,74 @@
+"filename", "language", "Rust", "Shell Script", "JavaScript", "Docker", "MS SQL", "TypeScript", "CSS", "JSON", "JSON with Comments", "HTML", "Markdown", "comment", "blank", "total"
+"/Users/sunplix/rust-ctf/backend/Dockerfile", "Docker", 0, 0, 0, 21, 0, 0, 0, 0, 0, 0, 0, 0, 6, 27
+"/Users/sunplix/rust-ctf/backend/migrations/20260214124500_init_core_schema.sql", "MS SQL", 0, 0, 0, 0, 143, 0, 0, 0, 0, 0, 0, 0, 24, 167
+"/Users/sunplix/rust-ctf/backend/migrations/20260215153000_add_audit_logs.sql", "MS SQL", 0, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 4, 20
+"/Users/sunplix/rust-ctf/backend/migrations/20260215193000_add_team_invitations.sql", "MS SQL", 0, 0, 0, 0, 24, 0, 0, 0, 0, 0, 0, 0, 7, 31
+"/Users/sunplix/rust-ctf/backend/migrations/20260215204000_enhance_challenge_management.sql", "MS SQL", 0, 0, 0, 0, 58, 0, 0, 0, 0, 0, 0, 0, 8, 66
+"/Users/sunplix/rust-ctf/backend/migrations/20260215213000_add_challenge_status.sql", "MS SQL", 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 6, 26
+"/Users/sunplix/rust-ctf/backend/migrations/20260215223000_add_contest_announcements_and_dynamic_scoring.sql", "MS SQL", 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 8, 37
+"/Users/sunplix/rust-ctf/backend/migrations/20260215233000_add_runtime_alerts.sql", "MS SQL", 0, 0, 0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 7, 39
+"/Users/sunplix/rust-ctf/backend/migrations/20260218090000_add_contest_poster_fields.sql", "MS SQL", 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 3, 8
+"/Users/sunplix/rust-ctf/backend/migrations/20260219190000_add_auth_email_verification_and_password_reset.sql", "MS SQL", 0, 0, 0, 0, 39, 0, 0, 0, 0, 0, 0, 0, 9, 48
+"/Users/sunplix/rust-ctf/backend/migrations/20260219194000_add_site_settings.sql", "MS SQL", 0, 0, 0, 0, 19, 0, 0, 0, 0, 0, 0, 0, 5, 24
+"/Users/sunplix/rust-ctf/backend/migrations/20260220001000_add_challenge_categories_and_blood_bonus.sql", "MS SQL", 0, 0, 0, 0, 46, 0, 0, 0, 0, 0, 0, 0, 9, 55
+"/Users/sunplix/rust-ctf/backend/migrations/20260220090000_add_builtin_pwn_category.sql", "MS SQL", 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 3, 12
+"/Users/sunplix/rust-ctf/backend/migrations/20260221093000_add_challenge_attachment_max_bytes_to_site_settings.sql", "MS SQL", 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 5, 14
+"/Users/sunplix/rust-ctf/backend/migrations/20260221162000_add_contest_registrations_and_time_mode_and_challenge_hints.sql", "MS SQL", 0, 0, 0, 0, 40, 0, 0, 0, 0, 0, 0, 0, 11, 51
+"/Users/sunplix/rust-ctf/backend/migrations/20260224112000_add_scoreboard_channels.sql", "MS SQL", 0, 0, 0, 0, 39, 0, 0, 0, 0, 0, 0, 0, 10, 49
+"/Users/sunplix/rust-ctf/backend/scripts/m5/full_acceptance.sh", "Shell Script", 0, 131, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 29, 168
+"/Users/sunplix/rust-ctf/backend/scripts/m5/load_benchmark.sh", "Shell Script", 0, 237, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 28, 266
+"/Users/sunplix/rust-ctf/backend/scripts/m5/security_smoke.sh", "Shell Script", 0, 202, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 35, 238
+"/Users/sunplix/rust-ctf/backend/scripts/runtime/challenge_template_lint.sh", "Shell Script", 0, 35, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 7, 43
+"/Users/sunplix/rust-ctf/backend/scripts/runtime/heartbeat_reporter.sh", "Shell Script", 0, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 4, 16
+"/Users/sunplix/rust-ctf/backend/scripts/runtime/runtime_full_regression.sh", "Shell Script", 0, 106, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 16, 123
+"/Users/sunplix/rust-ctf/backend/scripts/runtime/scoreboard_ws_smoke.mjs", "JavaScript", 0, 0, 182, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 209
+"/Users/sunplix/rust-ctf/backend/scripts/runtime/single_image_smoke.sh", "Shell Script", 0, 102, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 19, 122
+"/Users/sunplix/rust-ctf/backend/scripts/runtime/wireguard_smoke.sh", "Shell Script", 0, 112, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 21, 134
+"/Users/sunplix/rust-ctf/backend/scripts/verifiers/simple_compare.sh", "Shell Script", 0, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 6, 24
+"/Users/sunplix/rust-ctf/backend/src/auth.rs", "Rust", 304, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 54, 358
+"/Users/sunplix/rust-ctf/backend/src/config.rs", "Rust", 129, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 133
+"/Users/sunplix/rust-ctf/backend/src/error.rs", "Rust", 96, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 109
+"/Users/sunplix/rust-ctf/backend/src/mailer.rs", "Rust", 95, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 110
+"/Users/sunplix/rust-ctf/backend/src/main.rs", "Rust", 212, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 241
+"/Users/sunplix/rust-ctf/backend/src/password_policy.rs", "Rust", 294, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 47, 341
+"/Users/sunplix/rust-ctf/backend/src/routes/admin.rs", "Rust", 8114, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 734, 8848
+"/Users/sunplix/rust-ctf/backend/src/routes/auth.rs", "Rust", 1271, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 170, 1441
+"/Users/sunplix/rust-ctf/backend/src/routes/contest_access.rs", "Rust", 161, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23, 184
+"/Users/sunplix/rust-ctf/backend/src/routes/contests.rs", "Rust", 708, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 69, 777
+"/Users/sunplix/rust-ctf/backend/src/routes/health.rs", "Rust", 57, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 67
+"/Users/sunplix/rust-ctf/backend/src/routes/instances.rs", "Rust", 3207, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 325, 3532
+"/Users/sunplix/rust-ctf/backend/src/routes/mod.rs", "Rust", 25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 30
+"/Users/sunplix/rust-ctf/backend/src/routes/scoreboard.rs", "Rust", 1244, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 132, 1376
+"/Users/sunplix/rust-ctf/backend/src/routes/site.rs", "Rust", 42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 49
+"/Users/sunplix/rust-ctf/backend/src/routes/submissions.rs", "Rust", 624, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 73, 697
+"/Users/sunplix/rust-ctf/backend/src/routes/teams.rs", "Rust", 1128, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 152, 1280
+"/Users/sunplix/rust-ctf/backend/src/runtime_template.rs", "Rust", 632, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 96, 728
+"/Users/sunplix/rust-ctf/backend/src/state.rs", "Rust", 170, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 192
+"/Users/sunplix/rust-ctf/frontend/Dockerfile", "Docker", 0, 0, 0, -7, 0, 0, 0, 0, 0, 0, 0, 0, -4, -11
+"/Users/sunplix/rust-ctf/frontend/index.html", "HTML", 0, 0, 0, 0, 0, 0, 0, 0, 0, -12, 0, 0, -1, -13
+"/Users/sunplix/rust-ctf/frontend/package-lock.json", "JSON", 0, 0, 0, 0, 0, 0, 0, -1991, 0, 0, 0, 0, -1, -1992
+"/Users/sunplix/rust-ctf/frontend/package.json", "JSON", 0, 0, 0, 0, 0, 0, 0, -28, 0, 0, 0, 0, -1, -29
+"/Users/sunplix/rust-ctf/frontend/scripts/i18n_extract.mjs", "JavaScript", 0, 0, -451, 0, 0, 0, 0, 0, 0, 0, 0, -2, -56, -509
+"/Users/sunplix/rust-ctf/frontend/src/api/client.ts", "TypeScript", 0, 0, 0, 0, 0, -2483, 0, 0, 0, 0, 0, -2, -199, -2684
+"/Users/sunplix/rust-ctf/frontend/src/assets/main.css", "CSS", 0, 0, 0, 0, 0, 0, -1143, 0, 0, 0, 0, 0, -192, -1335
+"/Users/sunplix/rust-ctf/frontend/src/composables/useL10n.ts", "TypeScript", 0, 0, 0, 0, 0, -104, 0, 0, 0, 0, 0, 0, -17, -121
+"/Users/sunplix/rust-ctf/frontend/src/composables/useMarkdown.ts", "TypeScript", 0, 0, 0, 0, 0, -50, 0, 0, 0, 0, 0, 0, -11, -61
+"/Users/sunplix/rust-ctf/frontend/src/composables/usePasswordStrength.ts", "TypeScript", 0, 0, 0, 0, 0, -263, 0, 0, 0, 0, 0, 0, -34, -297
+"/Users/sunplix/rust-ctf/frontend/src/composables/useTimeFormat.ts", "TypeScript", 0, 0, 0, 0, 0, -45, 0, 0, 0, 0, 0, 0, -11, -56
+"/Users/sunplix/rust-ctf/frontend/src/env.d.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, -2
+"/Users/sunplix/rust-ctf/frontend/src/locales/README.md", "Markdown", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -72, 0, -36, -108
+"/Users/sunplix/rust-ctf/frontend/src/locales/catalog.json", "JSON", 0, 0, 0, 0, 0, 0, 0, -9984, 0, 0, 0, 0, -1, -9985
+"/Users/sunplix/rust-ctf/frontend/src/locales/i18n.config.json", "JSON", 0, 0, 0, 0, 0, 0, 0, -20, 0, 0, 0, 0, -1, -21
+"/Users/sunplix/rust-ctf/frontend/src/locales/i18n.ts", "TypeScript", 0, 0, 0, 0, 0, -126, 0, 0, 0, 0, 0, 0, -19, -145
+"/Users/sunplix/rust-ctf/frontend/src/locales/runtime.json", "JSON", 0, 0, 0, 0, 0, 0, 0, -8304, 0, 0, 0, 0, -1, -8305
+"/Users/sunplix/rust-ctf/frontend/src/main.ts", "TypeScript", 0, 0, 0, 0, 0, -13, 0, 0, 0, 0, 0, 0, -5, -18
+"/Users/sunplix/rust-ctf/frontend/src/router/index.ts", "TypeScript", 0, 0, 0, 0, 0, -115, 0, 0, 0, 0, 0, 0, -11, -126
+"/Users/sunplix/rust-ctf/frontend/src/stores/app.ts", "TypeScript", 0, 0, 0, 0, 0, -140, 0, 0, 0, 0, 0, 0, -22, -162
+"/Users/sunplix/rust-ctf/frontend/src/stores/auth.ts", "TypeScript", 0, 0, 0, 0, 0, -139, 0, 0, 0, 0, 0, 0, -20, -159
+"/Users/sunplix/rust-ctf/frontend/src/stores/index.ts", "TypeScript", 0, 0, 0, 0, 0, -2, 0, 0, 0, 0, 0, 0, -2, -4
+"/Users/sunplix/rust-ctf/frontend/src/stores/ui.ts", "TypeScript", 0, 0, 0, 0, 0, -230, 0, 0, 0, 0, 0, 0, -40, -270
+"/Users/sunplix/rust-ctf/frontend/tsconfig.json", "JSON with Comments", 0, 0, 0, 0, 0, 0, 0, 0, -20, 0, 0, 0, -1, -21
+"/Users/sunplix/rust-ctf/frontend/tsconfig.node.json", "JSON", 0, 0, 0, 0, 0, 0, 0, -9, 0, 0, 0, 0, -1, -10
+"/Users/sunplix/rust-ctf/frontend/tsconfig.tsbuildinfo", "JSON", 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, -1
+"/Users/sunplix/rust-ctf/frontend/vite.config.ts", "TypeScript", 0, 0, 0, 0, 0, -14, 0, 0, 0, 0, 0, -1, -3, -18
+"Total", "-", 18513, 953, -269, 14, 528, -3724, -1143, -20337, -20, -12, -72, 10, 1606, -3953

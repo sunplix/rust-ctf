@@ -125,6 +125,54 @@
             </form>
           </section>
 
+          <section class="stack">
+            <div class="split-line"></div>
+            <h3>{{ tr("渠道身份", "Channel Identity") }}</h3>
+            <form class="form-grid" @submit.prevent="handleJoinTeamScoreboardChannel">
+              <label>
+                <span>{{ tr("比赛", "Contest") }}</span>
+                <select v-model="selectedTeamChannelContestId" :disabled="loadingContests || teamScoreboardChannelBusy">
+                  <option value="" disabled>{{ tr("请选择比赛", "Select contest") }}</option>
+                  <option v-for="item in availableContests" :key="item.id" :value="item.id">
+                    {{ item.title }} ({{ item.status }})
+                  </option>
+                </select>
+              </label>
+              <label>
+                <span>{{ tr("邀请码", "Invite code") }}</span>
+                <input
+                  v-model.trim="teamChannelInviteCode"
+                  maxlength="48"
+                  :placeholder="tr('输入渠道邀请码', 'Enter channel invite code')"
+                  :disabled="teamScoreboardChannelBusy"
+                />
+              </label>
+              <div class="context-menu">
+                <button class="btn-solid" type="submit" :disabled="teamScoreboardChannelBusy || !selectedTeamChannelContestId">
+                  {{ teamScoreboardChannelBusy ? tr("处理中...", "Processing...") : tr("加入渠道", "Join channel") }}
+                </button>
+                <button
+                  class="btn-line"
+                  type="button"
+                  :disabled="teamScoreboardChannelBusy || !selectedTeamChannelContestId || !myTeamScoreboardChannel"
+                  @click="handleLeaveTeamScoreboardChannel"
+                >
+                  {{ tr("退出渠道", "Leave channel") }}
+                </button>
+                <button
+                  class="btn-line"
+                  type="button"
+                  :disabled="loadingTeamScoreboardChannel || !selectedTeamChannelContestId"
+                  @click="loadMyScoreboardChannelInTeamView()"
+                >
+                  {{ loadingTeamScoreboardChannel ? tr("刷新中...", "Refreshing...") : tr("刷新身份", "Refresh identity") }}
+                </button>
+              </div>
+            </form>
+            <p class="soft mono">{{ tr("当前身份", "Current identity") }}: {{ teamChannelIdentityLabel }}</p>
+            <p v-if="teamChannelError" class="error">{{ teamChannelError }}</p>
+          </section>
+
           <section v-if="isCaptain" class="stack">
             <div class="split-line"></div>
             <h3>{{ tr("邀请成员", "Invite Members") }}</h3>
@@ -325,10 +373,14 @@ import {
   createTeam,
   createTeamInvitation,
   disbandTeam,
+  getMyScoreboardChannel,
   getTeamById,
   getMyTeam,
   joinTeam,
+  joinScoreboardChannel,
   leaveTeam,
+  leaveScoreboardChannel,
+  listContests,
   listReceivedTeamInvitations,
   listSentTeamInvitations,
   listTeams,
@@ -336,6 +388,8 @@ import {
   respondTeamInvitation,
   transferTeamCaptain,
   updateTeam,
+  type ContestListItem,
+  type ScoreboardChannelMembershipItem,
   type TeamInvitationItem,
   type TeamListItem,
   type TeamMemberItem,
@@ -354,6 +408,8 @@ const myTeam = ref<TeamProfile | null>(null);
 const loadingMyTeam = ref(false);
 const teams = ref<TeamListItem[]>([]);
 const loadingTeams = ref(false);
+const availableContests = ref<ContestListItem[]>([]);
+const loadingContests = ref(false);
 
 const receivedInvitations = ref<TeamInvitationItem[]>([]);
 const sentInvitations = ref<TeamInvitationItem[]>([]);
@@ -379,11 +435,17 @@ const transferBusy = ref(false);
 const memberActionUserId = ref("");
 const invitationActionId = ref("");
 const cancelInvitationId = ref("");
+const teamScoreboardChannelBusy = ref(false);
+const loadingTeamScoreboardChannel = ref(false);
 const confirmDisband = ref(false);
 
 const keyword = ref("");
 const joinTeamName = ref("");
 const transferCaptainUserId = ref("");
+const selectedTeamChannelContestId = ref("");
+const teamChannelInviteCode = ref("");
+const teamChannelError = ref("");
+const myTeamScoreboardChannel = ref<ScoreboardChannelMembershipItem | null>(null);
 
 const createForm = reactive({
   name: "",
@@ -434,6 +496,13 @@ const selectedSentInvitation = computed(() => {
   return sentInvitations.value.find((item) => item.id === selectedSentInvitationId.value) ?? null;
 });
 
+const teamChannelIdentityLabel = computed(() => {
+  if (myTeamScoreboardChannel.value?.name) {
+    return myTeamScoreboardChannel.value.name;
+  }
+  return tr("未加入渠道", "Not joined");
+});
+
 watch(
   () => teams.value,
   (rows) => {
@@ -475,13 +544,17 @@ watch(
   () => myTeam.value,
   (team) => {
     confirmDisband.value = false;
+    teamChannelError.value = "";
+    teamChannelInviteCode.value = "";
     if (!team || team.members.length === 0) {
       selectedMemberUserId.value = "";
+      myTeamScoreboardChannel.value = null;
       return;
     }
     if (!selectedMemberUserId.value || !team.members.some((m) => m.user_id === selectedMemberUserId.value)) {
       selectedMemberUserId.value = team.members[0].user_id;
     }
+    loadMyScoreboardChannelInTeamView({ silentError: true });
   },
   { immediate: true }
 );
@@ -512,6 +585,35 @@ watch(
     }
   },
   { immediate: true }
+);
+
+watch(
+  () => availableContests.value,
+  (rows) => {
+    if (rows.length === 0) {
+      selectedTeamChannelContestId.value = "";
+      return;
+    }
+    if (
+      !selectedTeamChannelContestId.value ||
+      !rows.some((row) => row.id === selectedTeamChannelContestId.value)
+    ) {
+      selectedTeamChannelContestId.value = rows[0].id;
+    }
+  },
+  { immediate: true }
+);
+
+watch(
+  () => selectedTeamChannelContestId.value,
+  () => {
+    if (!myTeam.value) {
+      myTeamScoreboardChannel.value = null;
+      teamChannelError.value = "";
+      return;
+    }
+    loadMyScoreboardChannelInTeamView({ silentError: true });
+  }
 );
 
 function formatTime(input: string) {
@@ -585,6 +687,51 @@ async function loadTeams() {
   }
 }
 
+async function loadContestsForTeamChannel(options?: { silentError?: boolean }) {
+  loadingContests.value = true;
+  try {
+    availableContests.value = await listContests();
+  } catch (err) {
+    availableContests.value = [];
+    if (!options?.silentError) {
+      const message =
+        err instanceof ApiClientError ? err.message : tr("加载比赛失败", "Failed to load contests");
+      pageError.value = message;
+      uiStore.error(tr("加载比赛失败", "Failed to load contests"), message);
+    }
+  } finally {
+    loadingContests.value = false;
+  }
+}
+
+async function loadMyScoreboardChannelInTeamView(options?: { silentError?: boolean }) {
+  teamChannelError.value = "";
+
+  if (!myTeam.value || !selectedTeamChannelContestId.value) {
+    myTeamScoreboardChannel.value = null;
+    return;
+  }
+
+  loadingTeamScoreboardChannel.value = true;
+  try {
+    const token = accessTokenOrThrow();
+    const response = await getMyScoreboardChannel(selectedTeamChannelContestId.value, token);
+    myTeamScoreboardChannel.value = response.channel;
+  } catch (err) {
+    myTeamScoreboardChannel.value = null;
+    const message =
+      err instanceof ApiClientError
+        ? err.message
+        : tr("加载渠道身份失败", "Failed to load channel identity");
+    teamChannelError.value = message;
+    if (!options?.silentError) {
+      uiStore.error(tr("加载渠道身份失败", "Failed to load channel identity"), message);
+    }
+  } finally {
+    loadingTeamScoreboardChannel.value = false;
+  }
+}
+
 async function loadReceivedInvitations() {
   try {
     const token = accessTokenOrThrow();
@@ -615,8 +762,13 @@ async function loadSentInvitations() {
 async function refreshAll() {
   refreshing.value = true;
   await loadMyTeam();
-  await Promise.all([loadTeams(), loadReceivedInvitations()]);
+  await Promise.all([
+    loadTeams(),
+    loadReceivedInvitations(),
+    loadContestsForTeamChannel({ silentError: true })
+  ]);
   await loadSentInvitations();
+  await loadMyScoreboardChannelInTeamView({ silentError: true });
   refreshing.value = false;
 }
 
@@ -720,6 +872,81 @@ async function handleJoinById(teamId: string, teamName: string) {
     uiStore.error(tr("加入队伍失败", "Failed to join team"), message);
   } finally {
     actionBusy.value = false;
+  }
+}
+
+async function handleJoinTeamScoreboardChannel() {
+  const contestId = selectedTeamChannelContestId.value;
+  const inviteCode = teamChannelInviteCode.value.trim();
+  if (!contestId) {
+    teamChannelError.value = tr("请先选择比赛。", "Please select a contest first.");
+    uiStore.warning(tr("未选择比赛", "No contest selected"), teamChannelError.value, 2200);
+    return;
+  }
+  if (!inviteCode) {
+    teamChannelError.value = tr("请输入邀请码。", "Please enter an invite code.");
+    uiStore.warning(tr("邀请码为空", "Invite code required"), teamChannelError.value, 2200);
+    return;
+  }
+
+  teamScoreboardChannelBusy.value = true;
+  teamChannelError.value = "";
+  try {
+    const token = accessTokenOrThrow();
+    const response = await joinScoreboardChannel(
+      contestId,
+      {
+        invite_code: inviteCode
+      },
+      token
+    );
+    teamChannelInviteCode.value = "";
+    myTeamScoreboardChannel.value = response.channel;
+    uiStore.success(
+      tr("加入渠道成功", "Joined channel"),
+      response.channel?.name ?? tr("渠道身份已更新。", "Channel identity updated."),
+      2200
+    );
+    await loadMyScoreboardChannelInTeamView({ silentError: true });
+  } catch (err) {
+    const message =
+      err instanceof ApiClientError
+        ? err.message
+        : tr("加入渠道失败", "Failed to join channel");
+    teamChannelError.value = message;
+    uiStore.error(tr("加入渠道失败", "Failed to join channel"), message);
+  } finally {
+    teamScoreboardChannelBusy.value = false;
+  }
+}
+
+async function handleLeaveTeamScoreboardChannel() {
+  const contestId = selectedTeamChannelContestId.value;
+  if (!contestId) {
+    return;
+  }
+
+  teamScoreboardChannelBusy.value = true;
+  teamChannelError.value = "";
+  try {
+    const token = accessTokenOrThrow();
+    await leaveScoreboardChannel(contestId, token);
+    myTeamScoreboardChannel.value = null;
+    uiStore.info(
+      tr("已退出渠道", "Left channel"),
+      tr("当前比赛的渠道身份已清除。", "Channel identity has been cleared for this contest."),
+      2200
+    );
+    await loadMyScoreboardChannelInTeamView({ silentError: true });
+  } catch (err) {
+    const message =
+      err instanceof ApiClientError
+        ? err.message
+        : tr("退出渠道失败", "Failed to leave channel");
+    teamChannelError.value = message;
+    uiStore.error(tr("退出渠道失败", "Failed to leave channel"), message);
+  } finally {
+    teamScoreboardChannelBusy.value = false;
   }
 }
 

@@ -314,6 +314,44 @@
               </button>
             </div>
           </header>
+          <div class="scoreboard-scope-row">
+            <label class="scoreboard-scope-select">
+              <span>{{ tr("榜单范围", "Scope") }}</span>
+              <select :value="selectedScoreboardChannelId" @change="onScoreboardScopeChange">
+                <option value="">{{ tr("全体", "Global") }}</option>
+                <option v-for="item in scoreboardChannels" :key="item.id" :value="item.id">
+                  {{ item.name }}
+                </option>
+              </select>
+            </label>
+            <p class="soft mono">{{ tr("当前身份", "Current identity") }}: {{ scoreboardIdentityLabel }}</p>
+          </div>
+          <form class="scoreboard-channel-join" @submit.prevent="handleJoinScoreboardChannel">
+            <input
+              v-model.trim="scoreboardInviteCode"
+              :placeholder="tr('输入渠道邀请码', 'Enter channel invite code')"
+              maxlength="48"
+            />
+            <button class="btn-line" type="submit" :disabled="joiningScoreboardChannel">
+              {{
+                joiningScoreboardChannel
+                  ? tr("加入中...", "Joining...")
+                  : tr("加入渠道", "Join channel")
+              }}
+            </button>
+            <button
+              class="btn-line"
+              type="button"
+              :disabled="leavingScoreboardChannel || !myScoreboardChannel"
+              @click="handleLeaveScoreboardChannel"
+            >
+              {{
+                leavingScoreboardChannel
+                  ? tr("退出中...", "Leaving...")
+                  : tr("退出渠道", "Leave channel")
+              }}
+            </button>
+          </form>
           <div class="row-between trend-toolbar">
             <span class="soft">{{ tr("趋势维度", "Trend metric") }}</span>
             <div class="context-menu">
@@ -347,6 +385,7 @@
                 <tr>
                   <th>#</th>
                   <th>{{ tr("队伍", "Team") }}</th>
+                  <th v-if="!selectedScoreboardChannelId">{{ tr("渠道", "Channels") }}</th>
                   <th>{{ tr("分数", "Score") }}</th>
                   <th>{{ tr("解题", "Solved") }}</th>
                   <th>{{ tr("最后提交", "Last submission") }}</th>
@@ -356,6 +395,9 @@
                 <tr v-for="entry in scoreboard" :key="entry.team_id">
                   <td>{{ entry.rank }}</td>
                   <td>{{ entry.team_name }}</td>
+                  <td v-if="!selectedScoreboardChannelId">
+                    {{ entry.channels.length > 0 ? entry.channels.join(", ") : "-" }}
+                  </td>
                   <td>{{ entry.score }}</td>
                   <td>{{ entry.solved_count }}</td>
                   <td>{{ entry.last_submit_at ? formatTime(entry.last_submit_at) : '-' }}</td>
@@ -486,11 +528,15 @@ import {
   destroyInstance,
   getInstance,
   getInstanceWireguardConfig,
+  getMyScoreboardChannel,
   getScoreboard,
   getScoreboardTimeline,
+  joinScoreboardChannel,
+  leaveScoreboardChannel,
   listContestChallengeAttachments,
   listContestAnnouncements,
   listContestChallenges,
+  listScoreboardChannels,
   resetInstance,
   startInstance,
   stopInstance,
@@ -499,6 +545,8 @@ import {
   type ContestAnnouncementItem,
   type ContestChallengeItem,
   type InstanceResponse,
+  type ScoreboardChannelItem,
+  type ScoreboardChannelMembershipItem,
   type ScoreboardEntry,
   type ScoreboardTimelineSnapshot,
   type ScoreboardPushPayload,
@@ -539,6 +587,12 @@ const instanceError = ref("");
 const scoreboard = ref<ScoreboardEntry[]>([]);
 const scoreboardTimeline = ref<ScoreboardTimelineSnapshot[]>([]);
 const scoreboardTrendMode = ref<"score" | "rank">("score");
+const scoreboardChannels = ref<ScoreboardChannelItem[]>([]);
+const selectedScoreboardChannelId = ref("");
+const myScoreboardChannel = ref<ScoreboardChannelMembershipItem | null>(null);
+const scoreboardInviteCode = ref("");
+const joiningScoreboardChannel = ref(false);
+const leavingScoreboardChannel = ref(false);
 const loadingScoreboard = ref(false);
 const scoreboardError = ref("");
 const exportingTrendImage = ref(false);
@@ -599,6 +653,13 @@ const challengeGroups = computed(() => {
     category,
     items
   }));
+});
+
+const scoreboardIdentityLabel = computed(() => {
+  if (myScoreboardChannel.value?.name) {
+    return myScoreboardChannel.value.name;
+  }
+  return tr("未加入渠道", "Not joined");
 });
 
 const canManageInstance = computed(() => {
@@ -889,11 +950,15 @@ function handleWindowKeydown(event: KeyboardEvent) {
 
 function openScoreboardWall(mode: "score" | "rank") {
   scoreboardTrendMode.value = mode;
+  const channelId = selectedScoreboardChannelId.value || undefined;
 
   const target = router.resolve({
     name: "scoreboard-wall",
     params: { contestId: props.contestId },
-    query: { mode }
+    query: {
+      mode,
+      channel_id: channelId
+    }
   });
 
   const opened = window.open(target.href, "_blank", "noopener,noreferrer");
@@ -902,7 +967,10 @@ function openScoreboardWall(mode: "score" | "rank") {
       .push({
         name: "scoreboard-wall",
         params: { contestId: props.contestId },
-        query: { mode }
+        query: {
+          mode,
+          channel_id: channelId
+        }
       })
       .catch(() => undefined);
   }
@@ -1500,17 +1568,121 @@ async function loadAnnouncements() {
   }
 }
 
+async function loadScoreboardChannels() {
+  try {
+    const token = accessTokenOrThrow();
+    const [channels, myChannelResponse] = await Promise.all([
+      listScoreboardChannels(props.contestId, token),
+      getMyScoreboardChannel(props.contestId, token)
+    ]);
+    scoreboardChannels.value = channels;
+    myScoreboardChannel.value = myChannelResponse.channel;
+
+    if (
+      selectedScoreboardChannelId.value &&
+      !channels.some((item) => item.id === selectedScoreboardChannelId.value)
+    ) {
+      selectedScoreboardChannelId.value = "";
+    }
+  } catch (err) {
+    scoreboardError.value =
+      err instanceof ApiClientError ? err.message : tr("加载渠道失败", "Failed to load channels");
+  }
+}
+
+function onScoreboardScopeChange(event: Event) {
+  const target = event.target as HTMLSelectElement;
+  selectedScoreboardChannelId.value = target.value.trim();
+  loadScoreboard();
+  openScoreboardSocket();
+}
+
+async function handleJoinScoreboardChannel() {
+  const inviteCode = scoreboardInviteCode.value.trim();
+  if (!inviteCode) {
+    uiStore.warning(
+      tr("邀请码为空", "Invite code required"),
+      tr("请输入渠道邀请码。", "Please enter a channel invite code."),
+      2200
+    );
+    return;
+  }
+
+  joiningScoreboardChannel.value = true;
+  try {
+    const token = accessTokenOrThrow();
+    const response = await joinScoreboardChannel(
+      props.contestId,
+      {
+        invite_code: inviteCode
+      },
+      token
+    );
+
+    scoreboardInviteCode.value = "";
+    myScoreboardChannel.value = response.channel;
+    if (response.channel?.id) {
+      selectedScoreboardChannelId.value = response.channel.id;
+    }
+    await loadScoreboardChannels();
+    await loadScoreboard();
+    openScoreboardSocket();
+    uiStore.success(
+      tr("加入成功", "Joined"),
+      response.channel?.name ?? tr("已加入渠道身份。", "Channel identity joined."),
+      2200
+    );
+  } catch (err) {
+    const message =
+      err instanceof ApiClientError ? err.message : tr("加入渠道失败", "Failed to join channel");
+    uiStore.error(tr("加入渠道失败", "Failed to join channel"), message);
+  } finally {
+    joiningScoreboardChannel.value = false;
+  }
+}
+
+async function handleLeaveScoreboardChannel() {
+  leavingScoreboardChannel.value = true;
+  try {
+    const token = accessTokenOrThrow();
+    await leaveScoreboardChannel(props.contestId, token);
+    const previousChannelId = myScoreboardChannel.value?.id ?? "";
+    myScoreboardChannel.value = null;
+    if (selectedScoreboardChannelId.value && selectedScoreboardChannelId.value === previousChannelId) {
+      selectedScoreboardChannelId.value = "";
+    }
+    await loadScoreboardChannels();
+    await loadScoreboard();
+    openScoreboardSocket();
+    uiStore.info(
+      tr("已退出渠道", "Channel left"),
+      tr("已恢复全体榜单范围。", "Scope switched to global."),
+      2200
+    );
+  } catch (err) {
+    const message =
+      err instanceof ApiClientError ? err.message : tr("退出渠道失败", "Failed to leave channel");
+    uiStore.error(tr("退出渠道失败", "Failed to leave channel"), message);
+  } finally {
+    leavingScoreboardChannel.value = false;
+  }
+}
+
 async function loadScoreboard() {
   loadingScoreboard.value = true;
   scoreboardError.value = "";
 
   try {
     const token = accessTokenOrThrow();
+    const channelId = selectedScoreboardChannelId.value || undefined;
     const [entries, timeline] = await Promise.all([
-      getScoreboard(props.contestId, token),
+      getScoreboard(props.contestId, token, {
+        channel_id: channelId
+      }),
       getScoreboardTimeline(props.contestId, token, {
         max_snapshots: SCOREBOARD_TREND_MAX_SNAPSHOTS,
-        top_n: SCOREBOARD_TREND_TOP_N
+        top_n: SCOREBOARD_TREND_TOP_N,
+        channel_id: channelId
       })
     ]);
     scoreboard.value = timeline.latest_entries.length > 0 ? timeline.latest_entries : entries;
@@ -1554,7 +1726,9 @@ function openScoreboardSocket() {
   }
 
   wsState.value = "connecting";
-  const wsUrl = buildScoreboardWsUrl(props.contestId, token);
+  const wsUrl = buildScoreboardWsUrl(props.contestId, token, {
+    channel_id: selectedScoreboardChannelId.value || undefined
+  });
   scoreboardSocket = new WebSocket(wsUrl);
 
   scoreboardSocket.onopen = () => {
@@ -1696,7 +1870,8 @@ async function handleInstanceAction(action: "start" | "stop" | "reset" | "destro
 
 onMounted(async () => {
   shouldReconnectScoreboard = true;
-  await Promise.all([loadChallenges(), loadAnnouncements(), loadScoreboard()]);
+  await Promise.all([loadChallenges(), loadAnnouncements(), loadScoreboardChannels()]);
+  await loadScoreboard();
   openScoreboardSocket();
   scheduleTrendRender();
   window.addEventListener("keydown", handleWindowKeydown);
@@ -1794,6 +1969,38 @@ onUnmounted(() => {
 
 .scoreboard-actions .btn-line {
   white-space: nowrap;
+}
+
+.scoreboard-scope-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.56rem;
+  flex-wrap: wrap;
+}
+
+.scoreboard-scope-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.36rem;
+  padding: 0.16rem 0.2rem;
+  border-radius: var(--radius-sm);
+  background: var(--glass-mid);
+}
+
+.scoreboard-scope-select span {
+  font-size: 0.76rem;
+  color: var(--fg-2);
+}
+
+.scoreboard-scope-select select {
+  min-width: 8.4rem;
+}
+
+.scoreboard-channel-join {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.36rem;
 }
 
 .instance-controls {
@@ -1968,6 +2175,10 @@ onUnmounted(() => {
   .instance-controls {
     margin-left: 0;
     width: 100%;
+  }
+
+  .scoreboard-channel-join {
+    grid-template-columns: 1fr;
   }
 
   .instance-access-mode-select {

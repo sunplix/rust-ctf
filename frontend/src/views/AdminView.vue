@@ -120,6 +120,14 @@
           <button
             class="side-nav-btn side-sub-btn"
             type="button"
+            :class="{ active: contestSubTab === 'channels' }"
+            @click="contestSubTab = 'channels'"
+          >
+            {{ tr("渠道排行", "Channel Boards") }}
+          </button>
+          <button
+            class="side-nav-btn side-sub-btn"
+            type="button"
             :class="{ active: contestSubTab === 'registrations' }"
             @click="contestSubTab = 'registrations'"
           >
@@ -1256,6 +1264,9 @@
                       <button class="ghost" type="button" @click="contestSubTab = 'announcements'">
                         {{ tl('管理公告') }}
                       </button>
+                      <button class="ghost" type="button" @click="contestSubTab = 'channels'">
+                        {{ tr("管理渠道排行", "Manage channel boards") }}
+                      </button>
                       <button class="ghost" type="button" @click="contestSubTab = 'registrations'">
                         {{ tr("管理报名审核", "Manage registrations") }}
                       </button>
@@ -1662,6 +1673,241 @@
               <p v-else class="muted">{{ tl('从左侧选择一个公告查看详情。') }}</p>
             </section>
           </div>
+        </template>
+      </section>
+
+      <section v-if="adminModule === 'contests' && contestSubTab === 'channels'" class="panel">
+        <div class="row-between">
+          <h2>{{ tr("渠道排行榜管理", "Channel Scoreboards") }}</h2>
+          <span class="badge" v-if="selectedContest">{{ selectedContest.title }}</span>
+        </div>
+
+        <p class="muted" v-if="!selectedContest">
+          {{ tr("请先在“赛事配置”中选择一个比赛。", "Select a contest in config tab first.") }}
+        </p>
+
+        <template v-else>
+          <div class="row compact-actions">
+            <button class="ghost" type="button" @click="loadContestScoreboardChannels()" :disabled="scoreboardChannelBusy || loadingContestScoreboardBoards">
+              {{ tr("刷新渠道", "Refresh channels") }}
+            </button>
+            <button class="ghost" type="button" @click="loadContestScoreboardBoards()" :disabled="scoreboardChannelBusy || loadingContestScoreboardBoards">
+              {{ loadingContestScoreboardBoards ? tr("加载中...", "Loading...") : tr("刷新榜单", "Refresh scoreboards") }}
+            </button>
+            <button class="ghost" type="button" @click="openContestScoreboardWall()">
+              {{ tr("打开全体大屏", "Open global wall") }}
+            </button>
+          </div>
+
+          <p v-if="scoreboardChannelError" class="error">{{ scoreboardChannelError }}</p>
+
+          <div class="contest-browser">
+            <aside class="contest-list-pane">
+              <div class="row-between">
+                <h3>
+                  {{
+                    editingScoreboardChannelId
+                      ? tr("编辑渠道", "Edit channel")
+                      : tr("创建渠道", "Create channel")
+                  }}
+                </h3>
+                <button class="ghost" type="button" @click="resetScoreboardChannelForm">
+                  {{ tr("重置表单", "Reset form") }}
+                </button>
+              </div>
+
+              <form class="form-grid compact-grid" @submit.prevent="handleSaveScoreboardChannel">
+                <label>
+                  <span>{{ tr("渠道名称", "Channel name") }}</span>
+                  <input v-model.trim="scoreboardChannelForm.name" required maxlength="80" />
+                </label>
+                <label class="contest-field-span-2">
+                  <span>{{ tr("描述（可选）", "Description (optional)") }}</span>
+                  <textarea
+                    v-model="scoreboardChannelForm.description"
+                    rows="3"
+                    maxlength="500"
+                  />
+                </label>
+                <label class="inline-check contest-field-span-2">
+                  <input v-model="scoreboardChannelForm.is_active" type="checkbox" />
+                  <span>{{ tr("启用该渠道", "Enable this channel") }}</span>
+                </label>
+                <button class="primary" type="submit" :disabled="scoreboardChannelBusy">
+                  {{
+                    scoreboardChannelBusy
+                      ? tr("保存中...", "Saving...")
+                      : editingScoreboardChannelId
+                        ? tr("保存渠道", "Save channel")
+                        : tr("创建渠道", "Create channel")
+                  }}
+                </button>
+              </form>
+
+              <div class="row-between">
+                <h3>{{ tr("渠道列表", "Channel list") }}</h3>
+                <span class="badge">{{ contestScoreboardChannels.length }}</span>
+              </div>
+
+              <button
+                v-for="item in contestScoreboardChannels"
+                :key="item.id"
+                class="contest-list-item"
+                :class="{ active: selectedScoreboardChannelId === item.id }"
+                type="button"
+                @click="selectScoreboardChannel(item.id)"
+              >
+                <div class="row-between">
+                  <strong>{{ item.name }}</strong>
+                  <span class="badge">
+                    {{ item.is_active ? tr("启用", "active") : tr("停用", "inactive") }}
+                  </span>
+                </div>
+                <span class="muted mono">
+                  {{ tr("邀请码", "Invite code") }}: {{ item.invite_code || "-" }}
+                </span>
+                <span class="muted">
+                  {{ tr("成员数", "Members") }}: {{ item.member_count }}
+                </span>
+              </button>
+              <p v-if="contestScoreboardChannels.length === 0" class="muted">
+                {{ tr("当前比赛还没有渠道。", "No channels in this contest yet.") }}
+              </p>
+            </aside>
+
+            <section class="contest-detail-pane">
+              <template v-if="selectedScoreboardChannel">
+                <div class="row-between">
+                  <h4>{{ selectedScoreboardChannel.name }}</h4>
+                  <span class="badge">
+                    {{
+                      selectedScoreboardChannel.is_active
+                        ? tr("启用中", "active")
+                        : tr("已停用", "inactive")
+                    }}
+                  </span>
+                </div>
+                <p class="muted mono">
+                  {{ tr("邀请码", "Invite code") }}:
+                  {{ selectedScoreboardChannel.invite_code || "-" }}
+                </p>
+                <div class="actions-row compact-actions">
+                  <button
+                    class="ghost"
+                    type="button"
+                    :disabled="!selectedScoreboardChannel.invite_code"
+                    @click="copyTextValue(selectedScoreboardChannel.invite_code || '', tr('邀请码已复制。', 'Invite code copied.'))"
+                  >
+                    {{ tr("复制邀请码", "Copy invite code") }}
+                  </button>
+                  <button
+                    class="ghost"
+                    type="button"
+                    :disabled="scoreboardChannelBusy"
+                    @click="handleRegenerateScoreboardChannelInviteCode(selectedScoreboardChannel)"
+                  >
+                    {{ tr("重置邀请码", "Regenerate invite code") }}
+                  </button>
+                  <button
+                    class="ghost"
+                    type="button"
+                    @click="openContestScoreboardWall(selectedScoreboardChannel.id)"
+                  >
+                    {{ tr("打开该渠道大屏", "Open channel wall") }}
+                  </button>
+                </div>
+                <p class="muted">
+                  {{ tr("成员数", "Members") }}: {{ selectedScoreboardChannel.member_count }}
+                </p>
+                <p class="muted">
+                  {{ selectedScoreboardChannel.description || tr("暂无描述。", "No description.") }}
+                </p>
+
+                <details class="action-sheet">
+                  <summary>{{ tr("显示渠道操作菜单", "Show channel actions") }}</summary>
+                  <div class="actions-row compact-actions action-sheet-body">
+                    <button
+                      class="ghost"
+                      type="button"
+                      :disabled="scoreboardChannelBusy"
+                      @click="loadScoreboardChannelIntoForm(selectedScoreboardChannel)"
+                    >
+                      {{ tr("加载到左侧表单", "Load to left form") }}
+                    </button>
+                    <button
+                      class="ghost"
+                      type="button"
+                      :disabled="scoreboardChannelBusy"
+                      @click="handleToggleScoreboardChannelActive(selectedScoreboardChannel)"
+                    >
+                      {{
+                        selectedScoreboardChannel.is_active
+                          ? tr("停用渠道", "Disable channel")
+                          : tr("启用渠道", "Enable channel")
+                      }}
+                    </button>
+                  </div>
+                </details>
+              </template>
+              <p v-else class="muted">
+                {{ tr("从左侧选择一个渠道查看详情。", "Select a channel on the left to view details.") }}
+              </p>
+            </section>
+          </div>
+
+          <section class="stack">
+            <div class="row-between">
+              <h3>{{ tr("全部渠道榜单", "All channel scoreboards") }}</h3>
+              <span class="badge">{{ allContestScoreboardBoards.length }}</span>
+            </div>
+            <p v-if="loadingContestScoreboardBoards" class="muted">
+              {{ tr("正在加载榜单...", "Loading scoreboards...") }}
+            </p>
+            <p v-else-if="allContestScoreboardBoards.length === 0" class="muted">
+              {{ tr("暂无榜单数据。", "No scoreboard data.") }}
+            </p>
+            <article
+              v-for="board in allContestScoreboardBoards"
+              :key="board.key"
+              class="surface stack"
+            >
+              <div class="row-between">
+                <h4>{{ board.title }}</h4>
+                <div class="actions-row compact-actions">
+                  <span class="badge">{{ board.entries.length }}</span>
+                  <button
+                    class="ghost"
+                    type="button"
+                    @click="openContestScoreboardWall(board.channelId || undefined)"
+                  >
+                    {{ tr("大屏显示", "Open wall") }}
+                  </button>
+                </div>
+              </div>
+              <div class="table-wrap" v-if="board.entries.length > 0">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>{{ tr("队伍", "Team") }}</th>
+                      <th>{{ tr("渠道", "Channels") }}</th>
+                      <th>{{ tr("分数", "Score") }}</th>
+                      <th>{{ tr("解题", "Solved") }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="entry in board.entries.slice(0, 12)" :key="`${board.key}-${entry.team_id}`">
+                      <td>{{ entry.rank }}</td>
+                      <td>{{ entry.team_name }}</td>
+                      <td>{{ formatScoreboardEntryChannels(entry) }}</td>
+                      <td>{{ entry.score }}</td>
+                      <td>{{ entry.solved_count }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </article>
+          </section>
         </template>
       </section>
 
@@ -2468,6 +2714,7 @@ import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from
 import {
   ApiClientError,
   buildApiAssetUrl,
+  createScoreboardChannel,
   createAdminChallenge,
   createAdminChallengeCategory,
   createAdminContestAnnouncement,
@@ -2485,6 +2732,7 @@ import {
   getAdminInstanceRuntimeMetrics,
   getAdminRuntimeOverview,
   getAdminChallengeDetail,
+  getScoreboard,
   getAdminSiteSettings,
   listAdminChallengeCategories,
   listAdminRuntimeAlerts,
@@ -2499,6 +2747,7 @@ import {
   listAdminContestChallenges,
   listAdminContests,
   listAdminInstances,
+  listScoreboardChannels,
   resetAdminUserPassword,
   resolveAdminRuntimeAlert,
   rollbackAdminChallengeVersion,
@@ -2536,11 +2785,14 @@ import {
   type AdminRuntimeAlertItem,
   type AdminRuntimeOverview,
   type AdminUserItem,
+  type ScoreboardChannelItem,
+  type ScoreboardEntry,
   updateAdminChallenge,
   updateAdminChallengeCategory,
   updateAdminContest,
   updateAdminContestStatus,
   updateAdminContestChallenge,
+  updateScoreboardChannel,
   upsertAdminContestChallenge
 } from "../api/client";
 import UploadField from "../components/UploadField.vue";
@@ -3011,6 +3263,15 @@ const challengeRuntimeLint = ref<AdminChallengeRuntimeLintResponse | null>(null)
 const contests = ref<AdminContestItem[]>([]);
 const contestBindings = ref<AdminContestChallengeItem[]>([]);
 const contestAnnouncements = ref<AdminContestAnnouncementItem[]>([]);
+const contestScoreboardChannels = ref<ScoreboardChannelItem[]>([]);
+const allContestScoreboardBoards = ref<
+  Array<{
+    key: string;
+    title: string;
+    channelId: string | null;
+    entries: ScoreboardEntry[];
+  }>
+>([]);
 const contestRegistrations = ref<AdminContestRegistrationItem[]>([]);
 const instances = ref<AdminInstanceItem[]>([]);
 const selectedInstanceRuntimeMetrics = ref<AdminInstanceRuntimeMetricsResponse | null>(null);
@@ -3023,6 +3284,7 @@ const selectedContestId = ref("");
 const selectedChallengeId = ref("");
 const selectedBindingChallengeId = ref("");
 const selectedAnnouncementId = ref("");
+const selectedScoreboardChannelId = ref("");
 const selectedContestRegistrationId = ref("");
 const selectedRuntimeAlertId = ref("");
 const selectedInstanceId = ref("");
@@ -3030,10 +3292,11 @@ const selectedUserId = ref("");
 const editingChallengeId = ref("");
 const editingChallengeCategoryId = ref("");
 const editingContestId = ref("");
+const editingScoreboardChannelId = ref("");
 const adminModule = ref<"challenges" | "contests" | "operations" | "users" | "audit">("challenges");
 const challengeSubTab = ref<"library" | "versions" | "lint">("library");
 const challengeLibraryMode = ref<"catalog" | "editor">("catalog");
-const contestSubTab = ref<"contests" | "bindings" | "announcements" | "registrations">("contests");
+const contestSubTab = ref<"contests" | "bindings" | "announcements" | "channels" | "registrations">("contests");
 const contestManageMode = ref<"catalog" | "editor">("catalog");
 const operationsSubTab = ref<"runtime" | "alerts" | "instances">("runtime");
 
@@ -3048,6 +3311,7 @@ const challengeComposeTestError = ref("");
 const contestError = ref("");
 const bindingError = ref("");
 const announcementError = ref("");
+const scoreboardChannelError = ref("");
 const contestRegistrationError = ref("");
 const instanceError = ref("");
 const userError = ref("");
@@ -3079,6 +3343,8 @@ const creatingAnnouncement = ref(false);
 const updatingAnnouncementId = ref("");
 const deletingAnnouncementId = ref("");
 const savingAnnouncementId = ref("");
+const scoreboardChannelBusy = ref(false);
+const loadingContestScoreboardBoards = ref(false);
 const updatingContestRegistrationId = ref("");
 const loadingUsers = ref(false);
 const auditLoading = ref(false);
@@ -3322,6 +3588,12 @@ const announcementForm = reactive({
   is_pinned: false
 });
 
+const scoreboardChannelForm = reactive({
+  name: "",
+  description: "",
+  is_active: true
+});
+
 const selectedContest = computed(() => {
   return contests.value.find((item) => item.id === selectedContestId.value) ?? null;
 });
@@ -3336,6 +3608,13 @@ const selectedBinding = computed(() => {
 
 const selectedAnnouncement = computed(() => {
   return contestAnnouncements.value.find((item) => item.id === selectedAnnouncementId.value) ?? null;
+});
+
+const selectedScoreboardChannel = computed(() => {
+  return (
+    contestScoreboardChannels.value.find((item) => item.id === selectedScoreboardChannelId.value) ??
+    null
+  );
 });
 
 const currentAnnouncementDraft = computed(() => {
@@ -4282,6 +4561,101 @@ async function loadContestAnnouncements() {
   }
 }
 
+async function loadContestScoreboardChannels(options?: { silentError?: boolean }) {
+  scoreboardChannelError.value = "";
+
+  if (!selectedContestId.value) {
+    contestScoreboardChannels.value = [];
+    allContestScoreboardBoards.value = [];
+    selectedScoreboardChannelId.value = "";
+    return;
+  }
+
+  try {
+    const rows = await listScoreboardChannels(selectedContestId.value, accessTokenOrThrow());
+    contestScoreboardChannels.value = rows;
+
+    if (rows.length === 0) {
+      selectedScoreboardChannelId.value = "";
+      return;
+    }
+
+    if (!rows.some((item) => item.id === selectedScoreboardChannelId.value)) {
+      selectedScoreboardChannelId.value = rows[0].id;
+    }
+
+    if (adminModule.value === "contests" && contestSubTab.value === "channels") {
+      await loadContestScoreboardBoards({ silentError: true });
+    }
+  } catch (err) {
+    scoreboardChannelError.value =
+      err instanceof ApiClientError ? err.message : tr("加载渠道失败", "Failed to load channels");
+    if (!options?.silentError) {
+      notify.error(tr("加载渠道失败", "Failed to load channels"), scoreboardChannelError.value);
+    }
+  }
+}
+
+async function loadContestScoreboardBoards(options?: { silentError?: boolean }) {
+  if (!selectedContestId.value) {
+    allContestScoreboardBoards.value = [];
+    return;
+  }
+
+  loadingContestScoreboardBoards.value = true;
+  scoreboardChannelError.value = "";
+
+  try {
+    const token = accessTokenOrThrow();
+    const channelRows =
+      contestScoreboardChannels.value.length > 0
+        ? contestScoreboardChannels.value
+        : await listScoreboardChannels(selectedContestId.value, token);
+
+    if (contestScoreboardChannels.value.length === 0) {
+      contestScoreboardChannels.value = channelRows;
+    }
+
+    const [globalEntries, ...channelEntries] = await Promise.all([
+      getScoreboard(selectedContestId.value, token),
+      ...channelRows.map((item) =>
+        getScoreboard(selectedContestId.value, token, {
+          channel_id: item.id
+        })
+      )
+    ]);
+
+    allContestScoreboardBoards.value = [
+      {
+        key: "global",
+        title: tr("全体总榜", "Global scoreboard"),
+        channelId: null,
+        entries: globalEntries
+      },
+      ...channelRows.map((item, index) => ({
+        key: item.id,
+        title: item.name,
+        channelId: item.id,
+        entries: channelEntries[index] ?? []
+      }))
+    ];
+  } catch (err) {
+    allContestScoreboardBoards.value = [];
+    scoreboardChannelError.value =
+      err instanceof ApiClientError
+        ? err.message
+        : tr("加载渠道榜单失败", "Failed to load channel scoreboards");
+    if (!options?.silentError) {
+      notify.error(
+        tr("加载渠道榜单失败", "Failed to load channel scoreboards"),
+        scoreboardChannelError.value
+      );
+    }
+  } finally {
+    loadingContestScoreboardBoards.value = false;
+  }
+}
+
 async function loadContestRegistrations(options?: { silentError?: boolean }) {
   contestRegistrationError.value = "";
 
@@ -4696,6 +5070,7 @@ async function refreshAll() {
     await Promise.all([
       loadContestBindings(),
       loadContestAnnouncements(),
+      loadContestScoreboardChannels({ silentError: true }),
       loadContestRegistrations({ silentError: true })
     ]);
     if (selectedChallengeId.value) {
@@ -5274,7 +5649,11 @@ async function handleCreateContest() {
 
     await loadContests();
     selectedContestId.value = targetContestId;
-    await Promise.all([loadContestBindings(), loadContestAnnouncements()]);
+    await Promise.all([
+      loadContestBindings(),
+      loadContestAnnouncements(),
+      loadContestScoreboardChannels({ silentError: true })
+    ]);
     notify.success(
       isEditMode ? "比赛已更新" : "比赛已创建",
       "可以继续挂载题目并调整状态。"
@@ -5447,16 +5826,188 @@ async function handleDestroyContest(item: AdminContestItem) {
       selectedContestId.value = "";
       contestBindings.value = [];
       contestAnnouncements.value = [];
+      contestScoreboardChannels.value = [];
+      allContestScoreboardBoards.value = [];
       selectedBindingChallengeId.value = "";
       selectedAnnouncementId.value = "";
+      selectedScoreboardChannelId.value = "";
+      resetScoreboardChannelForm();
     }
-    await Promise.all([loadContests(), loadContestBindings(), loadContestAnnouncements()]);
+    await Promise.all([
+      loadContests(),
+      loadContestBindings(),
+      loadContestAnnouncements(),
+      loadContestScoreboardChannels({ silentError: true })
+    ]);
     notify.warning("比赛已销毁", item.title);
   } catch (err) {
     contestError.value = err instanceof ApiClientError ? err.message : tl("销毁比赛失败");
     notify.error("销毁比赛失败", contestError.value);
   } finally {
     destroyingContestId.value = "";
+  }
+}
+
+function resetScoreboardChannelForm() {
+  editingScoreboardChannelId.value = "";
+  scoreboardChannelForm.name = "";
+  scoreboardChannelForm.description = "";
+  scoreboardChannelForm.is_active = true;
+  scoreboardChannelError.value = "";
+}
+
+function loadScoreboardChannelIntoForm(item: ScoreboardChannelItem) {
+  editingScoreboardChannelId.value = item.id;
+  scoreboardChannelForm.name = item.name;
+  scoreboardChannelForm.description = item.description;
+  scoreboardChannelForm.is_active = item.is_active;
+  selectedScoreboardChannelId.value = item.id;
+  scoreboardChannelError.value = "";
+}
+
+async function handleSaveScoreboardChannel() {
+  if (!selectedContestId.value) {
+    scoreboardChannelError.value = tr("请先选择比赛", "Please select a contest first.");
+    notify.warning(tr("未选择比赛", "No contest selected"), scoreboardChannelError.value);
+    return;
+  }
+
+  const name = scoreboardChannelForm.name.trim();
+  if (!name) {
+    scoreboardChannelError.value = tr("渠道名称不能为空", "Channel name is required.");
+    notify.warning(
+      tr("渠道信息不完整", "Incomplete channel info"),
+      scoreboardChannelError.value
+    );
+    return;
+  }
+
+  scoreboardChannelBusy.value = true;
+  scoreboardChannelError.value = "";
+
+  const isEditing = !!editingScoreboardChannelId.value;
+
+  try {
+    const payload = {
+      name,
+      description: scoreboardChannelForm.description.trim() || undefined,
+      is_active: scoreboardChannelForm.is_active
+    };
+
+    const saved = isEditing
+      ? await updateScoreboardChannel(
+          selectedContestId.value,
+          editingScoreboardChannelId.value,
+          payload,
+          accessTokenOrThrow()
+        )
+      : await createScoreboardChannel(selectedContestId.value, payload, accessTokenOrThrow());
+
+    await loadContestScoreboardChannels({ silentError: true });
+    selectedScoreboardChannelId.value = saved.id;
+
+    const latest = contestScoreboardChannels.value.find((item) => item.id === saved.id);
+    if (latest) {
+      loadScoreboardChannelIntoForm(latest);
+    }
+
+    if (isEditing) {
+      notify.success(tr("渠道已更新", "Channel updated"), saved.name);
+    } else {
+      notify.success(tr("渠道已创建", "Channel created"), saved.name);
+      resetScoreboardChannelForm();
+      selectedScoreboardChannelId.value = saved.id;
+    }
+  } catch (err) {
+    scoreboardChannelError.value =
+      err instanceof ApiClientError ? err.message : tr("保存渠道失败", "Failed to save channel");
+    notify.error(tr("保存渠道失败", "Failed to save channel"), scoreboardChannelError.value);
+  } finally {
+    scoreboardChannelBusy.value = false;
+  }
+}
+
+async function handleRegenerateScoreboardChannelInviteCode(item: ScoreboardChannelItem) {
+  if (!selectedContestId.value) {
+    return;
+  }
+
+  scoreboardChannelBusy.value = true;
+  scoreboardChannelError.value = "";
+
+  try {
+    const updated = await updateScoreboardChannel(
+      selectedContestId.value,
+      item.id,
+      { regenerate_invite_code: true },
+      accessTokenOrThrow()
+    );
+    await loadContestScoreboardChannels({ silentError: true });
+    selectedScoreboardChannelId.value = updated.id;
+
+    if (editingScoreboardChannelId.value === updated.id) {
+      const latest = contestScoreboardChannels.value.find((row) => row.id === updated.id);
+      if (latest) {
+        loadScoreboardChannelIntoForm(latest);
+      }
+    }
+
+    notify.success(
+      tr("邀请码已重置", "Invite code regenerated"),
+      `${updated.name}: ${updated.invite_code ?? "-"}`
+    );
+  } catch (err) {
+    scoreboardChannelError.value =
+      err instanceof ApiClientError
+        ? err.message
+        : tr("重置邀请码失败", "Failed to regenerate invite code");
+    notify.error(
+      tr("重置邀请码失败", "Failed to regenerate invite code"),
+      scoreboardChannelError.value
+    );
+  } finally {
+    scoreboardChannelBusy.value = false;
+  }
+}
+
+async function handleToggleScoreboardChannelActive(item: ScoreboardChannelItem) {
+  if (!selectedContestId.value) {
+    return;
+  }
+
+  scoreboardChannelBusy.value = true;
+  scoreboardChannelError.value = "";
+
+  try {
+    const updated = await updateScoreboardChannel(
+      selectedContestId.value,
+      item.id,
+      { is_active: !item.is_active },
+      accessTokenOrThrow()
+    );
+    await loadContestScoreboardChannels({ silentError: true });
+    selectedScoreboardChannelId.value = updated.id;
+
+    if (editingScoreboardChannelId.value === updated.id) {
+      const latest = contestScoreboardChannels.value.find((row) => row.id === updated.id);
+      if (latest) {
+        loadScoreboardChannelIntoForm(latest);
+      }
+    }
+
+    notify.info(
+      tr("渠道状态已更新", "Channel status updated"),
+      `${updated.name} -> ${updated.is_active ? "active" : "inactive"}`
+    );
+  } catch (err) {
+    scoreboardChannelError.value =
+      err instanceof ApiClientError ? err.message : tr("更新渠道状态失败", "Failed to update channel status");
+    notify.error(
+      tr("更新渠道状态失败", "Failed to update channel status"),
+      scoreboardChannelError.value
+    );
+  } finally {
+    scoreboardChannelBusy.value = false;
   }
 }
 
@@ -5576,6 +6127,50 @@ function selectBinding(challengeId: string) {
 function selectAnnouncement(announcementId: string) {
   selectedAnnouncementId.value = announcementId;
   announcementEditMode.value = "edit";
+}
+
+function selectScoreboardChannel(channelId: string) {
+  selectedScoreboardChannelId.value = channelId;
+}
+
+function formatScoreboardEntryChannels(entry: ScoreboardEntry) {
+  if (!Array.isArray(entry.channels) || entry.channels.length === 0) {
+    return "-";
+  }
+  return entry.channels.join(", ");
+}
+
+async function copyTextValue(value: string, successMessage: string) {
+  const text = value.trim();
+  if (!text) {
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    notify.info(tr("已复制", "Copied"), successMessage, 1800);
+  } catch {
+    notify.warning(
+      tr("复制失败", "Copy failed"),
+      tr("浏览器不允许写入剪贴板。", "Clipboard access is blocked by the browser."),
+      2200
+    );
+  }
+}
+
+function openContestScoreboardWall(channelId?: string) {
+  if (!selectedContestId.value) {
+    return;
+  }
+
+  const url = new URL(`/contests/${selectedContestId.value}/scoreboard-wall`, window.location.origin);
+  if (channelId) {
+    url.searchParams.set("channel_id", channelId);
+  }
+
+  const opened = window.open(url.toString(), "_blank", "noopener,noreferrer");
+  if (!opened) {
+    window.location.href = url.toString();
+  }
 }
 
 function loadBindingIntoForm(item: AdminContestChallengeItem) {
@@ -5852,6 +6447,8 @@ watch(
   () => {
     selectedBindingChallengeId.value = "";
     selectedAnnouncementId.value = "";
+    selectedScoreboardChannelId.value = "";
+    allContestScoreboardBoards.value = [];
     selectedContestRegistrationId.value = "";
     announcementCreateMode.value = "edit";
     announcementEditMode.value = "edit";
@@ -5860,8 +6457,10 @@ watch(
     bindingForm.challenge_id = "";
     bindingForm.sort_order = 0;
     bindingForm.release_at = "";
+    resetScoreboardChannelForm();
     loadContestBindings();
     loadContestAnnouncements();
+    loadContestScoreboardChannels({ silentError: true });
     loadContestRegistrations({ silentError: true });
   }
 );
@@ -5896,10 +6495,16 @@ watch(
 watch(
   () => [adminModule.value, contestSubTab.value, selectedContestId.value] as const,
   ([module, subTab, contestId]) => {
-    if (module !== "contests" || subTab !== "registrations" || !contestId) {
+    if (module !== "contests" || !contestId) {
       return;
     }
-    loadContestRegistrations({ silentError: true });
+    if (subTab === "registrations") {
+      loadContestRegistrations({ silentError: true });
+      return;
+    }
+    if (subTab === "channels") {
+      loadContestScoreboardChannels({ silentError: true });
+    }
   }
 );
 

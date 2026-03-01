@@ -588,12 +588,15 @@
 - 访问控制：
   - 私有比赛：仅 `admin|judge`
   - `draft|archived` 比赛：仅 `admin|judge`
+- Query（可选）：
+  - `channel_id`：渠道 ID（UUID）；传入后返回该渠道范围内的队伍榜
 - 排序：`score DESC` -> `solved_count DESC` -> `last_submit_at ASC`
 - 平分并列名次（`rank` 相同）
 
 `ScoreboardEntry` 字段：
 
-- `rank,team_id,team_name,score,solved_count,last_submit_at`
+- `rank,team_id,team_name,score,solved_count,last_submit_at,channels[]`
+  - `channels[]`：队伍成员所属渠道名称列表（全体总榜用于标注渠道）
 
 ### `GET /contests/{contest_id}/scoreboard/timeline`
 
@@ -602,6 +605,7 @@
 - Query（可选）：
   - `max_snapshots`（默认 800，范围 1..5000）
   - `top_n`（默认 12，范围 1..200）
+  - `channel_id`：渠道 ID（UUID）；传入后返回该渠道范围内的趋势快照
 - 返回：
   - `contest_id,generated_at`
   - `snapshots[]`：
@@ -614,12 +618,15 @@
 - 鉴权：必须
 - 用途：返回“队伍排名 + 选手排名 + 分类题目矩阵”，用于大屏排行矩阵渲染
 - 访问控制：同 `GET /contests/{contest_id}/scoreboard`
+- Query（可选）：
+  - `channel_id`：渠道 ID（UUID）；传入后返回该渠道范围内的排行矩阵
 - 返回：
-  - `contest_id,generated_at`
+  - `contest_id,channel_id,generated_at`
   - `categories[]`：`category,challenges[]`
     - `challenges[]`：`challenge_id,challenge_title,challenge_slug`
   - `team_rankings[]` 与 `player_rankings[]`：
-    - `rank,subject_id,subject_name,total_score,solved_count,last_submit_at,categories[]`
+    - `rank,subject_id,subject_name,total_score,solved_count,last_submit_at,channels[],categories[]`
+    - `channels[]`：该排名主体所属渠道名称列表（用于榜单标注）
     - `categories[]`：`category,solved_count,challenges[]`
     - `challenges[]`：`challenge_id,challenge_title,challenge_slug,marker,score_awarded,submitted_at`
 - `marker`：
@@ -633,6 +640,8 @@
 - 鉴权：必须（两种方式二选一）
   - Header：`Authorization: Bearer <access_token>`
   - Query：`?access_token=...`（或 `?token=...`）
+- Query（可选）：
+  - `channel_id`：渠道 ID（UUID）；传入后推送该渠道范围内的队伍快照
 - 连接成功后先推送全量快照，再在 Redis 频道更新时推送
 - 推送 payload：
 
@@ -640,6 +649,7 @@
 {
   "event": "scoreboard_update",
   "contest_id": "uuid",
+  "channel_id": "uuid|null",
   "entries": [
     {
       "rank": 1,
@@ -647,11 +657,73 @@
       "team_name": "string",
       "score": 500,
       "solved_count": 5,
-      "last_submit_at": "datetime"
+      "last_submit_at": "datetime",
+      "channels": ["School-A", "School-B"]
     }
   ]
 }
 ```
+
+### `GET /contests/{contest_id}/scoreboard/channels`
+
+- 鉴权：必须
+- 用途：列出比赛可用的榜单渠道与成员规模
+- 普通用户仅可见：
+  - `is_active=true` 渠道
+  - 或本人已加入的渠道
+- `admin|judge` 额外可见：
+  - 非激活渠道
+  - `invite_code`
+- 返回：`ScoreboardChannelItem[]`
+  - `id,name,description,is_active,member_count,my_joined,invite_code`
+
+### `GET /contests/{contest_id}/scoreboard/channels/me`
+
+- 鉴权：必须
+- 用途：查询当前用户在比赛内的渠道身份
+- 返回：
+  - `contest_id`
+  - `channel`：`null` 或 `id,name,description,joined_at`
+
+### `POST /contests/{contest_id}/scoreboard/channels/join`
+
+- 鉴权：必须
+- 用途：通过邀请码加入（或切换到）渠道身份
+- Body：
+  - `invite_code`：必填，4..48，仅允许字母/数字/`-`/`_`
+- 返回：
+  - `contest_id,message,channel`
+  - `channel`：`id,name,description,joined_at`
+
+### `POST /contests/{contest_id}/scoreboard/channels/leave`
+
+- 鉴权：必须
+- 用途：退出当前比赛内的渠道身份
+- 返回：
+  - `contest_id,message,channel`（`channel` 固定为 `null`）
+
+### `POST /contests/{contest_id}/scoreboard/channels`
+
+- 鉴权：必须（仅 `admin|judge`）
+- 用途：创建榜单渠道（例如学校/赛道），系统自动生成邀请码
+- Body：
+  - `name`：必填，<=80
+  - `description`：可选，<=500
+- `is_active`：可选，默认 `true`
+- 成功：`200`
+- 返回字段：`id,name,description,is_active,member_count,my_joined,invite_code`
+
+### `PATCH /contests/{contest_id}/scoreboard/channels/{channel_id}`
+
+- 鉴权：必须（仅 `admin|judge`）
+- 用途：更新榜单渠道信息（名称、描述、启停状态）并可重置邀请码
+- Body（至少一个字段）：
+  - `name`：可选，<=80
+  - `description`：可选，<=500
+  - `is_active`：可选，`true|false`
+  - `regenerate_invite_code`：可选，`true|false`；`true` 时自动重置新邀请码
+- 成功：`200`
+- 返回字段：`id,name,description,is_active,member_count,my_joined,invite_code`
 
 ## 10. 管理端 API
 

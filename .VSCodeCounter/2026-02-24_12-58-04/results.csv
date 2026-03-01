@@ -1,0 +1,29 @@
+"filename", "language", "TypeScript", "Docker", "CSS", "JSON", "JSON with Comments", "HTML", "JavaScript", "Markdown", "comment", "blank", "total"
+"/Users/sunplix/rust-ctf/frontend/Dockerfile", "Docker", 0, 7, 0, 0, 0, 0, 0, 0, 0, 4, 11
+"/Users/sunplix/rust-ctf/frontend/index.html", "HTML", 0, 0, 0, 0, 0, 12, 0, 0, 0, 1, 13
+"/Users/sunplix/rust-ctf/frontend/package-lock.json", "JSON", 0, 0, 0, 1991, 0, 0, 0, 0, 0, 1, 1992
+"/Users/sunplix/rust-ctf/frontend/package.json", "JSON", 0, 0, 0, 28, 0, 0, 0, 0, 0, 1, 29
+"/Users/sunplix/rust-ctf/frontend/scripts/i18n_extract.mjs", "JavaScript", 0, 0, 0, 0, 0, 0, 451, 0, 2, 56, 509
+"/Users/sunplix/rust-ctf/frontend/src/api/client.ts", "TypeScript", 2483, 0, 0, 0, 0, 0, 0, 0, 2, 199, 2684
+"/Users/sunplix/rust-ctf/frontend/src/assets/main.css", "CSS", 0, 0, 1143, 0, 0, 0, 0, 0, 0, 192, 1335
+"/Users/sunplix/rust-ctf/frontend/src/composables/useL10n.ts", "TypeScript", 104, 0, 0, 0, 0, 0, 0, 0, 0, 17, 121
+"/Users/sunplix/rust-ctf/frontend/src/composables/useMarkdown.ts", "TypeScript", 50, 0, 0, 0, 0, 0, 0, 0, 0, 11, 61
+"/Users/sunplix/rust-ctf/frontend/src/composables/usePasswordStrength.ts", "TypeScript", 263, 0, 0, 0, 0, 0, 0, 0, 0, 34, 297
+"/Users/sunplix/rust-ctf/frontend/src/composables/useTimeFormat.ts", "TypeScript", 45, 0, 0, 0, 0, 0, 0, 0, 0, 11, 56
+"/Users/sunplix/rust-ctf/frontend/src/env.d.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2
+"/Users/sunplix/rust-ctf/frontend/src/locales/README.md", "Markdown", 0, 0, 0, 0, 0, 0, 0, 72, 0, 36, 108
+"/Users/sunplix/rust-ctf/frontend/src/locales/catalog.json", "JSON", 0, 0, 0, 9984, 0, 0, 0, 0, 0, 1, 9985
+"/Users/sunplix/rust-ctf/frontend/src/locales/i18n.config.json", "JSON", 0, 0, 0, 20, 0, 0, 0, 0, 0, 1, 21
+"/Users/sunplix/rust-ctf/frontend/src/locales/i18n.ts", "TypeScript", 126, 0, 0, 0, 0, 0, 0, 0, 0, 19, 145
+"/Users/sunplix/rust-ctf/frontend/src/locales/runtime.json", "JSON", 0, 0, 0, 8304, 0, 0, 0, 0, 0, 1, 8305
+"/Users/sunplix/rust-ctf/frontend/src/main.ts", "TypeScript", 13, 0, 0, 0, 0, 0, 0, 0, 0, 5, 18
+"/Users/sunplix/rust-ctf/frontend/src/router/index.ts", "TypeScript", 115, 0, 0, 0, 0, 0, 0, 0, 0, 11, 126
+"/Users/sunplix/rust-ctf/frontend/src/stores/app.ts", "TypeScript", 140, 0, 0, 0, 0, 0, 0, 0, 0, 22, 162
+"/Users/sunplix/rust-ctf/frontend/src/stores/auth.ts", "TypeScript", 139, 0, 0, 0, 0, 0, 0, 0, 0, 20, 159
+"/Users/sunplix/rust-ctf/frontend/src/stores/index.ts", "TypeScript", 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4
+"/Users/sunplix/rust-ctf/frontend/src/stores/ui.ts", "TypeScript", 230, 0, 0, 0, 0, 0, 0, 0, 0, 40, 270
+"/Users/sunplix/rust-ctf/frontend/tsconfig.json", "JSON with Comments", 0, 0, 0, 0, 20, 0, 0, 0, 0, 1, 21
+"/Users/sunplix/rust-ctf/frontend/tsconfig.node.json", "JSON", 0, 0, 0, 9, 0, 0, 0, 0, 0, 1, 10
+"/Users/sunplix/rust-ctf/frontend/tsconfig.tsbuildinfo", "JSON", 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1
+"/Users/sunplix/rust-ctf/frontend/vite.config.ts", "TypeScript", 14, 0, 0, 0, 0, 0, 0, 0, 1, 3, 18
+"Total", "-", 3724, 7, 1143, 20337, 20, 12, 451, 72, 6, 691, 26463

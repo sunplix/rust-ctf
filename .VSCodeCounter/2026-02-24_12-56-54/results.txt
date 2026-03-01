@@ -1,0 +1,35 @@
+Date : 2026-02-24 12:56:54
+Directory : /Users/sunplix/rust-ctf/backend/src/routes
+Total : 11 files,  16581 codes, 0 comments, 1700 blanks, all 18281 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| Rust     |         11 |     16,581 |          0 |      1,700 |     18,281 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++--------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                         | files      | code       | comment    | blank      | total      |
++--------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                            |         11 |     16,581 |          0 |      1,700 |     18,281 |
++--------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++--------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                     | language | code       | comment    | blank      | total      |
++--------------------------------------------------------------+----------+------------+------------+------------+------------+
+| /Users/sunplix/rust-ctf/backend/src/routes/admin.rs          | Rust     |      8,114 |          0 |        734 |      8,848 |
+| /Users/sunplix/rust-ctf/backend/src/routes/auth.rs           | Rust     |      1,271 |          0 |        170 |      1,441 |
+| /Users/sunplix/rust-ctf/backend/src/routes/contest_access.rs | Rust     |        161 |          0 |         23 |        184 |
+| /Users/sunplix/rust-ctf/backend/src/routes/contests.rs       | Rust     |        708 |          0 |         69 |        777 |
+| /Users/sunplix/rust-ctf/backend/src/routes/health.rs         | Rust     |         57 |          0 |         10 |         67 |
+| /Users/sunplix/rust-ctf/backend/src/routes/instances.rs      | Rust     |      3,207 |          0 |        325 |      3,532 |
+| /Users/sunplix/rust-ctf/backend/src/routes/mod.rs            | Rust     |         25 |          0 |          5 |         30 |
+| /Users/sunplix/rust-ctf/backend/src/routes/scoreboard.rs     | Rust     |      1,244 |          0 |        132 |      1,376 |
+| /Users/sunplix/rust-ctf/backend/src/routes/site.rs           | Rust     |         42 |          0 |          7 |         49 |
+| /Users/sunplix/rust-ctf/backend/src/routes/submissions.rs    | Rust     |        624 |          0 |         73 |        697 |
+| /Users/sunplix/rust-ctf/backend/src/routes/teams.rs          | Rust     |      1,128 |          0 |        152 |      1,280 |
+| Total                                                        |          |     16,581 |          0 |      1,700 |     18,281 |
++--------------------------------------------------------------+----------+------------+------------+------------+------------+

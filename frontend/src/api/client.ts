@@ -259,11 +259,13 @@ export type ScoreboardEntry = {
   score: number;
   solved_count: number;
   last_submit_at: string | null;
+  channels: string[];
 };
 
 export type ScoreboardPushPayload = {
   event: string;
   contest_id: string;
+  channel_id?: string | null;
   entries: ScoreboardEntry[];
 };
 
@@ -302,6 +304,7 @@ export type ScoreboardRankingEntry = {
   total_score: number;
   solved_count: number;
   last_submit_at: string | null;
+  channels: string[];
   categories: ScoreboardRankingCategory[];
 };
 
@@ -318,10 +321,52 @@ export type ScoreboardCategoryItem = {
 
 export type ScoreboardRankingsResponse = {
   contest_id: string;
+  channel_id?: string | null;
   generated_at: string;
   categories: ScoreboardCategoryItem[];
   team_rankings: ScoreboardRankingEntry[];
   player_rankings: ScoreboardRankingEntry[];
+};
+
+export type ScoreboardChannelItem = {
+  id: string;
+  name: string;
+  description: string;
+  is_active: boolean;
+  member_count: number;
+  my_joined: boolean;
+  invite_code: string | null;
+};
+
+export type ScoreboardChannelMembershipItem = {
+  id: string;
+  name: string;
+  description: string;
+  joined_at: string;
+};
+
+export type ScoreboardMyChannelResponse = {
+  contest_id: string;
+  channel: ScoreboardChannelMembershipItem | null;
+};
+
+export type ScoreboardChannelActionResponse = {
+  contest_id: string;
+  message: string;
+  channel: ScoreboardChannelMembershipItem | null;
+};
+
+export type CreateScoreboardChannelPayload = {
+  name: string;
+  description?: string;
+  is_active?: boolean;
+};
+
+export type UpdateScoreboardChannelPayload = {
+  name?: string;
+  description?: string;
+  is_active?: boolean;
+  regenerate_invite_code?: boolean;
 };
 
 export type InstanceNetworkAccess = {
@@ -1268,12 +1313,16 @@ export async function submitFlag(
 
 export async function getScoreboard(
   contestId: string,
-  accessToken: string
+  accessToken: string,
+  query?: { channel_id?: string }
 ): Promise<ScoreboardEntry[]> {
   try {
     const { data } = await api.get<ScoreboardEntry[]>(
       `/contests/${contestId}/scoreboard`,
-      authHeaders(accessToken)
+      {
+        ...authHeaders(accessToken),
+        params: query
+      }
     );
     return data;
   } catch (error) {
@@ -1284,7 +1333,7 @@ export async function getScoreboard(
 export async function getScoreboardTimeline(
   contestId: string,
   accessToken: string,
-  query?: { max_snapshots?: number; top_n?: number }
+  query?: { max_snapshots?: number; top_n?: number; channel_id?: string }
 ): Promise<ScoreboardTimelineResponse> {
   try {
     const { data } = await api.get<ScoreboardTimelineResponse>(
@@ -1302,11 +1351,30 @@ export async function getScoreboardTimeline(
 
 export async function getScoreboardRankings(
   contestId: string,
-  accessToken: string
+  accessToken: string,
+  query?: { channel_id?: string }
 ): Promise<ScoreboardRankingsResponse> {
   try {
     const { data } = await api.get<ScoreboardRankingsResponse>(
       `/contests/${contestId}/scoreboard/rankings`,
+      {
+        ...authHeaders(accessToken),
+        params: query
+      }
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function listScoreboardChannels(
+  contestId: string,
+  accessToken: string
+): Promise<ScoreboardChannelItem[]> {
+  try {
+    const { data } = await api.get<ScoreboardChannelItem[]>(
+      `/contests/${contestId}/scoreboard/channels`,
       authHeaders(accessToken)
     );
     return data;
@@ -1315,10 +1383,102 @@ export async function getScoreboardRankings(
   }
 }
 
-export function buildScoreboardWsUrl(contestId: string, accessToken: string): string {
+export async function getMyScoreboardChannel(
+  contestId: string,
+  accessToken: string
+): Promise<ScoreboardMyChannelResponse> {
+  try {
+    const { data } = await api.get<ScoreboardMyChannelResponse>(
+      `/contests/${contestId}/scoreboard/channels/me`,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function joinScoreboardChannel(
+  contestId: string,
+  payload: { invite_code: string },
+  accessToken: string
+): Promise<ScoreboardChannelActionResponse> {
+  try {
+    const { data } = await api.post<ScoreboardChannelActionResponse>(
+      `/contests/${contestId}/scoreboard/channels/join`,
+      payload,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function leaveScoreboardChannel(
+  contestId: string,
+  accessToken: string
+): Promise<ScoreboardChannelActionResponse> {
+  try {
+    const { data } = await api.post<ScoreboardChannelActionResponse>(
+      `/contests/${contestId}/scoreboard/channels/leave`,
+      {},
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function createScoreboardChannel(
+  contestId: string,
+  payload: CreateScoreboardChannelPayload,
+  accessToken: string
+): Promise<ScoreboardChannelItem> {
+  try {
+    const { data } = await api.post<ScoreboardChannelItem>(
+      `/contests/${contestId}/scoreboard/channels`,
+      payload,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export async function updateScoreboardChannel(
+  contestId: string,
+  channelId: string,
+  payload: UpdateScoreboardChannelPayload,
+  accessToken: string
+): Promise<ScoreboardChannelItem> {
+  try {
+    const { data } = await api.patch<ScoreboardChannelItem>(
+      `/contests/${contestId}/scoreboard/channels/${channelId}`,
+      payload,
+      authHeaders(accessToken)
+    );
+    return data;
+  } catch (error) {
+    throw toApiClientError(error);
+  }
+}
+
+export function buildScoreboardWsUrl(
+  contestId: string,
+  accessToken: string,
+  query?: { channel_id?: string }
+): string {
   const url = new URL(API_BASE_URL);
   const protocol = url.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${url.host}/api/v1/contests/${contestId}/scoreboard/ws?access_token=${encodeURIComponent(accessToken)}`;
+  const params = new URLSearchParams();
+  params.set("access_token", accessToken);
+  if (query?.channel_id) {
+    params.set("channel_id", query.channel_id);
+  }
+  return `${protocol}//${url.host}/api/v1/contests/${contestId}/scoreboard/ws?${params.toString()}`;
 }
 
 export async function startInstance(

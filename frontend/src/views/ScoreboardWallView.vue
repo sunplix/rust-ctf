@@ -7,6 +7,15 @@
           <h1>{{ tr("实时趋势与排名", "Live Trend & Rankings") }}</h1>
         </div>
         <div class="context-menu">
+          <label class="wall-scope-select">
+            <span>{{ tr("榜单范围", "Scope") }}</span>
+            <select :value="selectedChannelId" @change="onChannelScopeChange">
+              <option value="">{{ tr("全体", "Global") }}</option>
+              <option v-for="item in scoreboardChannels" :key="item.id" :value="item.id">
+                {{ item.name }}
+              </option>
+            </select>
+          </label>
           <button
             class="btn-line"
             :class="{ active: trendMode === 'score' }"
@@ -31,6 +40,7 @@
           </RouterLink>
         </div>
       </header>
+      <p class="soft mono">{{ tr("当前范围", "Current scope") }}: {{ currentScopeLabel }}</p>
       <p class="soft mono">ws: {{ wsState }}</p>
       <p v-if="pageError" class="error">{{ pageError }}</p>
     </article>
@@ -89,6 +99,7 @@
               <tr>
                 <th rowspan="2" class="matrix-rank-col">{{ tr("排名", "Rank") }}</th>
                 <th rowspan="2" class="matrix-name-col">{{ tr("名称", "Name") }}</th>
+                <th rowspan="2" class="matrix-channel-col">{{ tr("渠道名称", "Channel") }}</th>
                 <th
                   v-for="group in rankingMatrixGroups"
                   :key="`team-header-${group.category}`"
@@ -116,6 +127,7 @@
               <tr v-for="row in topTeamRankings" :key="`team-${row.subject_id}`">
                 <td class="mono">{{ row.rank }}</td>
                 <td class="matrix-name-col" :title="row.subject_name">{{ row.subject_name }}</td>
+                <td class="matrix-channel-col">{{ teamChannelsLabel(row.subject_id) }}</td>
                 <template v-for="group in rankingMatrixGroups" :key="`team-row-${row.subject_id}-${group.category}`">
                   <td
                     v-for="column in group.columns"
@@ -148,6 +160,7 @@
               <tr>
                 <th rowspan="2" class="matrix-rank-col">{{ tr("排名", "Rank") }}</th>
                 <th rowspan="2" class="matrix-name-col">{{ tr("名称", "Name") }}</th>
+                <th rowspan="2" class="matrix-channel-col">{{ tr("渠道名称", "Channel") }}</th>
                 <th
                   v-for="group in rankingMatrixGroups"
                   :key="`player-header-${group.category}`"
@@ -175,6 +188,7 @@
               <tr v-for="row in topPlayerRankings" :key="`player-${row.subject_id}`">
                 <td class="mono">{{ row.rank }}</td>
                 <td class="matrix-name-col" :title="row.subject_name">{{ row.subject_name }}</td>
+                <td class="matrix-channel-col">{{ rankingChannelsLabel(row.channels) }}</td>
                 <template
                   v-for="group in rankingMatrixGroups"
                   :key="`player-row-${row.subject_id}-${group.category}`"
@@ -212,9 +226,13 @@ import { RouterLink, useRoute, useRouter } from "vue-router";
 import {
   ApiClientError,
   buildScoreboardWsUrl,
+  getScoreboard,
   getScoreboardRankings,
   getScoreboardTimeline,
+  listScoreboardChannels,
   type ScoreboardCategoryItem,
+  type ScoreboardChannelItem,
+  type ScoreboardEntry,
   type ScoreboardRankingEntry,
   type ScoreboardTimelineSnapshot,
   type ScoreboardPushPayload
@@ -234,6 +252,9 @@ const route = useRoute();
 const router = useRouter();
 
 const trendMode = ref<"score" | "rank">("score");
+const selectedChannelId = ref("");
+const scoreboardChannels = ref<ScoreboardChannelItem[]>([]);
+const latestEntries = ref<ScoreboardEntry[]>([]);
 const timeline = ref<ScoreboardTimelineSnapshot[]>([]);
 const rankingCategories = ref<ScoreboardCategoryItem[]>([]);
 const teamRankings = ref<ScoreboardRankingEntry[]>([]);
@@ -250,6 +271,20 @@ let shouldReconnect = true;
 
 const topTeamRankings = computed(() => teamRankings.value.slice(0, 60));
 const topPlayerRankings = computed(() => playerRankings.value.slice(0, 60));
+const currentScopeLabel = computed(() => {
+  if (!selectedChannelId.value) {
+    return tr("全体", "Global");
+  }
+  const current = scoreboardChannels.value.find((item) => item.id === selectedChannelId.value);
+  return current?.name ?? tr("全体", "Global");
+});
+const teamChannelsMap = computed(() => {
+  const map = new Map<string, string[]>();
+  for (const item of latestEntries.value) {
+    map.set(item.team_id, item.channels ?? []);
+  }
+  return map;
+});
 const teamMarkerLookup = computed(() => buildMarkerLookup(teamRankings.value));
 const playerMarkerLookup = computed(() => buildMarkerLookup(playerRankings.value));
 const rankingMatrixGroups = computed(() =>
@@ -432,6 +467,14 @@ watch(
   { immediate: true }
 );
 
+watch(
+  () => route.query.channel_id,
+  (value) => {
+    selectedChannelId.value = typeof value === "string" ? value : "";
+  },
+  { immediate: true }
+);
+
 function setTrendMode(mode: "score" | "rank") {
   trendMode.value = mode;
   const nextQuery = {
@@ -439,6 +482,34 @@ function setTrendMode(mode: "score" | "rank") {
     mode
   };
   router.replace({ query: nextQuery }).catch(() => undefined);
+}
+
+function stringQueryParams() {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(route.query)) {
+    if (typeof value === "string") {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+function onChannelScopeChange(event: Event) {
+  const target = event.target as HTMLSelectElement;
+  const nextChannelId = target.value.trim();
+  selectedChannelId.value = nextChannelId;
+
+  const nextQuery = stringQueryParams();
+
+  if (nextChannelId) {
+    nextQuery.channel_id = nextChannelId;
+  } else {
+    delete nextQuery.channel_id;
+  }
+
+  router.replace({ query: nextQuery }).catch(() => undefined);
+  loadWallData();
+  openScoreboardSocket();
 }
 
 function buildMarkerLookup(rows: ScoreboardRankingEntry[]) {
@@ -519,6 +590,18 @@ function formatTimeLabel(input: string) {
   });
 }
 
+function teamChannelsLabel(teamId: string) {
+  const channels = teamChannelsMap.value.get(teamId) ?? [];
+  return rankingChannelsLabel(channels);
+}
+
+function rankingChannelsLabel(channels: string[] | undefined | null) {
+  if (!channels || channels.length === 0) {
+    return "-";
+  }
+  return channels.join(", ");
+}
+
 function accessTokenOrThrow() {
   const token = authStore.accessToken;
   if (!token) {
@@ -533,14 +616,33 @@ async function loadWallData() {
 
   try {
     const token = accessTokenOrThrow();
-    const [timelineResponse, rankingResponse] = await Promise.all([
+    const channels = await listScoreboardChannels(props.contestId, token);
+    scoreboardChannels.value = channels;
+    if (selectedChannelId.value && !channels.some((item) => item.id === selectedChannelId.value)) {
+      selectedChannelId.value = "";
+      if (typeof route.query.channel_id === "string") {
+        const nextQuery = stringQueryParams();
+        delete nextQuery.channel_id;
+        router.replace({ query: nextQuery }).catch(() => undefined);
+      }
+    }
+
+    const channelIdQuery = selectedChannelId.value || undefined;
+    const [timelineResponse, rankingResponse, entries] = await Promise.all([
       getScoreboardTimeline(props.contestId, token, {
         max_snapshots: 1200,
-        top_n: 12
+        top_n: 12,
+        channel_id: channelIdQuery
       }),
-      getScoreboardRankings(props.contestId, token)
+      getScoreboardRankings(props.contestId, token, {
+        channel_id: channelIdQuery
+      }),
+      getScoreboard(props.contestId, token, {
+        channel_id: channelIdQuery
+      })
     ]);
 
+    latestEntries.value = entries;
     timeline.value = timelineResponse.snapshots;
     rankingCategories.value = rankingResponse.categories;
     teamRankings.value = rankingResponse.team_rankings;
@@ -594,7 +696,9 @@ function openScoreboardSocket() {
   }
 
   wsState.value = "connecting";
-  const wsUrl = buildScoreboardWsUrl(props.contestId, token);
+  const wsUrl = buildScoreboardWsUrl(props.contestId, token, {
+    channel_id: selectedChannelId.value || undefined
+  });
   scoreboardSocket = new WebSocket(wsUrl);
 
   scoreboardSocket.onopen = () => {
@@ -658,6 +762,24 @@ onUnmounted(() => {
 .wall-header .btn-line.active {
   background: var(--fg-0);
   color: var(--bg-0);
+}
+
+.wall-scope-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  padding: 0.14rem 0.18rem;
+  border-radius: var(--radius-sm);
+  background: var(--glass-mid);
+}
+
+.wall-scope-select span {
+  font-size: 0.74rem;
+  color: var(--fg-2);
+}
+
+.wall-scope-select select {
+  min-width: 9rem;
 }
 
 .wall-trend {
@@ -789,6 +911,15 @@ onUnmounted(() => {
 
 .matrix-score-col {
   min-width: 88px;
+}
+
+.matrix-channel-col {
+  min-width: 160px;
+  max-width: 260px;
+  text-align: left !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .matrix-category-head {
